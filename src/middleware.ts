@@ -13,6 +13,7 @@ const PROTECTED_PREFIXES = [
   "/api/chat",
   "/api/conversations",
   "/api/user-providers",
+  "/api/notifications",
 ];
 
 const ADMIN_COOKIE_NAME = "arka_admin_session";

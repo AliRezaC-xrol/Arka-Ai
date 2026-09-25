@@ -31,6 +31,7 @@ model User {
   userProviders UserProvider[]
   usageLogs     UsageLog[]
   notifications Notification[]
+  messageRecipients MessageRecipient[]
 
   @@map("users")
 }
@@ -158,4 +159,37 @@ model Notification {
   user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+model AdminMessage {
+  id        String   @id @default(uuid())
+  title     String?
+  content   String   @db.Text
+  sentAt    DateTime @default(now()) @map("sent_at")
+  sentToAll Boolean  @default(false) @map("sent_to_all")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  recipients MessageRecipient[]
+
+  @@map("admin_messages")
+}
+
+model MessageRecipient {
+  id             String    @id @default(uuid())
+  adminMessageId String    @map("admin_message_id")
+  userId         String    @map("user_id")
+  isRead         Boolean   @default(false) @map("is_read")
+  readAt         DateTime? @map("read_at")
+  isDeleted      Boolean   @default(false) @map("is_deleted")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  adminMessage AdminMessage @relation(fields: [adminMessageId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([adminMessageId, userId])
+  @@index([userId, isDeleted, isRead])
+  @@index([adminMessageId])
+  @@map("message_recipients")
 }

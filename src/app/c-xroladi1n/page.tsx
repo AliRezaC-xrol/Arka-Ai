@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProvidersManager } from "@/components/admin/providers-manager";
 import { UsersManager } from "@/components/admin/users-manager";
+import { BroadcastsManager } from "@/components/admin/broadcasts-manager";
 import { cn } from "@/lib/utils";
 
 interface StatsData {
@@ -315,13 +316,20 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => setActiveTab("broadcasts")}
-            className="flex w-full items-center justify-between rounded-control px-3 py-2 text-xs font-medium text-foreground-3 hover:bg-soft hover:text-foreground-2 transition-colors"
+            className={cn(
+              "flex w-full items-center justify-between rounded-control px-3 py-2 text-xs font-medium transition-colors",
+              activeTab === "broadcasts"
+                ? "bg-white/10 text-white"
+                : "text-foreground-2 hover:bg-soft hover:text-white",
+            )}
           >
             <span className="flex items-center gap-2.5">
               <Radio className="size-4" />
               <span>پیام‌رسانی</span>
             </span>
-            <span className="rounded bg-white/5 border border-line px-1.5 py-0.2 text-[9.5px]">فاز بعد</span>
+            <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 text-[9.5px] text-emerald-400 font-medium">
+              فعال
+            </span>
           </button>
         </nav>
 
@@ -378,6 +386,8 @@ export default function AdminPage() {
           <ProvidersManager />
         ) : activeTab === "users" ? (
           <UsersManager />
+        ) : activeTab === "broadcasts" ? (
+          <BroadcastsManager />
         ) : (
           /* Dashboard Content Area */
           <div className="flex-1 overflow-y-auto p-6 space-y-6">

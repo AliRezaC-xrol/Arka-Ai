@@ -31,6 +31,7 @@ import {
   type SpotlightGroup,
 } from "@/components/spotlight-list";
 import { UserMenu } from "@/components/user-menu";
+import { NotificationsMenu } from "@/components/notifications-menu";
 import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -806,6 +807,9 @@ function ChatContent() {
               <Plus className="size-3.5" />
               گفتگوی جدید
             </Button>
+
+            {/* Notification Bell Menu */}
+            <NotificationsMenu />
 
             {/* User Menu with Google profile + Logout */}
             <div className="w-44">
