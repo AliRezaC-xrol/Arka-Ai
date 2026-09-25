@@ -260,46 +260,68 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
 
           {/* ================= Mode 4: Personal Providers & Failover ================= */}
           <div className={activeTab === "provider" ? "block space-y-3 animate-in fade-in-50 duration-300" : "hidden"}>
-            <div className="rounded-control border border-emerald-500/30 bg-emerald-500/[0.05] p-3 text-xs flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="size-4 text-emerald-400" />
-                <span className="font-bold text-white">کلاستر چندکلیدی متصل (Multi-Key BYOK)</span>
+            <div className="rounded-card border border-white/10 bg-black/40 px-3.5 py-3 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="size-6 rounded-full bg-white/10 border border-white/15 flex items-center justify-center">
+                  <ShieldCheck className="size-3.5 text-white" />
+                </div>
+                <div>
+                  <span className="font-bold text-white text-[12.5px] block leading-tight">کلاستر چندکلیدی BYOK</span>
+                  <span className="text-[10px] text-foreground-3">مدیریت متمرکز کلیدهای اختصاصی</span>
+                </div>
               </div>
-              <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.2 text-[10px] font-mono">
+              <span className="rounded-full bg-white/10 text-white border border-white/20 px-2.5 py-0.5 text-[10px] font-mono tracking-wider">
                 AES-256-GCM
               </span>
             </div>
 
-              {/* Provider Card Mock */}
-              <div className="rounded-control border border-line bg-card/60 p-3 space-y-2.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="font-bold text-white">OpenAI Enterprise Primary</span>
-                  </div>
-                  <span className="font-mono text-[10.5px] text-foreground-3">استفاده کمترین بار (Least-Used)</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                  <div className="bg-black/40 border border-line p-2 rounded">
-                    <span className="text-foreground-3 block text-[10px]">کلید ۱ (اصلی)</span>
-                    <span className="text-white">sk-...9a12 (فعال)</span>
-                  </div>
-                  <div className="bg-black/40 border border-line p-2 rounded">
-                    <span className="text-foreground-3 block text-[10px]">کلید ۲ (رزرو Failover)</span>
-                    <span className="text-emerald-400">sk-...4d88 (آماده‌باش)</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1 text-[11px] text-foreground-3">
-                  <span className="flex items-center gap-1">
-                    <Zap className="size-3 text-amber-400" />
-                    جابجایی آنی در صورت سقف مصرف (بدون قطعی چت)
+            {/* Provider Card Mock */}
+            <div className="rounded-card border border-white/10 bg-[#121214] p-3.5 space-y-3 shadow-md">
+              <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex size-2">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-white" />
                   </span>
-                  <span className="text-white font-bold">{"۲ از ۲ کلید فعال"}</span>
+                  <span className="font-bold text-white text-xs">OpenAI Direct / Anthropic</span>
+                </div>
+                <span className="font-mono text-[10px] rounded bg-white/[0.05] border border-white/10 px-2 py-0.5 text-neutral-300">
+                  توزیع بار: Least-Used
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="rounded-control bg-black/60 border border-white/10 p-2.5 flex items-center justify-between">
+                  <div>
+                    <span className="text-foreground-3 block text-[10px] font-sans">کلید ۱ (اصلی)</span>
+                    <span className="text-white font-mono text-[11px]">sk-...9a12</span>
+                  </div>
+                  <span className="rounded-full bg-white text-black font-bold text-[10px] px-2 py-0.5 shadow-sm">
+                    فعال
+                  </span>
+                </div>
+                <div className="rounded-control bg-black/60 border border-white/10 p-2.5 flex items-center justify-between">
+                  <div>
+                    <span className="text-foreground-3 block text-[10px] font-sans">کلید ۲ (رزرو Failover)</span>
+                    <span className="text-neutral-300 font-mono text-[11px]">sk-...4d88</span>
+                  </div>
+                  <span className="rounded-full bg-white/10 text-neutral-300 border border-white/20 font-medium text-[10px] px-2 py-0.5">
+                    آماده‌باش
+                  </span>
                 </div>
               </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] text-foreground-3">
+                <span className="flex items-center gap-1.5 text-white/80">
+                  <Zap className="size-3 text-white" />
+                  <span>جابجایی خودکار بدون قطعی چت</span>
+                </span>
+                <span className="text-white font-semibold rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
+                  ۲ از ۲ کلید فعال
+                </span>
+              </div>
             </div>
+          </div>
 
           {/* Bottom Interactive Composer Pill */}
           <div className="mt-4 rounded-[12px] border border-white/10 bg-white/[0.03] p-2.5">

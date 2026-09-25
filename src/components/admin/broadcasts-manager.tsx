@@ -390,6 +390,27 @@ export function BroadcastsManager() {
               />
             </div>
 
+            {/* Live Banner Preview */}
+            {(title.trim() || content.trim()) && (
+              <div className="rounded-control border border-white/10 bg-black/60 p-3 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] text-foreground-3">
+                  <span className="font-medium text-white/80">پیش‌نمایش زنده اعلان برای کاربر:</span>
+                  <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                    Live Preview
+                  </span>
+                </div>
+                <div className="rounded-control border border-white/15 bg-[#161619] p-3 text-xs shadow-md">
+                  <div className="flex items-center gap-2 font-bold text-white mb-1.5">
+                    <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>{title.trim() || "اعلان ارکا"}</span>
+                  </div>
+                  <p className="text-neutral-300 leading-relaxed text-[11.5px] whitespace-pre-wrap">
+                    {content.trim() || "متن پیام در اینجا نمایش داده خواهد شد..."}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
               disabled={submitLoading}

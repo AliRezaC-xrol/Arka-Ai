@@ -7,6 +7,8 @@ import {
   AlertCircle,
   AlertTriangle,
   BarChart2,
+  Check,
+  Copy,
   Cpu,
   Key,
   Layers,
@@ -119,6 +121,13 @@ export function ProvidersManager() {
   const [formKeyLabel, setFormKeyLabel] = React.useState("");
   const [formSubmitLoading, setFormSubmitLoading] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
+  const [copiedKeyId, setCopiedKeyId] = React.useState<string | null>(null);
+
+  const handleCopyKeyMask = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKeyId(id);
+    setTimeout(() => setCopiedKeyId(null), 2000);
+  };
 
   // Fetch Providers
   const fetchProviders = React.useCallback(async () => {
@@ -664,9 +673,21 @@ export function ProvidersManager() {
                                   <span className="font-semibold text-white">{k.label}</span>
                                   <span
                                     dir="ltr"
-                                    className="font-mono text-[11px] text-foreground-2 bg-black/50 border border-line px-1.5 py-0.5 rounded"
+                                    className="inline-flex items-center gap-1.5 font-mono text-[11px] text-foreground-2 bg-black/50 border border-line px-2 py-0.5 rounded"
                                   >
-                                    {k.keyMask}
+                                    <span>{k.keyMask}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyKeyMask(k.id, k.keyMask)}
+                                      className="text-neutral-400 hover:text-white transition-colors"
+                                      title="کپی شناسه کلید"
+                                    >
+                                      {copiedKeyId === k.id ? (
+                                        <Check className="size-3 text-emerald-400" />
+                                      ) : (
+                                        <Copy className="size-3" />
+                                      )}
+                                    </button>
                                   </span>
                                   <span
                                     className={cn(

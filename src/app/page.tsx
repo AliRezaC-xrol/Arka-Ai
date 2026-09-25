@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Check, Gauge, Image as ImageIcon, KeyRound, Lock } from "lucide-react";
+import { Check, Cpu, Lock, Sparkles, Zap } from "lucide-react";
 
 import { FaqList } from "@/components/faq-list";
 import { MeshCanvas } from "@/components/mesh-canvas";
@@ -9,38 +9,68 @@ import { Reveal } from "@/components/reveal";
 import { StepsScroll } from "@/components/steps-scroll";
 import { HeroWindow } from "@/components/chat-preview";
 import { ArkaMark, SiteNavbar } from "@/components/site-navbar";
+import { ProviderLogosRow } from "@/components/provider-logos";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 
-const MODELS = [
-  { name: "GPT", org: "OpenAI" },
-  { name: "Claude", org: "Anthropic" },
-  { name: "Gemini", org: "Google" },
-  { name: "Grok", org: "xAI" },
-  { name: "DeepSeek", org: "DeepSeek" },
-  { name: "Qwen", org: "Alibaba" },
-  { name: "Mistral", org: "Mistral AI" },
-  { name: "Llama", org: "Meta" },
-];
-
 const FEATURES = [
-  { icon: KeyRound, title: "یک حساب، همه‌ی مدل‌ها", text: "GPT، Claude، Gemini، Grok و DeepSeek در یک محیط. فقط مدل را عوض کن، بقیه‌چیز همان است." },
-  { icon: Gauge, title: "جابه‌جایی خودکار", text: "اگر کلیدی به سقف برسد یا خطا بدهد، ارکا بی‌صدا سراغ کلید بعدی می‌رود و گفتگو قطع نمی‌شود." },
-  { icon: ImageIcon, title: "تصویر در همان گفتگو", text: "پرامپت بنویس و تصویر را کنار متن ببین؛ بدون رفتن به سایت یا اشتراک دیگر." },
-  { icon: Lock, title: "امن و خصوصی", text: "کلیدها با AES-256-GCM رمزنگاری می‌شوند و گفتگوهایت فقط برای خودت قابل دیدن است." },
+  {
+    icon: Cpu,
+    title: "یک حساب، همه‌ی مدل‌ها",
+    text: "GPT، Claude، Gemini، DeepSeek و Grok در یک رابط کاربری ساده. مدل را تغییر دهید، گفتگو بدون وقفه ادامه می‌یابد.",
+  },
+  {
+    icon: Zap,
+    title: "جابه‌جایی خودکار کلیدها",
+    text: "در صورت بروز خطای سقف سهمیه (Quota)، سیستم بدون قطع گفتگو به کلید آماده‌باش بعدی سوئیچ می‌کند.",
+  },
+  {
+    icon: Sparkles,
+    title: "استودیوی تصویر در چت",
+    text: "ایده‌ها و پرامپت‌های تصویری را با مدل‌های برتر مثل FLUX در همان پنجره گفتگو دریافت و دانلود کنید.",
+  },
+  {
+    icon: Lock,
+    title: "امنیت رمزنگاری AES-256",
+    text: "کلیدهای API شخصی شما با استاندارد AES-256-GCM در سرور رمز شده و فقط در زمان ارسال درخواست فراخوانی می‌شوند.",
+  },
 ];
 
 const STEPS = [
-  { title: "ورود با گوگل", text: "با یک کلیک و از طریق حساب گوگل وارد شو." },
-  { title: "کلید وصل کن", text: "کلید هر پروایدری را اضافه کن یا از پروایدرهای آماده استفاده کن." },
-  { title: "گفتگو کن", text: "مدل را از داخل کادر نوشتن انتخاب کن و شروع کن." },
+  {
+    title: "ورود با گوگل",
+    text: "با یک کلیک و از طریق حساب گوگل وارد شو.",
+  },
+  {
+    title: "کلید وصل کن",
+    text: "کلید هر پروایدری را اضافه کن یا از پروایدرهای آماده استفاده کن.",
+  },
+  {
+    title: "گفتگو کن",
+    text: "مدل را از داخل کادر نوشتن انتخاب کن و شروع کن.",
+  },
 ];
 
 const FAQ = [
-  { q: "آیا برای هر پروایدر حساب جدا لازم دارم؟", a: "نه. می‌توانی از پروایدرهای آماده‌ی ارکا استفاده کنی یا فقط کلید API پروایدرهایی را که خودت داری اضافه کنی." },
-  { q: "کلیدهای من کجا ذخیره می‌شوند؟", a: "کلیدها با AES-256-GCM رمزنگاری و فقط سمت سرور استفاده می‌شوند؛ هیچ‌وقت به مرورگر برگردانده نمی‌شوند." },
-  { q: "اگر یک کلید از کار بیفتد چه می‌شود؟", a: "ارکا به‌طور خودکار درخواست را با کلید بعدی همان پروایدر ادامه می‌دهد و تو چیزی حس نمی‌کنی." },
-  { q: "تولید تصویر هم دارد؟", a: "بله. مدل‌های تصویری پروایدرهای متصل، مستقیم داخل همان گفتگو در دسترس‌اند." },
-  { q: "چطور حسابم را حذف کنم؟", a: "از بخش تنظیمات حساب، با یک کلیک؛ همه‌ی گفتگوها و کلیدها برای همیشه پاک می‌شوند." },
+  {
+    q: "آیا برای هر مدل حساب جداگانه نیاز دارم؟",
+    a: "خیر. می‌توانید از پروایدرهای آماده ارکا استفاده کنید یا کلیدهای اختصاصی خود را اضافه نمایید.",
+  },
+  {
+    q: "کلیدهای API من چگونه ذخیره و محافظت می‌شوند؟",
+    a: "کلیدها با الگوریتم استاندارد AES-256-GCM رمزنگاری شده و تنها سمت سرور در زمان فراخوانی API رمزگشایی می‌شوند؛ هیچ‌گاه به مرورگر ارسال نمی‌گردند.",
+  },
+  {
+    q: "سیستم Failover خودکار چگونه کار می‌کند؟",
+    a: "اگر یک کلید با خطای Rate Limit یا سقف مصرف مواجه شود، سامانه خودکار به کلید بعدی سوئیچ کرده و چت کاربر قطع نمی‌شود.",
+  },
+  {
+    q: "آیا تولید تصویر هم مستقیماً در دسترس است؟",
+    a: "بله، مدل‌های تصویری پیشرفته نظیر FLUX در انتخاب‌گر مدل‌ها موجود بوده و در همان چت تولید می‌شوند.",
+  },
+  {
+    q: "چگونه می‌توانم حساب یا اطلاعاتم را به طور کامل حذف کنم؟",
+    a: "از بخش تنظیمات حساب، با یک کلیک امکان پاک‌سازی کامل تمام کلیدها و تاریخچه چت‌ها به صورت آنی وجود دارد.",
+  },
 ];
 
 export default async function Home() {
@@ -54,23 +84,43 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+    <div className="flex min-h-dvh flex-col bg-background text-foreground" dir="rtl">
       <SiteNavbar />
 
       <main className="flex-1">
         {/* ================= Hero ================= */}
         <section aria-labelledby="hero-title" className="relative overflow-hidden border-b border-line">
-          <div aria-hidden className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,#000_60%,transparent_100%)]">
-            <MeshCanvas />
+          {/* Animated Sleeping Mesh Monochrome Background */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,#000_65%,transparent_100%)] opacity-80"
+          >
+            <MeshCanvas spacing={58} />
           </div>
+
+          {/* Radial Ambient Glow */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_60%_50%_at_50%_15%,rgba(255,255,255,0.06),transparent_80%)]"
+          />
+
           <div className="relative mx-auto grid w-full max-w-7xl items-center gap-14 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:pb-28 lg:pt-24">
             <div>
-              <Link href="/login" className="enter inline-flex items-center gap-2.5 rounded-full border border-line bg-white/[0.03] py-1 pe-3.5 ps-1 text-[13.5px] hover:border-white/25">
-                <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-black">رایگان</span>
-                ۱۰۰ پیام رایگان بعد از ثبت‌نام
+              <Link
+                href="/login"
+                className="enter inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.04] py-1 pe-4 ps-1 text-[13px] text-neutral-200 transition-colors hover:border-white/30"
+              >
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-black shadow-sm">
+                  رایگان
+                </span>
+                ۱۰۰ پیام رایگان پس از اولین ورود
               </Link>
 
-              <h1 id="hero-title" className="enter mt-7 text-[2.6rem] font-extrabold leading-[1.25] tracking-[-0.01em] sm:text-[3.5rem] lg:text-[4rem]" style={{ ["--enter-delay" as string]: "80ms" }}>
+              <h1
+                id="hero-title"
+                className="enter mt-7 text-[2.6rem] font-extrabold leading-[1.25] tracking-[-0.01em] sm:text-[3.5rem] lg:text-[4rem] text-white"
+                style={{ ["--enter-delay" as string]: "80ms" }}
+              >
                 یک حساب
                 <br />
                 برای همه‌ی مدل‌های
@@ -78,21 +128,43 @@ export default async function Home() {
                 هوش مصنوعی.
               </h1>
 
-              <p className="enter mt-6 max-w-xl text-[17px] leading-[1.95] text-foreground-2 sm:text-[18px]" style={{ ["--enter-delay" as string]: "180ms" }}>
-                GPT، Claude، Gemini، Grok، DeepSeek و Qwen را در یک محیط تمیز و کاملاً فارسی داشته باش؛
-                با کلید خودت یا پروایدرهای آماده‌ی ارکا.
+              <p
+                className="enter mt-6 max-w-xl text-[16.5px] leading-[1.9] text-foreground-2 sm:text-[18px]"
+                style={{ ["--enter-delay" as string]: "180ms" }}
+              >
+                GPT، Claude، Gemini، Grok و DeepSeek در یک محیط یکپارچه، سریع و کاملاً فارسی؛
+                با اتصال کلید اختصاصی یا پروایدرهای متمرکز ارکا.
               </p>
 
-              <div className="enter mt-9 flex flex-wrap gap-3" style={{ ["--enter-delay" as string]: "260ms" }}>
-                <Link href="/login" className="btn-ink inline-flex h-12 items-center rounded-control px-6 text-[15px] font-semibold">شروع رایگان</Link>
-                <Link href="/chat" className="btn-line inline-flex h-12 items-center rounded-control px-6 text-[15px] font-semibold">دیدن محیط چت</Link>
+              <div className="enter mt-9 flex flex-wrap gap-3.5" style={{ ["--enter-delay" as string]: "260ms" }}>
+                <Link
+                  href="/login"
+                  className="btn-ink inline-flex h-12 items-center rounded-control px-7 text-[15px] font-semibold"
+                >
+                  شروع رایگان
+                </Link>
+                <Link
+                  href="/chat"
+                  className="btn-line inline-flex h-12 items-center rounded-control px-7 text-[15px] font-semibold border-white/20 hover:border-white/40"
+                >
+                  دیدن محیط چت
+                </Link>
               </div>
 
-              <ul className="enter mt-9 space-y-3 text-[15px]" style={{ ["--enter-delay" as string]: "340ms" }}>
-                {["سازگار با OpenAI، Anthropic و Google", "جابه‌جایی خودکار بین کلیدها", "بدون نیاز به کارت بانکی"].map((t) => (
-                  <li key={t} className="flex items-center gap-3">
-                    <Check aria-hidden className="size-4" strokeWidth={2.25} />
-                    {t}
+              <ul
+                className="enter mt-9 space-y-3 text-[14.5px] text-foreground-2"
+                style={{ ["--enter-delay" as string]: "340ms" }}
+              >
+                {[
+                  "سازگار با OpenAI، Anthropic، Google و DeepSeek",
+                  "جابه‌جایی خودکار بین کلیدها بدون قطعی چت",
+                  "رمزنگاری امن کلیدها با استاندارد AES-256-GCM",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3">
+                    <span className="grid size-5 place-items-center rounded-full bg-white/10 text-white">
+                      <Check aria-hidden className="size-3.5 stroke-[2.5]" />
+                    </span>
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
@@ -104,58 +176,60 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ================= Models strip ================= */}
-        <section id="models" aria-labelledby="models-title" className="scroll-mt-16 border-b border-line py-10">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8">
-            <h2 id="models-title" className="text-[13.5px] font-medium text-foreground-3">مدل‌هایی که در ارکا در دسترس‌اند</h2>
-            <Link href="/chat" className="text-[14px] font-semibold hover:underline">همه‌ی مدل‌ها</Link>
-          </div>
-          <div dir="ltr" className="mt-8 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_10%,#000_90%,transparent)]">
-            <div className="marquee">
-              {[0, 1].map((copy) => (
-                <ul key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-16 pe-16">
-                  {MODELS.map((m) => (
-                    <li key={m.name} className="flex items-center gap-3 whitespace-nowrap text-foreground-2 transition-colors hover:text-foreground">
-                      <span className="grid size-10 place-items-center rounded-full border border-line font-display text-[15px] font-bold">{m.name.charAt(0)}</span>
-                      <span>
-                        <span className="block font-display text-[20px] font-bold leading-6 tracking-[-0.02em]">{m.name}</span>
-                        <span className="block text-[12px] text-foreground-3">{m.org}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ))}
+        {/* ================= Provider Logos Strip ================= */}
+        <section id="models" aria-labelledby="models-title" className="scroll-mt-16 border-b border-line py-9 bg-[#0a0a0c]">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8 mb-6">
+            <div className="flex items-center gap-2">
+              <span className="size-2 rounded-full bg-white animate-pulse" />
+              <h2 id="models-title" className="text-[13px] font-medium text-foreground-3">
+                پروایدرها و مدل‌های فعال در ارکا
+              </h2>
             </div>
+            <Link href="/chat" className="text-[13px] font-semibold text-neutral-300 hover:text-white transition-colors">
+              مشاهده در محیط چت ←
+            </Link>
           </div>
+          <ProviderLogosRow />
         </section>
 
-        {/* ================= Why ================= */}
-        <section id="features" aria-labelledby="features-title" className="scroll-mt-16 bg-elevated">
-          <div className="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8 lg:py-28">
+        {/* ================= Why Arka (Monochrome Minimalist Cards) ================= */}
+        <section id="features" aria-labelledby="features-title" className="scroll-mt-16 bg-[#08080a] py-24 sm:py-28 border-b border-line">
+          <div className="mx-auto w-full max-w-7xl px-5 sm:px-8">
             <Reveal className="grid gap-6 lg:grid-cols-2 lg:items-end">
               <div>
-                <p className="text-[13.5px] font-semibold text-foreground-3">چرا ارکا</p>
-                <h2 id="features-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">یک حساب. همه‌ی مدل‌ها. به فارسی.</h2>
+                <p className="text-[13px] font-semibold text-neutral-400">چرا ارکا</p>
+                <h2 id="features-title" className="mt-3 text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.8rem]">
+                  یک حساب. همه‌ی مدل‌ها. به فارسی.
+                </h2>
               </div>
-              <p className="max-w-xl text-[17px] leading-[1.95] text-foreground-2">
-                دیگر لازم نیست برای هر مدل یک اشتراک جدا بخری و بین چند سایت جابه‌جا شوی. همه‌چیز در یک محیط راست‌چین و تمیز.
+              <p className="max-w-xl text-[16.5px] leading-[1.9] text-foreground-2">
+                نیازی به خرید اشتراک‌های دلاری پراکنده یا جابه‌جایی مداوم میان وب‌سایت‌های مختلف ندارید. تمامی برترین هوش مصنوعی‌ها در یک رابط مونوکروم و سریع در دسترس شما هستند.
               </p>
             </Reveal>
-            <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {FEATURES.map((f, i) => (
-                <Reveal as="article" key={f.title} delay={i * 90} className="rounded-card border border-line bg-background p-7 transition-colors hover:border-white/20">
-                  <span className="grid size-11 place-items-center rounded-control bg-white text-black">
-                    <f.icon aria-hidden className="size-5" strokeWidth={1.8} />
-                  </span>
-                  <h3 className="mt-7 text-[18px] font-bold">{f.title}</h3>
-                  <p className="mt-3 text-[14.5px] leading-7 text-foreground-2">{f.text}</p>
-                </Reveal>
-              ))}
+
+            <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {FEATURES.map((f, i) => {
+                const Icon = f.icon;
+                return (
+                  <Reveal
+                    as="article"
+                    key={f.title}
+                    delay={i * 90}
+                    className="group rounded-card border border-white/10 bg-[#0f0f12] p-7 transition-all duration-300 hover:border-white/25 hover:bg-[#141418] shadow-sm"
+                  >
+                    <span className="grid size-11 place-items-center rounded-2xl border border-white/15 bg-white/[0.05] text-white transition-colors group-hover:bg-white group-hover:text-black">
+                      <Icon aria-hidden className="size-5" strokeWidth={2} />
+                    </span>
+                    <h3 className="mt-6 text-[17px] font-bold text-white">{f.title}</h3>
+                    <p className="mt-2.5 text-[14px] leading-7 text-neutral-400">{f.text}</p>
+                  </Reveal>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* ================= How it works (horizontal, scroll-driven) ================= */}
+        {/* ================= How it works (3 Steps) ================= */}
         <section id="how" aria-labelledby="steps-title" className="scroll-mt-16 border-b border-line bg-elevated">
           <StepsScroll steps={STEPS} />
         </section>
@@ -164,8 +238,13 @@ export default async function Home() {
         <section id="faq" aria-labelledby="faq-title" className="scroll-mt-16">
           <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-24 sm:px-8 lg:grid-cols-[1fr_2fr] lg:py-28">
             <div>
-              <p className="text-[13.5px] font-semibold text-foreground-3">پرسش‌های پرتکرار</p>
-              <h2 id="faq-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">سوالات متداول</h2>
+              <p className="text-[13px] font-semibold text-foreground-3">پاسخ به سوالات</p>
+              <h2 id="faq-title" className="mt-3 text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.8rem]">
+                سوالات متداول
+              </h2>
+              <p className="mt-4 text-xs text-foreground-3 leading-6 max-w-xs">
+                پاسخ به رایج‌ترین پرسش‌های کاربران پیرامون نحوه کارکرد ارکا، امنیت کلیدها و سهمیه‌ها.
+              </p>
             </div>
             <Reveal delay={100}>
               <FaqList items={FAQ} />
@@ -173,34 +252,54 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ================= Dark CTA band ================= */}
-        <section className="relative overflow-hidden border-t border-line bg-elevated text-white">
-          <div aria-hidden className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_85%)]">
-            <MeshCanvas />
+        {/* ================= Dark CTA ================= */}
+        <section className="relative overflow-hidden border-t border-line bg-[#09090b] text-white">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_85%)] opacity-70"
+          >
+            <MeshCanvas spacing={60} />
           </div>
-          <div className="relative mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-8 px-5 py-20 sm:px-8 lg:flex-row lg:items-center lg:py-28">
+          <div className="relative mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-8 px-5 py-20 sm:px-8 lg:flex-row lg:items-center lg:py-24">
             <div>
-              <h2 className="text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">همین حالا شروع کن.<br />هر وقت خواستی عوضش کن.</h2>
-              <p className="mt-4 text-[18px] text-white/65">حساب بساز، کلید وصل کن و با هر مدلی که خواستی گفتگو کن.</p>
+              <h2 className="text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.8rem]">
+                همین حالا شروع کنید.
+                <br />
+                مدل خود را انتخاب کنید.
+              </h2>
+              <p className="mt-3 text-[16.5px] text-neutral-300">
+                حساب بسازید، کلید خود را وصل کنید و بدون محدودیت گفتگو کنید.
+              </p>
             </div>
-            <Link href="/login" className="inline-flex h-12 shrink-0 items-center rounded-control bg-white px-7 text-[15px] font-semibold text-[#0a0a0a] transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black">
-              شروع کنید
+            <Link
+              href="/login"
+              className="inline-flex h-12 shrink-0 items-center rounded-control bg-white px-8 text-[15px] font-semibold text-black transition-colors hover:bg-neutral-200"
+            >
+              ورود سریع با گوگل
             </Link>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-line">
+      <footer className="border-t border-line bg-[#08080a]">
         <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-4 px-5 py-6 text-[13px] text-foreground-3 sm:flex-row sm:px-8">
           <div className="flex items-center gap-2 text-foreground">
             <ArkaMark className="size-5" />
-            <span dir="ltr" className="font-display text-[15px] font-bold tracking-[-0.02em]">ARKA</span>
+            <span dir="ltr" className="font-display text-[15px] font-bold tracking-[-0.02em]">
+              ARKA
+            </span>
             <span className="ms-2 text-[13px] text-foreground-3">© ۲۰۲۶</span>
           </div>
           <nav aria-label="پیوندهای پایین صفحه" className="flex items-center gap-6">
-            <Link href="/chat" className="rounded-sm hover:text-foreground">محیط چت</Link>
-            <a href="#" className="rounded-sm hover:text-foreground">شرایط استفاده</a>
-            <a href="#" className="rounded-sm hover:text-foreground">حریم خصوصی</a>
+            <Link href="/chat" className="hover:text-white transition-colors">
+              محیط چت
+            </Link>
+            <Link href="/login" className="hover:text-white transition-colors">
+              ورود
+            </Link>
+            <a href="#how" className="hover:text-white transition-colors">
+              راهنما
+            </a>
           </nav>
         </div>
       </footer>

@@ -3,11 +3,12 @@ import { ArrowRight, Check } from "lucide-react";
 
 import { ArkaMark } from "@/components/site-navbar";
 import { GoogleLoginButton } from "@/components/google-login-button";
+import { MeshCanvas } from "@/components/mesh-canvas";
 
 const BRAND_POINTS = [
   {
     title: "همه‌ی مدل‌ها، یک گفتگو",
-    text: "GPT، Claude، Gemini، Grok و DeepSeek — بدون جابه‌جایی بین سایت‌ها.",
+    text: "GPT، Claude، Gemini، Grok و DeepSeek — بدون جابه‌جایی میان چندین سایت و اشتراک.",
   },
   {
     title: "ورود آنی و امن فقط با گوگل",
@@ -63,27 +64,29 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="flex min-h-dvh bg-background text-foreground">
+    <div className="flex min-h-dvh bg-background text-foreground" dir="rtl">
       {/* Brand panel (desktop) */}
       <aside
         aria-label="درباره‌ی ارکا"
-        className="relative hidden w-[44%] max-w-2xl flex-col justify-between overflow-hidden border-s border-line bg-[#0c0c0c] p-10 lg:flex xl:p-14"
+        className="relative hidden w-[45%] max-w-2xl flex-col justify-between overflow-hidden border-s border-line bg-[#0a0a0c] p-10 lg:flex xl:p-14"
       >
-        <div aria-hidden className="mesh-dark pointer-events-none absolute inset-0" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-40">
+          <MeshCanvas spacing={64} />
+        </div>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 [background:radial-gradient(46rem_26rem_at_75%_-12%,rgba(255,255,255,0.08),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_at_center,rgba(255,255,255,0.06),transparent_80%)]"
         />
 
         <div className="relative flex items-center gap-2.5">
-          <ArkaMark className="size-7" />
-          <span dir="ltr" className="font-display text-[19px] font-bold tracking-[-0.02em]">
+          <ArkaMark className="size-7 text-white" />
+          <span dir="ltr" className="font-display text-[19px] font-bold tracking-[-0.02em] text-white">
             ARKA
           </span>
         </div>
 
         <div className="relative">
-          <h2 className="text-[2.4rem] font-extrabold leading-[1.28] xl:text-[2.9rem]">
+          <h2 className="text-[2.4rem] font-extrabold leading-[1.28] xl:text-[2.9rem] text-white">
             یک حساب،
             <br />
             همه‌ی مدل‌های
@@ -95,13 +98,13 @@ export default async function LoginPage({
               <li key={point.title} className="flex items-start gap-4">
                 <span
                   aria-hidden
-                  className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-white/15 bg-white/[0.04]"
+                  className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-white/20 bg-white/[0.06] text-white"
                 >
                   <Check className="size-3" strokeWidth={2.5} />
                 </span>
                 <span>
-                  <span className="block text-[15.5px] font-bold">{point.title}</span>
-                  <span className="mt-1.5 block max-w-md text-[13.5px] leading-7 text-white/50">
+                  <span className="block text-[15.5px] font-bold text-white">{point.title}</span>
+                  <span className="mt-1.5 block max-w-md text-[13.5px] leading-7 text-neutral-400">
                     {point.text}
                   </span>
                 </span>
@@ -110,39 +113,46 @@ export default async function LoginPage({
           </ul>
         </div>
 
-        <p className="relative text-[12.5px] text-white/35">© ۲۰۲۶ ارکا — پلتفرم هوش مصنوعی</p>
+        <p className="relative text-[12.5px] text-neutral-500">© ۲۰۲۶ ارکا — پلتفرم هوش مصنوعی</p>
       </aside>
 
       {/* Main login card area */}
-      <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-8">
+      <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-8 bg-[#070709]">
+        {/* Animated sleeping mesh in background */}
         <div
           aria-hidden
-          className="dot-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(52rem_36rem_at_50%_38%,black,transparent_82%)]"
-        />
-        <div aria-hidden className="glow pointer-events-none absolute inset-0" />
+          className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_80%)] opacity-30"
+        >
+          <MeshCanvas spacing={60} />
+        </div>
 
         <Link
           href="/"
-          className="absolute start-4 top-5 z-[1] inline-flex items-center gap-1.5 rounded-control px-2 py-1.5 text-[13.5px] text-foreground-2 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:start-8"
+          className="absolute start-4 top-5 z-[1] inline-flex items-center gap-1.5 rounded-control px-2 py-1.5 text-[13px] text-neutral-400 transition-colors hover:text-white focus-visible:outline-none sm:start-8"
         >
           <ArrowRight aria-hidden className="size-4" />
           بازگشت به خانه
         </Link>
 
-        <div className="w-full max-w-[26rem]">
+        <div className="relative z-10 w-full max-w-[26rem]">
           {/* Mobile brand row */}
           <div className="mb-6 flex items-center justify-center gap-2.5 lg:hidden">
-            <ArkaMark className="size-6" />
-            <span dir="ltr" className="font-display text-[18px] font-bold tracking-[-0.02em]">
+            <ArkaMark className="size-6 text-white" />
+            <span dir="ltr" className="font-display text-[18px] font-bold tracking-[-0.02em] text-white">
               ARKA
             </span>
           </div>
 
-          <div className="rounded-card border border-line bg-card p-6 sm:p-8">
-            <div>
-              <h1 className="text-[1.4rem] font-extrabold leading-snug">ورود یا ساخت حساب</h1>
-              <p className="mt-2 text-[13.5px] leading-7 text-foreground-2">
-                با یک کلیک و فقط از طریق حساب گوگل، وارد محیط جامع هوش مصنوعی شوید.
+          <div className="rounded-card border border-white/10 bg-[#101013]/95 backdrop-blur-xl p-6 sm:p-8 shadow-2xl">
+            <div className="text-center sm:text-start">
+              <div className="mx-auto sm:mx-0 mb-4 grid size-12 place-items-center rounded-2xl border border-white/15 bg-white/5">
+                <ArkaMark className="size-6 text-white" />
+              </div>
+              <h1 className="text-[1.35rem] font-extrabold leading-snug text-white">
+                ورود یا ساخت حساب
+              </h1>
+              <p className="mt-2 text-[13px] leading-6 text-neutral-400">
+                با یک کلیک و فقط از طریق حساب گوگل، به سامانه متصل شوید.
               </p>
             </div>
 
@@ -169,16 +179,16 @@ export default async function LoginPage({
               <GoogleLoginButton returnTo={returnTo} />
             </div>
 
-            <div className="mt-6 border-t border-line/60 pt-5 text-center">
-              <p className="text-[12px] leading-6 text-foreground-3">
+            <div className="mt-6 border-t border-white/5 pt-5 text-center">
+              <p className="text-[11.5px] leading-6 text-neutral-400">
                 ورود اول حساب جدید می‌سازد و ورودهای بعدی همان حساب قبلی را باز می‌کنند.
               </p>
             </div>
           </div>
 
           <div className="mt-5 space-y-2 text-center">
-            <p className="text-[11.5px] leading-5 text-foreground-3">
-              با ادامه، شرایط استفاده و حریم خصوصی Arka را می‌پذیرید.
+            <p className="text-[11px] leading-5 text-neutral-500">
+              با ورود به ارکا، قوانین استفاده و حریم خصوصی را می‌پذیرید.
             </p>
           </div>
         </div>

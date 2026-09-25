@@ -10,6 +10,7 @@ const testFiles = [
   { phase: "Phase 7: Admin Broadcasts, Notifications & Multi-tier Deletion", script: "scripts/test-phase7.ts" },
   { phase: "Phase 8: Hero Window, Dedicated Login & Smart Redirects", script: "scripts/test-phase8.ts" },
   { phase: "Phase 9: Comprehensive End-to-End & Stress Testing", script: "scripts/test-phase9.ts" },
+  { phase: "Phase 10: Complete UI/UX Redesign, Admin Polish, Docs & Server CLI", script: "scripts/test-phase10.ts" },
 ];
 
 console.log("=================================================================");
