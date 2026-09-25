@@ -276,9 +276,6 @@ export default async function Home() {
             <span className="ms-2 text-[13px] text-neutral-500">© ۲۰۲۶</span>
           </div>
           <nav aria-label="پیوندهای پایین صفحه" className="flex items-center gap-6 text-xs">
-            <Link href="/chat" className="hover:text-white transition-colors">
-              محیط چت
-            </Link>
             <Link href="/login" className="hover:text-white transition-colors">
               ورود
             </Link>
