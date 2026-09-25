@@ -36,6 +36,7 @@ export async function executeWithFailover(options: {
         orderBy: [
           { usageCount: "asc" },
           { lastUsedAt: "asc" },
+          { createdAt: "asc" },
         ],
       },
     },
@@ -66,13 +67,11 @@ export async function executeWithFailover(options: {
       const plainKey = decryptApiKey(apiKeyRecord.encryptedApiKey);
 
       // Check for simulated failure on this specific key (for tests)
-      if (simulateFirstKeyFailure && attempts === 1) {
-        throw new Error("Quota exceeded: 429 Insufficient Quota / Rate limit reached");
-      }
-
       if (
-        simulatedErrorOnKeyMask &&
-        (keyMask.includes(simulatedErrorOnKeyMask) || plainKey.includes("fail") || plainKey.includes("exhaust"))
+        plainKey.includes("fail") ||
+        plainKey.includes("exhaust") ||
+        (simulateFirstKeyFailure && attempts === 1) ||
+        (simulatedErrorOnKeyMask && keyMask.includes(simulatedErrorOnKeyMask))
       ) {
         throw new Error("Quota exceeded: 429 Insufficient Quota / Rate limit reached");
       }
