@@ -31,6 +31,13 @@ GITHUB_TOKEN="${1:-${TOKEN:-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}}"
 DOMAIN_NAME="${2:-${DOMAIN:-}}"
 TARGET_DIR="/var/www/arka"
 
+# Prompt for Domain if interactive
+if [[ -z "$DOMAIN_NAME" ]]; then
+  echo -en " ${CLR_WHITE}🌐 اگر مایلید دامنه اختصاصی با SSL رایگان ست شود، آن را وارد کنید (یا [Enter] برای استفاده از IP سرور): ${CLR_RESET}"
+  read -r DOMAIN_NAME < /dev/tty 2>/dev/null || true
+  DOMAIN_NAME=$(echo "$DOMAIN_NAME" | tr -d '[:space:]')
+fi
+
 # 1. Detect Server Public IP
 echo -e " ${CLR_CYAN}ℹ [1/8] شناسایی IP عمومی سرور...${CLR_RESET}"
 SERVER_IP=$(curl -s https://api.ipify.org || hostname -I | awk '{print $1}')
