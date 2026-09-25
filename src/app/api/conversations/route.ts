@@ -40,6 +40,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (user.isBanned) {
+    return NextResponse.json({ error: "حساب شما مسدود شده است", banned: true }, { status: 403 });
+  }
+
+  if (user.timeoutUntil && new Date(user.timeoutUntil) > new Date()) {
+    return NextResponse.json({ error: "شما موقتاً محدود شده‌اید", timedOut: true }, { status: 429 });
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const title = (body.title || "گفتگوی جدید").trim().slice(0, 100);

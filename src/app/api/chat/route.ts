@@ -131,6 +131,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Phase 6: Server-side Ban check
+  if (user.isBanned) {
+    return NextResponse.json(
+      {
+        error: "حساب شما مسدود شده است",
+        banned: true,
+        banReason: user.banReason || user.bannedReason || "مسدودسازی توسط مدیر سیستم",
+      },
+      { status: 403 },
+    );
+  }
+
+  // Phase 6: Server-side Timeout check
+  if (user.timeoutUntil && new Date(user.timeoutUntil) > new Date()) {
+    const diffMs = new Date(user.timeoutUntil).getTime() - Date.now();
+    const diffMinutes = Math.max(1, Math.ceil(diffMs / (60 * 1000)));
+    return NextResponse.json(
+      {
+        error: `شما موقتاً محدود شده‌اید، ${diffMinutes} دقیقه دیگر می‌توانید استفاده کنید`,
+        timedOut: true,
+        timeoutUntil: user.timeoutUntil,
+        timeoutReason: user.timeoutReason,
+      },
+      { status: 429 },
+    );
+  }
+
   let body: {
     conversationId?: string;
     message: string;

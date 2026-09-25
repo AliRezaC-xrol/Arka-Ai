@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ArrowUp,
+  Ban,
+  Clock,
   Code,
   Download,
   Image as ImageIcon,
@@ -153,10 +155,40 @@ function ChatContent() {
 
   // User session state
   const [user, setUser] = React.useState<{
+    id?: string;
     name?: string | null;
     email?: string;
     avatarUrl?: string | null;
+    isBanned?: boolean;
+    banReason?: string | null;
+    isTimedOut?: boolean;
+    timeoutUntil?: string | null;
+    timeoutReason?: string | null;
   } | null>(null);
+
+  // Live countdown state for timeout
+  const [timeoutRemainingSeconds, setTimeoutRemainingSeconds] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (!user?.timeoutUntil) {
+      setTimeoutRemainingSeconds(null);
+      return;
+    }
+
+    const checkTimeout = () => {
+      const diffMs = new Date(user.timeoutUntil!).getTime() - Date.now();
+      const seconds = Math.max(0, Math.floor(diffMs / 1000));
+      setTimeoutRemainingSeconds(seconds);
+
+      if (seconds === 0) {
+        setUser((prev) => (prev ? { ...prev, isTimedOut: false, timeoutUntil: null } : null));
+      }
+    };
+
+    checkTimeout();
+    const interval = setInterval(checkTimeout, 1000);
+    return () => clearInterval(interval);
+  }, [user?.timeoutUntil]);
 
   // Conversations and messages
   const [conversations, setConversations] = React.useState<ConversationItem[]>([]);
@@ -463,6 +495,9 @@ function ChatContent() {
 
   // Send Message with Streaming
   const handleSend = async (messageText?: string) => {
+    if (user?.isBanned) return;
+    if (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0) return;
+
     const textToSend = (messageText ?? input).trim();
     if (!textToSend && !attachment) return;
     if (isStreaming) return;
@@ -509,7 +544,9 @@ function ChatContent() {
       });
 
       if (!res.ok) {
-        throw new Error(`Chat error: ${res.status}`);
+        const errorData = await res.json().catch(() => ({}));
+        const errorMsg = errorData.error || `خطا در برقراری ارتباط (${res.status})`;
+        throw new Error(errorMsg);
       }
 
       const contentType = res.headers.get("content-type") || "";
@@ -613,12 +650,13 @@ function ChatContent() {
     } catch (err: unknown) {
       if ((err as Error)?.name !== "AbortError") {
         console.error("Send error:", err);
+        const errMsg = (err as Error)?.message || "متأسفانه در برقراری ارتباط با مدل خطایی رخ داد. لطفاً دوباره تلاش کنید.";
         setMessages((prev) => [
           ...prev,
           {
             id: `err-${Date.now()}`,
             role: "assistant",
-            content: "متأسفانه در برقراری ارتباط با مدل خطایی رخ داد. لطفاً دوباره تلاش کنید.",
+            content: `⚠️ ${errMsg}`,
           },
         ]);
       }
@@ -865,6 +903,48 @@ function ChatContent() {
         {/* ================= Composer (Unified Input Box) ================= */}
         <div className="shrink-0 border-t border-line/60 bg-background/95 p-3 backdrop-blur sm:p-4">
           <div className="mx-auto max-w-3xl">
+            {/* Ban Banner */}
+            {user?.isBanned && (
+              <div className="mb-3 rounded-card border border-red-500/40 bg-red-500/10 p-4 text-xs text-red-200">
+                <div className="flex items-center gap-2 font-bold text-red-400 text-sm mb-1">
+                  <Ban className="size-4" />
+                  <span>حساب شما مسدود شده است</span>
+                </div>
+                <p className="leading-5">
+                  دسترسی شما به محیط چت و ارسال پیام به دلیل تصمیم مدیریت سیستم مسدود گردیده است.
+                  {user.banReason && (
+                    <span className="block mt-1.5 font-medium text-red-300">
+                      علت مسدودسازی: {user.banReason}
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* Timeout Banner with Live Countdown */}
+            {timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0 && (
+              <div className="mb-3 rounded-card border border-amber-500/40 bg-amber-500/10 p-3.5 text-xs text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <Clock className="size-4 text-amber-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-amber-300">شما موقتاً محدود شده‌اید.</span>
+                    <span className="ms-1.5">
+                      {Math.ceil(timeoutRemainingSeconds / 60)} دقیقه دیگر می‌توانید استفاده کنید.
+                      {user?.timeoutReason && ` (علت: ${user.timeoutReason})`}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="shrink-0 flex items-center gap-1.5 font-mono text-xs font-bold bg-black/50 border border-amber-500/30 px-3 py-1 rounded-control text-amber-300" dir="ltr">
+                  <span>زمان باقی‌مانده:</span>
+                  <span>
+                    {Math.floor(timeoutRemainingSeconds / 60)}:
+                    {String(timeoutRemainingSeconds % 60).padStart(2, "0")}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Attachment preview chip */}
             {attachment && (
               <div className="mb-2 inline-flex items-center gap-2 rounded-control border border-line bg-card px-3 py-1 text-xs text-foreground-2">
@@ -905,6 +985,7 @@ function ChatContent() {
                 type="button"
                 variant="ghost"
                 size="icon"
+                disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
                 onClick={() => fileInputRef.current?.click()}
                 className="size-9 shrink-0 rounded-control text-foreground-3 hover:text-white"
                 title="پیوست فایل یا تصویر"
@@ -918,9 +999,20 @@ function ChatContent() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="پیامی بنویسید یا برای تولید تصویر پرامپت وارد کنید... (Enter برای ارسال، Shift+Enter برای خط بعد)"
+                disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
+                placeholder={
+                  user?.isBanned
+                    ? "حساب شما مسدود شده است. امکان ارسال پیام وجود ندارد."
+                    : timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0
+                      ? `شما موقتاً محدود شده‌اید (${Math.ceil(timeoutRemainingSeconds / 60)} دقیقه دیگر می‌توانید استفاده کنید)`
+                      : "پیامی بنویسید یا برای تولید تصویر پرامپت وارد کنید... (Enter برای ارسال، Shift+Enter برای خط بعد)"
+                }
                 rows={1}
-                className="max-h-36 min-h-[38px] flex-1 resize-none bg-transparent py-2 text-[13.5px] leading-6 text-foreground placeholder:text-foreground-3 focus:outline-none"
+                className={cn(
+                  "max-h-36 min-h-[38px] flex-1 resize-none bg-transparent py-2 text-[13.5px] leading-6 text-foreground placeholder:text-foreground-3 focus:outline-none",
+                  (user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0)) &&
+                    "opacity-50 cursor-not-allowed",
+                )}
               />
 
               {/* Send or Stop Button */}
@@ -938,7 +1030,10 @@ function ChatContent() {
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={!input.trim() && !attachment}
+                  disabled={
+                    (!input.trim() && !attachment) ||
+                    Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))
+                  }
                   className="size-9 shrink-0 rounded-control bg-white text-black hover:bg-neutral-200 disabled:opacity-40"
                   title="ارسال پیام"
                 >

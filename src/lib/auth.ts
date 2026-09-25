@@ -254,13 +254,15 @@ export async function getCurrentUser() {
         avatarUrl: true,
         createdAt: true,
         lastLoginAt: true,
+        lastActiveAt: true,
         isBanned: true,
+        bannedAt: true,
+        bannedReason: true,
+        banReason: true,
         timeoutUntil: true,
+        timeoutReason: true,
       },
     });
-
-    if (!user || user.isBanned) return null;
-    if (user.timeoutUntil && user.timeoutUntil > new Date()) return null;
 
     return user;
   } catch {

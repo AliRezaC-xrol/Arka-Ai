@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
+  const isTimedOut = Boolean(user.timeoutUntil && new Date(user.timeoutUntil) > new Date());
+
   // Update lastActiveAt on user visit
   try {
     await prisma.user.update({
@@ -46,6 +48,12 @@ export async function GET(request: NextRequest) {
       avatarUrl: user.avatarUrl,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
+      isBanned: user.isBanned,
+      banReason: user.banReason || user.bannedReason || null,
+      bannedAt: user.bannedAt,
+      isTimedOut,
+      timeoutUntil: isTimedOut ? user.timeoutUntil : null,
+      timeoutReason: isTimedOut ? user.timeoutReason : null,
     },
   });
 }
