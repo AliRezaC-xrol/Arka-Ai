@@ -243,7 +243,7 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ================= Dark CTA ================= */}
+        {/* ================= Dark CTA (Centered) ================= */}
         <section className="relative overflow-hidden border-t border-line bg-[#09090b] text-white">
           <div
             aria-hidden
@@ -251,23 +251,23 @@ export default async function Home() {
           >
             <MeshCanvas spacing={60} />
           </div>
-          <div className="relative mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-8 px-5 py-18 sm:px-8 lg:flex-row lg:items-center lg:py-22">
-            <div>
-              <h2 className="text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.7rem]">
-                همین حالا شروع کنید.
-                <br />
-                مدل خود را انتخاب کنید.
-              </h2>
-              <p className="mt-3 text-[16px] text-neutral-300">
-                حساب بسازید، کلید خود را وصل کنید و بدون محدودیت گفتگو کنید.
-              </p>
+          <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center justify-center text-center px-5 py-20 sm:px-8 lg:py-24">
+            <h2 className="text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.8rem] text-center">
+              همین حالا شروع کنید.
+              <br />
+              مدل خود را انتخاب کنید.
+            </h2>
+            <p className="mt-4 text-[16.5px] text-neutral-300 text-center max-w-xl mx-auto leading-relaxed">
+              حساب بسازید، کلید خود را وصل کنید و بدون محدودیت گفتگو کنید.
+            </p>
+            <div className="mt-8 flex justify-center">
+              <Link
+                href="/login"
+                className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-white px-9 text-[15px] font-bold text-black transition-all hover:bg-neutral-200 hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(255,255,255,0.15)]"
+              >
+                ورود سریع با گوگل
+              </Link>
             </div>
-            <Link
-              href="/login"
-              className="inline-flex h-12 shrink-0 items-center rounded-full bg-white px-8 text-[15px] font-bold text-black transition-all hover:bg-neutral-200 hover:scale-105 active:scale-95 shadow-lg"
-            >
-              ورود سریع با گوگل
-            </Link>
           </div>
         </section>
       </main>
