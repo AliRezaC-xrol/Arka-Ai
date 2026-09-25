@@ -108,6 +108,43 @@ if [[ "$APPLY_GOOGLE" = true ]]; then
   echo -e " ${CLR_GREEN}✔ کلیدهای گوگل با موفقیت در .env ذخیره شدند.${CLR_RESET}"
 fi
 
+# 2.5 Ensure Admin Password synchronization between ADMIN_PASSWORD and ADMIN_PANEL_PASSWORD
+EXISTING_PASS=$(grep "^ADMIN_PANEL_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+if [[ -z "$EXISTING_PASS" ]]; then
+  EXISTING_PASS=$(grep "^ADMIN_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+fi
+
+if [[ -z "$EXISTING_PASS" ]]; then
+  EXISTING_PASS="Arka-$(openssl rand -hex 4 2>/dev/null | tr '[:lower:]' '[:upper:]' || echo '2026Master')"
+fi
+
+echo -e "\n ${CLR_CYAN}ℹ بررسی رمز عبور پنل مدیریت:${CLR_RESET}"
+echo -e " ${CLR_WHITE}🔑 رمز عبور فعلی ثبت‌شده:${CLR_RESET} ${CLR_YELLOW}${EXISTING_PASS}${CLR_RESET}"
+echo -en " ${CLR_WHITE}آیا می‌خواهید رمز عبور پنل مدیریت را تغییر دهید؟ [y/N]: ${CLR_RESET}"
+read -r CHANGE_PASS < /dev/tty 2>/dev/null || read -r CHANGE_PASS || CHANGE_PASS="n"
+
+if [[ "$CHANGE_PASS" =~ ^[Yy]$ ]]; then
+  echo -en " ${CLR_BOLD}${CLR_WHITE}🔑 لطفاً رمز عبور دلخواه جدید را وارد کنید: ${CLR_RESET}"
+  read -r NEW_PASS < /dev/tty 2>/dev/null || read -r NEW_PASS || true
+  NEW_PASS=$(echo "$NEW_PASS" | tr -d '[:space:]' | tr -d '"' | tr -d "'")
+  if [[ -n "$NEW_PASS" ]]; then
+    EXISTING_PASS="$NEW_PASS"
+    echo -e " ${CLR_GREEN}✔ رمز عبور به $EXISTING_PASS تغییر یافت.${CLR_RESET}"
+  fi
+fi
+
+if grep -q "^ADMIN_PANEL_PASSWORD=" "$ENV_FILE"; then
+  sed -i "s|^ADMIN_PANEL_PASSWORD=.*|ADMIN_PANEL_PASSWORD=\"${EXISTING_PASS}\"|g" "$ENV_FILE"
+else
+  echo "ADMIN_PANEL_PASSWORD=\"${EXISTING_PASS}\"" >> "$ENV_FILE"
+fi
+
+if grep -q "^ADMIN_PASSWORD=" "$ENV_FILE"; then
+  sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=\"${EXISTING_PASS}\"|g" "$ENV_FILE"
+else
+  echo "ADMIN_PASSWORD=\"${EXISTING_PASS}\"" >> "$ENV_FILE"
+fi
+
 # 3. Build & Migrate
 echo -e "\n ${CLR_CYAN}ℹ [3/4] بیلد بهینه و اعمال تغییرات جدید در دیتابیس...${CLR_RESET}"
 npx prisma generate

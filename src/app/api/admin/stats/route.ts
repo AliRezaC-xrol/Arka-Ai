@@ -26,49 +26,55 @@ export async function GET(request: NextRequest) {
 
   try {
     // 1. Total users
-    const totalUsers = await prisma.user.count();
+    const totalUsers = await prisma.user.count().catch(() => 0);
 
     // 2. Total messages across system
-    const totalMessages = await prisma.message.count();
+    const totalMessages = await prisma.message.count().catch(() => 0);
 
     // 3. Online users (active in last 5 minutes)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const onlineUsers = await prisma.user.count({
-      where: {
-        lastActiveAt: {
-          gte: fiveMinutesAgo,
-        },
-      },
-    });
-
-    // 4. Top user by message count
-    const usersWithMessages = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        conversations: {
-          select: {
-            _count: {
-              select: { messages: true },
-            },
+    const onlineUsers = await prisma.user
+      .count({
+        where: {
+          lastActiveAt: {
+            gte: fiveMinutesAgo,
           },
         },
-      },
-    });
+      })
+      .catch(() => 0);
 
+    // 4. Top user by message count
     let topUserName = "بدون پیام";
     let maxMessageCount = 0;
 
-    for (const u of usersWithMessages) {
-      const userMessageTotal = u.conversations.reduce(
-        (sum, c) => sum + (c._count?.messages || 0),
-        0,
-      );
-      if (userMessageTotal > maxMessageCount) {
-        maxMessageCount = userMessageTotal;
-        topUserName = u.name || u.email.split("@")[0] || "کاربر";
+    try {
+      const usersWithMessages = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          conversations: {
+            select: {
+              _count: {
+                select: { messages: true },
+              },
+            },
+          },
+        },
+      });
+
+      for (const u of usersWithMessages) {
+        const userMessageTotal = u.conversations.reduce(
+          (sum, c) => sum + (c._count?.messages || 0),
+          0,
+        );
+        if (userMessageTotal > maxMessageCount) {
+          maxMessageCount = userMessageTotal;
+          topUserName = u.name || u.email.split("@")[0] || "کاربر";
+        }
       }
+    } catch {
+      // fallback if user query fails
     }
 
     // 5. System uptime
@@ -88,6 +94,13 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Admin stats error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({
+      totalUsers: 0,
+      totalMessages: 0,
+      onlineUsers: 0,
+      topUser: { name: "بدون پیام", messageCount: 0 },
+      uptime: formatUptime(getServerStartTime()),
+      startedAt: getServerStartTime(),
+    });
   }
 }

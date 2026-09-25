@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { ProvidersManager } from "@/components/admin/providers-manager";
 import { UsersManager } from "@/components/admin/users-manager";
 import { BroadcastsManager } from "@/components/admin/broadcasts-manager";
-import { adminFetch, setStoredAdminToken } from "@/lib/admin-fetch";
+import { adminFetch, getStoredAdminToken, setStoredAdminToken } from "@/lib/admin-fetch";
 import { cn } from "@/lib/utils";
 
 interface StatsData {
@@ -80,19 +80,24 @@ export default function AdminPage() {
       if (explicitToken) {
         setStoredAdminToken(explicitToken);
       }
+      const token = explicitToken || getStoredAdminToken();
+      if (!token) {
+        setIsAdmin(false);
+        return;
+      }
       const res = await adminFetch("/api/admin/stats");
       if (res.ok) {
         const data = await res.json();
         setStats(data);
         setIsAdmin(true);
-      } else {
+      } else if (res.status === 401 || res.status === 403 || res.status === 404) {
         if (!explicitToken) {
           setStoredAdminToken(null);
         }
         setIsAdmin(false);
       }
     } catch {
-      setIsAdmin(false);
+      // transient network error, keep current state
     }
   }, []);
 

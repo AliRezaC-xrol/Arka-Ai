@@ -90,35 +90,88 @@ export function resetAdminRateLimit(ipOrKey: string) {
   rateLimitMap.delete(ipOrKey);
 }
 
+/**
+ * Returns configured admin master password, accepting either ADMIN_PANEL_PASSWORD,
+ * ADMIN_PASSWORD, or ADMIN_SECRET from environment.
+ */
 export function getAdminPassword(): string {
-  return process.env.ADMIN_PASSWORD || "c-xrol-arka-admin-2026";
+  const raw =
+    process.env.ADMIN_PANEL_PASSWORD ||
+    process.env.ADMIN_PASSWORD ||
+    process.env.ADMIN_SECRET ||
+    "c-xrol-arka-admin-2026";
+
+  return raw.replace(/^["']|["']$/g, "").trim();
+}
+
+function getAdminSecret(): string {
+  return process.env.SESSION_SECRET || getAdminPassword() || "arka-secure-2026";
 }
 
 /**
- * Creates an admin session record in PostgreSQL and returns the session token.
+ * Creates an admin session record in PostgreSQL and returns an HMAC-signed token.
  */
 export async function createAdminSession(): Promise<string> {
-  const rawToken = crypto.randomUUID() + "-" + crypto.randomBytes(16).toString("hex");
-  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+  const timestamp = Date.now().toString();
+  const random = crypto.randomUUID() + "-" + crypto.randomBytes(16).toString("hex");
+  const payload = `${timestamp}_${random}`;
+  const hmac = crypto.createHmac("sha256", getAdminSecret()).update(payload).digest("hex");
+  const signedToken = `${payload}.${hmac}`;
+
+  const tokenHash = crypto.createHash("sha256").update(signedToken).digest("hex");
   const expiresAt = new Date(Date.now() + ADMIN_SESSION_HOURS * 3600 * 1000);
 
-  await prisma.adminSession.create({
-    data: {
-      tokenHash,
-      expiresAt,
-    },
-  });
+  try {
+    await prisma.adminSession.create({
+      data: {
+        tokenHash,
+        expiresAt,
+      },
+    });
+  } catch (err) {
+    console.warn("Notice: Prisma adminSession persistence skipped, using cryptographic HMAC session:", err);
+  }
 
-  return rawToken;
+  return signedToken;
 }
 
 /**
- * Verifies if the request carries a valid admin session.
+ * Verifies if the request carries a valid admin session using HMAC verification
+ * and optional database lookup.
  */
-export async function verifyAdminSession(rawToken?: string | null): Promise<boolean> {
-  if (!rawToken) return false;
+export async function verifyAdminSession(token?: string | null): Promise<boolean> {
+  if (!token || typeof token !== "string") return false;
 
-  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+  // 1. Verify HMAC cryptographic signature
+  try {
+    const parts = token.split(".");
+    if (parts.length === 2) {
+      const [payload, signature] = parts;
+      const expected = crypto.createHmac("sha256", getAdminSecret()).update(payload).digest("hex");
+
+      const sigBuffer = Buffer.from(signature);
+      const expectedBuffer = Buffer.from(expected);
+
+      if (
+        sigBuffer.length === expectedBuffer.length &&
+        crypto.timingSafeEqual(sigBuffer, expectedBuffer)
+      ) {
+        const timestampStr = payload.split("_")[0];
+        const timestamp = parseInt(timestampStr, 10);
+        if (!isNaN(timestamp)) {
+          const ageHours = (Date.now() - timestamp) / (3600 * 1000);
+          if (ageHours < ADMIN_SESSION_HOURS) {
+            return true;
+          }
+        }
+      }
+    }
+  } catch {
+    // fallback to DB lookup
+  }
+
+  // 2. Fallback to database session record
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
   try {
     const session = await prisma.adminSession.findUnique({
@@ -127,7 +180,6 @@ export async function verifyAdminSession(rawToken?: string | null): Promise<bool
 
     if (!session) return false;
     if (session.expiresAt <= new Date()) {
-      // Session expired, remove it
       await prisma.adminSession.delete({ where: { tokenHash } }).catch(() => {});
       return false;
     }

@@ -109,6 +109,12 @@ action_change_admin_password() {
     echo "ADMIN_PANEL_PASSWORD=\"$new_pass1\"" >> "$ENV_FILE"
   fi
 
+  if grep -q "^ADMIN_PASSWORD=" "$ENV_FILE"; then
+    sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=\"$new_pass1\"|g" "$ENV_FILE"
+  else
+    echo "ADMIN_PASSWORD=\"$new_pass1\"" >> "$ENV_FILE"
+  fi
+
   log_success "گذرواژه پنل مدیریت با موفقیت به‌روزرسانی شد: $new_pass1"
   press_enter
 }
