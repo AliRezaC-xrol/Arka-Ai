@@ -88,7 +88,7 @@ export default async function Home() {
       <SiteNavbar />
 
       <main className="flex-1">
-        {/* ================= Hero (Restored Exactly As It Was, Without Demo Chat) ================= */}
+        {/* ================= Hero (Tablet & Laptop 2-col side-by-side; Mobile professional stacked) ================= */}
         <section aria-labelledby="hero-title" className="relative overflow-hidden border-b border-line">
           {/* Animated Sleeping Mesh Monochrome Background */}
           <div
@@ -104,13 +104,14 @@ export default async function Home() {
             className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_60%_50%_at_50%_15%,rgba(255,255,255,0.06),transparent_80%)]"
           />
 
-          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-14 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:pb-28 lg:pt-24">
+          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16 md:grid-cols-2 md:gap-8 lg:grid-cols-[1fr_1.15fr] lg:gap-14 lg:pb-24 lg:pt-20 xl:grid-cols-[1fr_1.2fr] xl:gap-16">
+            {/* Right Column: Hero Heading, Description, CTA and Bullets */}
             <div>
               <Link
                 href="/login"
-                className="enter inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.04] py-1 pe-4 ps-1 text-[13px] text-neutral-200 transition-colors hover:border-white/30"
+                className="enter inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-1 pe-3.5 ps-1 text-[12px] sm:text-[13px] text-neutral-200 transition-colors hover:border-white/30"
               >
-                <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-black shadow-sm">
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-[10.5px] sm:text-[11px] font-bold text-black shadow-sm">
                   رایگان
                 </span>
                 ۱۰۰ پیام رایگان پس از اولین ورود
@@ -118,7 +119,7 @@ export default async function Home() {
 
               <h1
                 id="hero-title"
-                className="enter mt-7 text-[2.6rem] font-extrabold leading-[1.25] tracking-[-0.01em] sm:text-[3.5rem] lg:text-[4rem] text-white"
+                className="enter mt-5 sm:mt-6 text-[2.2rem] font-extrabold leading-[1.25] tracking-tight sm:text-[3rem] md:text-[2.5rem] lg:text-[3.4rem] xl:text-[3.8rem] text-white"
                 style={{ ["--enter-delay" as string]: "80ms" }}
               >
                 یک حساب
@@ -129,24 +130,24 @@ export default async function Home() {
               </h1>
 
               <p
-                className="enter mt-6 max-w-xl text-[16.5px] leading-[1.9] text-foreground-2 sm:text-[18px]"
+                className="enter mt-4 sm:mt-5 max-w-xl text-[15px] leading-[1.85] text-neutral-300 sm:text-[16.5px] md:text-[15.5px] lg:text-[17px]"
                 style={{ ["--enter-delay" as string]: "180ms" }}
               >
                 GPT، Claude، Gemini، Grok و DeepSeek در یک محیط یکپارچه، سریع و کاملاً فارسی؛
                 با اتصال کلید اختصاصی یا پروایدرهای متمرکز ارکا.
               </p>
 
-              <div className="enter mt-9 flex flex-wrap gap-3.5" style={{ ["--enter-delay" as string]: "260ms" }}>
+              <div className="enter mt-7 sm:mt-8 flex flex-wrap gap-3.5" style={{ ["--enter-delay" as string]: "260ms" }}>
                 <Link
                   href="/login"
-                  className="btn-ink inline-flex h-12 items-center rounded-control px-7 text-[15px] font-semibold"
+                  className="btn-ink inline-flex h-11 sm:h-12 items-center rounded-control px-7 text-[14.5px] sm:text-[15px] font-semibold"
                 >
                   شروع رایگان
                 </Link>
               </div>
 
               <ul
-                className="enter mt-9 space-y-3 text-[14.5px] text-foreground-2"
+                className="enter mt-7 sm:mt-8 space-y-2.5 sm:space-y-3 text-[13.5px] sm:text-[14.5px] text-foreground-2"
                 style={{ ["--enter-delay" as string]: "340ms" }}
               >
                 {[
@@ -154,8 +155,8 @@ export default async function Home() {
                   "جابه‌جایی خودکار بین کلیدها بدون قطعی چت",
                   "رمزنگاری امن کلیدها با استاندارد AES-256-GCM",
                 ].map((item) => (
-                  <li key={item} className="flex items-center gap-3">
-                    <span className="grid size-5 place-items-center rounded-full bg-white/10 text-white">
+                  <li key={item} className="flex items-center gap-2.5 sm:gap-3">
+                    <span className="grid size-5 place-items-center rounded-full bg-white/10 text-white shrink-0">
                       <Check aria-hidden className="size-3.5 stroke-[2.5]" />
                     </span>
                     <span>{item}</span>
@@ -164,7 +165,8 @@ export default async function Home() {
               </ul>
             </div>
 
-            <div className="enter" style={{ ["--enter-delay" as string]: "200ms" }}>
+            {/* Left Column (Opposite in RTL): Hero Window Showcase */}
+            <div className="enter w-full" style={{ ["--enter-delay" as string]: "200ms" }}>
               <HeroWindow />
             </div>
           </div>
