@@ -186,14 +186,15 @@ export default async function Home() {
         {/* ================= Why Arka (Monochrome Minimalist Cards) ================= */}
         <section id="features" aria-labelledby="features-title" className="scroll-mt-16 bg-[#08080a] py-20 sm:py-24 border-b border-line">
           <div className="mx-auto w-full max-w-7xl px-5 sm:px-8">
-            <Reveal className="grid gap-6 lg:grid-cols-2 lg:items-end">
-              <div>
-                <p className="text-[12.5px] font-semibold text-neutral-400">چرا ارکا</p>
-                <h2 id="features-title" className="mt-2 text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.7rem]">
-                  یک حساب. همه‌ی مدل‌ها. به فارسی.
-                </h2>
-              </div>
-              <p className="max-w-xl text-[16px] leading-[1.85] text-neutral-300">
+            <Reveal className="max-w-3xl">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1 text-[13px] font-semibold text-white shadow-sm">
+                <span className="size-2 rounded-full bg-emerald-400" />
+                چرا ارکا؟
+              </span>
+              <h2 id="features-title" className="mt-4 text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.8rem]">
+                یک حساب. همه‌ی مدل‌ها. به فارسی.
+              </h2>
+              <p className="mt-4 text-[16px] leading-[1.85] text-neutral-300">
                 نیازی به خرید اشتراک‌های دلاری پراکنده یا جابه‌جایی مداوم میان وب‌سایت‌های مختلف ندارید. تمامی برترین هوش مصنوعی‌ها در یک رابط مونوکروم و سریع در دسترس شما هستند.
               </p>
             </Reveal>
@@ -225,18 +226,20 @@ export default async function Home() {
           <StepsScroll steps={STEPS} />
         </section>
 
-        {/* ================= FAQ ================= */}
-        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-16">
-          <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[1fr_2fr] lg:py-24">
-            <div>
-              <p className="text-[12.5px] font-semibold text-neutral-400">پاسخ به سوالات</p>
-              <h2 id="faq-title" className="mt-2 text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.7rem]">
+        {/* ================= FAQ (Centered) ================= */}
+        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-16 border-b border-line py-20 sm:py-24">
+          <div className="mx-auto w-full max-w-4xl px-5 sm:px-8">
+            <Reveal className="mx-auto max-w-xl text-center mb-12">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-[12.5px] font-semibold text-neutral-300">
+                پاسخ به سوالات
+              </span>
+              <h2 id="faq-title" className="mt-4 text-[2.2rem] font-extrabold leading-[1.3] text-white sm:text-[2.7rem]">
                 سوالات متداول
               </h2>
-              <p className="mt-3 text-xs text-neutral-400 leading-6 max-w-xs">
-                پاسخ به رایج‌ترین پرسش‌های کاربران پیرامون نحوه کارکرد ارکا، امنیت کلیدها و سهمیه‌ها.
+              <p className="mt-3.5 text-[14.5px] text-neutral-400 leading-7 max-w-md mx-auto">
+                پاسخ به رایج‌ترین پرسش‌های کاربران پیرامون نحوه کارکرد ارکا، مدل‌ها و حساب کاربری.
               </p>
-            </div>
+            </Reveal>
             <Reveal delay={100}>
               <FaqList items={FAQ} />
             </Reveal>

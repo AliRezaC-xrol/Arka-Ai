@@ -58,7 +58,7 @@ export default async function LoginPage({
         canRetry = false;
         break;
       case "oauth_config":
-        errorMessage = "تنظیمات Google OAuth (Client ID / Secret) در فایل .env تعریف نشده است.";
+        errorMessage = "تنظیمات Google OAuth (Client ID / Secret) در فایل .env سرور تعریف نشده است. لطفاً اسکریپت تنظیم گوگل را در سرور اجرا کنید.";
         break;
       case "invalid_state":
         errorMessage = "خطای اعتبارسنجی امنیتی در ورود (CSRF). لطفاً دوباره امتحان کنید.";
@@ -71,18 +71,15 @@ export default async function LoginPage({
 
   return (
     <div className="relative flex min-h-dvh w-full bg-[#08080a] text-foreground overflow-hidden" dir="rtl">
-      {/* 1. Subtle, single uniform background grid without any clashing halos or seam lines */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_50%,transparent_95%)] opacity-25"
-      >
-        <MeshCanvas spacing={60} />
+      {/* 1. Uniform background mesh - no halos, no radial masks, no color mismatch */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-20">
+        <MeshCanvas spacing={64} />
       </div>
 
-      {/* 2. Brand panel (desktop - right side in RTL) with clean hairline divider border-e */}
+      {/* 2. Brand panel (desktop - right side in RTL) with clean hairline divider */}
       <aside
         aria-label="درباره‌ی ارکا"
-        className="relative z-10 hidden w-[48%] max-w-2xl flex-col justify-between border-e border-white/10 bg-[#08080a]/40 p-10 lg:flex xl:p-14"
+        className="relative z-10 hidden w-[48%] max-w-2xl flex-col justify-between border-e border-white/10 p-10 lg:flex xl:p-14"
       >
         {/* Top Brand Logo */}
         <div className="flex items-center gap-2.5">
@@ -94,10 +91,8 @@ export default async function LoginPage({
 
         {/* Center Content: Balanced headline with NO empty space in front of text */}
         <div className="my-auto py-8">
-          <h2 className="text-[2.2rem] lg:text-[2.6rem] xl:text-[2.9rem] font-extrabold leading-[1.35] tracking-tight text-white">
-            یک حساب برای همه‌ی
-            <br />
-            مدل‌های هوش مصنوعی.
+          <h2 className="text-[2.1rem] lg:text-[2.5rem] xl:text-[2.8rem] font-extrabold leading-[1.35] tracking-tight text-white">
+            یک حساب برای همه‌ی مدل‌های هوش مصنوعی.
           </h2>
 
           <p className="mt-4 text-[14.5px] leading-7 text-neutral-300 max-w-lg">
@@ -130,14 +125,6 @@ export default async function LoginPage({
 
       {/* 3. Main login card area (left side in RTL) */}
       <main className="relative z-10 flex min-h-dvh flex-1 flex-col items-center justify-center px-4 py-12 sm:px-8">
-        <Link
-          href="/"
-          className="absolute start-4 top-5 z-[1] inline-flex items-center gap-1.5 rounded-control px-2 py-1.5 text-[13px] text-neutral-400 transition-colors hover:text-white focus-visible:outline-none sm:start-8"
-        >
-          <ArrowRight aria-hidden className="size-4" />
-          بازگشت به خانه
-        </Link>
-
         <div className="w-full max-w-[26rem]">
           {/* Mobile brand row */}
           <div className="mb-6 flex items-center justify-center gap-2.5 lg:hidden">
@@ -147,7 +134,7 @@ export default async function LoginPage({
             </span>
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-[#101013]/95 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_24px_50px_rgba(0,0,0,0.85)] text-center">
+          <div className="rounded-[28px] border border-white/10 bg-[#101013]/95 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_16px_40px_rgba(0,0,0,0.7)] text-center">
             {/* Centered Brand Icon */}
             <div className="mx-auto mb-5 grid size-13 place-items-center rounded-2xl border border-white/15 bg-white/[0.05] shadow-inner">
               <ArkaMark className="size-6 text-white" />
@@ -191,7 +178,16 @@ export default async function LoginPage({
             </div>
           </div>
 
-          <div className="mt-5 space-y-2 text-center">
+          {/* Centered Back button placed below the login box */}
+          <div className="mt-6 flex flex-col items-center gap-3.5 text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[13px] font-medium text-neutral-300 transition-all duration-200 hover:border-white/25 hover:bg-white/[0.08] hover:text-white"
+            >
+              <ArrowRight aria-hidden className="size-4" />
+              <span>بازگشت به صفحه‌ی اصلی</span>
+            </Link>
+
             <p className="text-[11px] leading-5 text-neutral-500">
               با ورود به ارکا، قوانین استفاده و حریم خصوصی را می‌پذیرید.
             </p>
