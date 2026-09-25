@@ -121,7 +121,7 @@ export default async function LoginPage({
         {/* Animated sleeping mesh in background */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_80%)] opacity-30"
+          className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_80%)] opacity-35"
         >
           <MeshCanvas spacing={60} />
         </div>
@@ -143,24 +143,25 @@ export default async function LoginPage({
             </span>
           </div>
 
-          <div className="rounded-card border border-white/10 bg-[#101013]/95 backdrop-blur-xl p-6 sm:p-8 shadow-2xl">
-            <div className="text-center sm:text-start">
-              <div className="mx-auto sm:mx-0 mb-4 grid size-12 place-items-center rounded-2xl border border-white/15 bg-white/5">
-                <ArkaMark className="size-6 text-white" />
-              </div>
-              <h1 className="text-[1.35rem] font-extrabold leading-snug text-white">
-                ورود یا ساخت حساب
-              </h1>
-              <p className="mt-2 text-[13px] leading-6 text-neutral-400">
-                با یک کلیک و فقط از طریق حساب گوگل، به سامانه متصل شوید.
-              </p>
+          <div className="rounded-[28px] border border-white/10 bg-[#101013]/95 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_24px_50px_rgba(0,0,0,0.8)] text-center">
+            {/* Centered Brand Icon */}
+            <div className="mx-auto mb-5 grid size-13 place-items-center rounded-2xl border border-white/15 bg-white/[0.05] shadow-inner">
+              <ArkaMark className="size-6 text-white" />
             </div>
+
+            {/* Centered Title and Subtitle as explicitly requested */}
+            <h1 className="text-[1.4rem] font-extrabold leading-snug text-white text-center">
+              ورود یا ساخت حساب
+            </h1>
+            <p className="mt-2.5 text-[13px] leading-6 text-neutral-400 text-center mx-auto max-w-xs">
+              با یک کلیک و فقط از طریق حساب گوگل، به سامانه متصل شوید.
+            </p>
 
             {/* Error notification */}
             {errorMessage && (
               <div
                 role="alert"
-                className="mt-6 rounded-control border border-red-500/30 bg-red-500/10 p-3.5 text-[13px] leading-6 text-red-300"
+                className="mt-6 rounded-control border border-red-500/30 bg-red-500/10 p-3.5 text-[13px] leading-6 text-red-300 text-start"
               >
                 <p>{errorMessage}</p>
                 {canRetry && (
@@ -180,7 +181,7 @@ export default async function LoginPage({
             </div>
 
             <div className="mt-6 border-t border-white/5 pt-5 text-center">
-              <p className="text-[11.5px] leading-6 text-neutral-400">
+              <p className="text-[11.5px] leading-6 text-neutral-500">
                 ورود اول حساب جدید می‌سازد و ورودهای بعدی همان حساب قبلی را باز می‌کنند.
               </p>
             </div>

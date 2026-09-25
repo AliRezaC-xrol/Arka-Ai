@@ -7,21 +7,19 @@ import {
   ArrowUp,
   Ban,
   Clock,
-  Code,
   Download,
   Image as ImageIcon,
   Key,
-  Lightbulb,
+  Moon,
   PanelRightClose,
   PanelRightOpen,
   Paperclip,
-  PenLine,
   Plus,
   Search,
   Settings,
   Square,
+  SquarePen,
   X,
-  type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -39,6 +37,7 @@ import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormattedMessage } from "@/components/code-block";
+import { MeshCanvas } from "@/components/mesh-canvas";
 import { cn } from "@/lib/utils";
 
 interface ConversationItem {
@@ -67,46 +66,36 @@ const BASE_MODEL_GROUPS: ModelGroup[] = [
   { provider: "Image Studio", models: ["FLUX.1 Schnell"] },
 ];
 
-interface Suggestion {
-  icon: LucideIcon;
-  title: string;
-  prompt: string;
-}
-
-const SUGGESTIONS: Suggestion[] = [
+const SUGGESTIONS = [
   {
-    icon: PenLine,
-    title: "ایده‌ی محتوا",
-    prompt: "برای پیج طراحی محصول، سه ایده‌ی پست با لحن ساده و حرفه‌ای بنویس.",
+    title: "خودت را معرفی کن",
+    prompt: "خودت را به عنوان دستیار هوشمند ارکا معرفی کن و بگو چطور می‌توانی در کارها کمکم کنی.",
   },
   {
-    icon: ImageIcon,
-    title: "تولید تصویر",
-    prompt: "تصویری از یک استودیوی طراحی مینیمال مه‌آلود با پالت خاکستری و نور متمرکز خلق کن.",
+    title: "چطور روزم را بهتر برنامه‌ریزی کنم؟",
+    prompt: "یک روش ساده و موثر برای مدیریت زمان و اولویت‌بندی کارهای روزانه به من پیشنهاد بده.",
   },
   {
-    icon: Code,
-    title: "توضیح کد",
-    prompt: "یک هوک ساده‌ی React برای debounce بنویس و خط‌به‌خط توضیح بده.",
+    title: "پایتخت فرانسه کجاست؟",
+    prompt: "پایتخت فرانسه کجاست؟ و سه مکان تاریخی و گردشگری مهم آن را نام ببر.",
   },
   {
-    icon: Lightbulb,
-    title: "خلاصه‌سازی",
-    prompt: "مهم‌ترین اصول معماری سیستم‌های هوش مصنوعی را در پنج خط خلاصه کن.",
+    title: "یک متن انگیزشی کوتاه بگو",
+    prompt: "یک جمله انگیزشی کوتاه، عمیق و پرانرژی برای شروع یک روز کاری پرچالش بنویس.",
   },
 ];
 
 function ClaudeThinkingIndicator() {
   return (
-    <div className="flex items-center gap-3 py-3 text-foreground-3">
+    <div className="flex items-center gap-3 py-3 text-neutral-400">
       <div className="relative flex items-center justify-center">
         <span className="relative flex size-2.5">
           <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/40 opacity-75" />
           <span className="relative inline-flex size-2.5 rounded-full bg-white/70" />
         </span>
       </div>
-      <span className="animate-pulse text-[12.5px] font-medium tracking-wide text-foreground-2">
-        در حال پردازش و تولید پاسخ...
+      <span className="animate-pulse text-[12.5px] font-medium tracking-wide text-neutral-300">
+        در حال پردازش و نگارش پاسخ...
       </span>
     </div>
   );
@@ -125,7 +114,7 @@ function ImageMessageCard({ content }: { content: string }) {
   }
 
   return (
-    <div className="my-2 max-w-xl overflow-hidden rounded-card border border-white/10 bg-[#121214]">
+    <div className="my-2 max-w-xl overflow-hidden rounded-[20px] border border-white/10 bg-[#121214]">
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/60">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -135,12 +124,12 @@ function ImageMessageCard({ content }: { content: string }) {
         />
       </div>
       {caption && (
-        <div className="flex items-center justify-between border-t border-white/5 p-3 text-xs text-foreground-2">
+        <div className="flex items-center justify-between border-t border-white/5 p-3 text-xs text-neutral-300">
           <span className="truncate">{caption}</span>
           <a
             href={imageUrl}
             download="arka-ai-image.svg"
-            className="inline-flex items-center gap-1 rounded px-2.5 py-1 text-foreground-3 hover:bg-white/10 hover:text-white"
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-neutral-400 hover:bg-white/10 hover:text-white transition-colors"
             title="دانلود تصویر"
           >
             <Download className="size-3.5" />
@@ -277,8 +266,8 @@ function ChatContent() {
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
   // UI state: Dock / Sidebar
-  const [sidebarOpen, setSidebarOpen] = React.useState(false); // Mobile drawer
-  const [desktopCollapsed, setDesktopCollapsed] = React.useState(false); // Desktop icon-only dock
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = React.useState(true); // Collapsed by default like reference video
   const [searchQuery, setSearchQuery] = React.useState("");
   const chatScrollRef = React.useRef<HTMLDivElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -416,7 +405,6 @@ function ChatContent() {
     return groups;
   }, [conversations, searchQuery]);
 
-  // Conversation Actions
   const handleSelectConversation = (id: string) => {
     router.push(`/chat?id=${id}`);
     setSidebarOpen(false);
@@ -481,7 +469,6 @@ function ChatContent() {
     }
   };
 
-  // Export current conversation to Markdown
   const handleExportChat = () => {
     if (messages.length === 0) return;
     const currentConv = conversations.find((c) => c.id === activeId);
@@ -509,7 +496,6 @@ function ChatContent() {
     URL.revokeObjectURL(url);
   };
 
-  // Attachment upload simulation
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -522,7 +508,6 @@ function ChatContent() {
     e.target.value = "";
   };
 
-  // Stop Streaming
   const handleStop = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -532,7 +517,6 @@ function ChatContent() {
     setIsThinking(false);
   };
 
-  // Send Message with Streaming
   const handleSend = async (messageText?: string) => {
     if (user?.isBanned) return;
     if (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0) return;
@@ -679,7 +663,7 @@ function ChatContent() {
                 );
               }
             } catch {
-              // Ignore partial JSON
+              // ignore
             }
           }
         }
@@ -716,11 +700,11 @@ function ChatContent() {
   const activeTitle = conversations.find((c) => c.id === activeId)?.title;
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground" dir="rtl">
+    <div className="flex h-dvh w-full overflow-hidden bg-[#070709] text-foreground" dir="rtl">
       {/* ================= Dock / Sidebar ================= */}
       <aside
         className={cn(
-          "fixed inset-y-0 start-0 z-40 flex shrink-0 flex-col border-e border-line bg-[#0d0d0f] transition-all duration-300 ease-in-out md:static",
+          "fixed inset-y-0 start-0 z-40 flex shrink-0 flex-col border-e border-white/5 bg-[#0b0b0e] transition-all duration-300 ease-in-out md:static",
           // Mobile state
           sidebarOpen ? "translate-x-0 w-72" : "-translate-x-full md:translate-x-0",
           // Desktop state
@@ -728,52 +712,50 @@ function ChatContent() {
         )}
       >
         {desktopCollapsed ? (
-          /* Desktop Collapsed Icon Dock Mode */
-          <div className="hidden md:flex h-full flex-col items-center justify-between py-2">
-            <div className="flex flex-col items-center gap-4">
+          /* Desktop Collapsed Icon Dock Mode (Clean reference-styled) */
+          <div className="hidden md:flex h-full flex-col items-center justify-between py-3">
+            <div className="flex flex-col items-center gap-3.5">
               <button
                 type="button"
                 onClick={() => setDesktopCollapsed(false)}
-                className="grid size-10 place-items-center rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 transition-colors"
-                title="باز کردن سایدبار"
+                className="grid size-9 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/10 transition-colors"
+                title="باز کردن تاریخچه گفتگوها"
               >
-                <ArkaMark className="size-5" />
+                <ArkaMark className="size-4" />
               </button>
 
               <button
                 type="button"
                 onClick={handleNewChat}
-                className="grid size-10 place-items-center rounded-xl bg-white text-black hover:bg-neutral-200 transition-colors shadow-sm"
+                className="grid size-9 place-items-center rounded-xl bg-white text-black hover:bg-neutral-200 transition-all shadow"
                 title="گفتگوی جدید"
               >
-                <Plus className="size-5" />
+                <Plus className="size-4 stroke-[2.5]" />
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setDesktopCollapsed(false);
-                }}
-                className="grid size-10 place-items-center rounded-xl border border-white/10 text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+                onClick={() => setDesktopCollapsed(false)}
+                className="grid size-9 place-items-center rounded-xl border border-white/10 text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
                 title="جستجو در گفتگوها"
               >
-                <Search className="size-4" />
+                <Search className="size-3.5" />
               </button>
             </div>
 
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-2.5">
               <Link
                 href="/settings/providers"
-                className="grid size-10 place-items-center rounded-xl border border-white/10 text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+                className="grid size-9 place-items-center rounded-xl border border-white/10 text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
                 title="پروایدرهای شخصی (BYOK)"
               >
-                <Key className="size-4" />
+                <Key className="size-3.5" />
               </Link>
 
               <button
                 type="button"
                 onClick={() => setDesktopCollapsed(false)}
-                className="grid size-10 place-items-center rounded-xl text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+                className="grid size-9 place-items-center rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
                 title="گسترش نوار کناری"
               >
                 <PanelRightOpen className="size-4" />
@@ -783,17 +765,15 @@ function ChatContent() {
         ) : (
           /* Expanded Full Sidebar */
           <div className="flex h-full flex-col">
-            {/* Brand & Toggle Header */}
             <div className="flex items-center justify-between pb-3 border-b border-white/5">
               <Link href="/" className="flex items-center gap-2 px-1">
-                <ArkaMark className="size-6 text-white" />
-                <span dir="ltr" className="font-display text-[16px] font-bold tracking-[-0.02em] text-white">
+                <ArkaMark className="size-5 text-white" />
+                <span dir="ltr" className="font-display text-[15px] font-bold tracking-tight text-white">
                   ARKA
                 </span>
               </Link>
 
               <div className="flex items-center gap-1">
-                {/* Desktop Collapse Button */}
                 <button
                   type="button"
                   onClick={() => setDesktopCollapsed(true)}
@@ -802,8 +782,6 @@ function ChatContent() {
                 >
                   <PanelRightClose className="size-4" />
                 </button>
-
-                {/* Mobile Close Button */}
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}
@@ -815,39 +793,36 @@ function ChatContent() {
               </div>
             </div>
 
-            {/* New Chat Primary Button */}
             <div className="pt-3 pb-2">
               <Button
                 type="button"
                 onClick={handleNewChat}
-                className="w-full justify-start gap-2.5 bg-white text-xs font-semibold text-black hover:bg-neutral-200 shadow-sm h-9"
+                className="w-full justify-start gap-2 bg-white text-xs font-bold text-black hover:bg-neutral-200 shadow-sm h-9 rounded-xl"
               >
                 <Plus className="size-4 stroke-[2.5]" />
                 <span>گفتگوی جدید</span>
               </Button>
             </div>
 
-            {/* Search Input */}
             <div className="relative my-2">
-              <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground-3" />
+              <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="جستجو در گفتگوها..."
-                className="h-8 ps-8 pe-3 text-xs bg-black/40 border-white/10 placeholder:text-foreground-3"
+                className="h-8 ps-8 pe-3 text-xs bg-black/40 border-white/10 placeholder:text-neutral-500 rounded-lg"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute end-2 top-1/2 -translate-y-1/2 text-foreground-3 hover:text-white"
+                  className="absolute end-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
                 >
                   <X className="size-3" />
                 </button>
               )}
             </div>
 
-            {/* Conversation Group List */}
             <div className="min-h-0 flex-1 overflow-y-auto py-1">
               <SpotlightList
                 groups={conversationGroups}
@@ -859,8 +834,7 @@ function ChatContent() {
               />
             </div>
 
-            {/* Footer Links */}
-            <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-foreground-3">
+            <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-neutral-400">
               <Link
                 href="/settings/providers"
                 className="flex items-center gap-1.5 hover:text-white transition-colors"
@@ -890,85 +864,94 @@ function ChatContent() {
 
       {/* ================= Main Chat Section ================= */}
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[#070709]">
-        {/* Subtle Ambient Background Mesh Glow */}
+        {/* Animated Monochrome Sleeping Mesh Background (Black & White, NO BLUE) */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 [background:radial-gradient(circle_at_50%_15%,rgba(255,255,255,0.03),transparent_70%)]"
-        />
+          className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_30%,transparent_90%)] opacity-35"
+        >
+          <MeshCanvas spacing={60} />
+        </div>
 
-        {/* Top Header Bar */}
-        <header className="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-line bg-background/80 px-4 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            {/* Sidebar toggle for mobile & desktop collapsed */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn("size-8 text-neutral-400 hover:text-white", !desktopCollapsed && "md:hidden")}
+        {/* Top Header Bar matching Video 1 exactly */}
+        <header className="relative z-20 flex h-14 shrink-0 items-center justify-between px-4 sm:px-6 border-b border-white/[0.04] bg-background/60 backdrop-blur-md">
+          {/* Left Side: Sidebar toggle + New chat + Arka Logo */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
               onClick={() => {
                 if (window.innerWidth < 768) {
                   setSidebarOpen(!sidebarOpen);
                 } else {
-                  setDesktopCollapsed(false);
+                  setDesktopCollapsed(!desktopCollapsed);
                 }
               }}
+              className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
               title="تغییر وضعیت نوار کناری"
             >
-              <PanelRightOpen className="size-4" />
-            </Button>
+              {desktopCollapsed ? (
+                <PanelRightOpen className="size-4" />
+              ) : (
+                <PanelRightClose className="size-4" />
+              )}
+            </button>
 
-            {/* Model Picker Pill */}
-            <ModelPicker
-              groups={modelGroups}
-              value={model}
-              onChange={setModel}
-              className="text-xs"
-            />
+            <button
+              type="button"
+              onClick={handleNewChat}
+              className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+              title="گفتگوی جدید"
+            >
+              <SquarePen className="size-4" />
+            </button>
 
-            {/* Connection Status Dot */}
-            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10.5px] text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>متصل به کلاستر</span>
-            </div>
-
-            {activeTitle && (
-              <span className="hidden text-xs text-foreground-3 lg:inline truncate max-w-xs">
-                • {activeTitle}
-              </span>
-            )}
+            <span className="ms-1 font-display text-[14px] font-bold text-white tracking-tight flex items-center gap-1.5">
+              <span>ARKA</span>
+              {activeTitle && (
+                <span className="text-xs text-neutral-400 font-normal truncate max-w-[140px] sm:max-w-xs">
+                  / {activeTitle}
+                </span>
+              )}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* New Chat Top Button */}
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleNewChat}
-              className="hidden gap-1.5 text-xs text-foreground-2 hover:text-white sm:inline-flex h-8"
-              title="شروع چت تازه"
+          {/* Right Side: Status dot + Export + Theme Icon + User */}
+          <div className="flex items-center gap-2.5">
+            {/* Green connection dot (pulse) */}
+            <div
+              className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10.5px] text-emerald-400"
+              title="متصل به کلاستر هوش مصنوعی ارکا"
             >
-              <Plus className="size-3.5" />
-              <span>چت جدید</span>
-            </Button>
+              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="hidden sm:inline">متصل به کلاستر</span>
+            </div>
 
-            {/* Export Chat Button */}
+            {/* Export conversation */}
             {messages.length > 0 && (
-              <Button
-                size="sm"
-                variant="outline"
+              <button
+                type="button"
                 onClick={handleExportChat}
-                className="gap-1.5 text-xs h-8 text-neutral-300 hover:text-white border-white/15"
-                title="خروجی گرفتن و دانلود گفتگو به صورت Markdown"
+                className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+                title="دانلود و خروجی گفت‌وگو"
               >
-                <Download className="size-3.5" />
-                <span className="hidden sm:inline">خروجی گفت‌وگو</span>
-              </Button>
+                <Download className="size-4" />
+              </button>
             )}
 
-            {/* Notification Bell Menu */}
+            {/* Notification Menu */}
             <NotificationsMenu />
 
-            {/* User Menu */}
-            <div className="w-36 sm:w-44">
+            {/* Theme / Appearance toggle */}
+            <button
+              type="button"
+              onClick={() => {}}
+              className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+              title="حالت تاریک"
+            >
+              <Moon className="size-4" />
+            </button>
+
+            {/* User Profile */}
+            <div className="w-32 sm:w-40">
               <UserMenu
                 name={user?.name || "کاربر ارکا"}
                 subtitle={user?.email || "حساب گوگل"}
@@ -981,37 +964,32 @@ function ChatContent() {
         {/* Chat Messages Scroll View OR Empty State */}
         <div
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8"
+          className="relative min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-8"
         >
           {messages.length === 0 && !isLoadingMessages ? (
-            /* ================= Empty State with Centered Greeting & Floating Composer ================= */
-            <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center py-8">
-              <div className="mb-5 grid size-16 place-items-center rounded-2xl border border-white/15 bg-white/[0.04] shadow-2xl backdrop-blur-md">
-                <ArkaMark className="size-8 text-white" />
-              </div>
-
-              <h1 className="text-2xl font-extrabold sm:text-3xl text-white tracking-tight">
+            /* ================= Exact Empty State matching Video 1 ================= */
+            <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center py-6">
+              {/* Friendly Title & Subtitle */}
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 چطور می‌توانم کمکت کنم؟
               </h1>
-              <p className="mt-2 text-xs leading-6 text-neutral-400 sm:text-[14px]">
-                یک مدل هوش مصنوعی انتخاب کن، سوال بپرس، کد بنویس یا درخواست تصویر بده.
+              <p className="mt-2 text-xs sm:text-[13px] text-neutral-400">
+                هر چه می‌خواهید بپرسید — تاریخچه فقط روی همین دستگاه می‌ماند.
               </p>
 
-              {/* Centered Composer for Zero State */}
-              <div className="w-full mt-8 text-start">
+              {/* Center Floating Capsule Composer (Video 1 recreation) */}
+              <div className="w-full mt-7 text-start">
                 {/* Ban Banner */}
                 {user?.isBanned && (
-                  <div className="mb-3 rounded-card border border-red-500/40 bg-red-500/10 p-4 text-xs text-red-200">
+                  <div className="mb-3 rounded-[20px] border border-red-500/40 bg-red-500/10 p-3.5 text-xs text-red-200">
                     <div className="flex items-center gap-2 font-bold text-red-400 text-sm mb-1">
                       <Ban className="size-4" />
                       <span>حساب شما مسدود شده است</span>
                     </div>
                     <p className="leading-5">
-                      دسترسی شما به محیط چت مسدود گردیده است.
+                      دسترسی به ارسال پیام به دلیل تصمیم مدیریت قطع گردیده است.
                       {user.banReason && (
-                        <span className="block mt-1 font-medium text-red-300">
-                          علت: {user.banReason}
-                        </span>
+                        <span className="block mt-1 text-red-300">علت: {user.banReason}</span>
                       )}
                     </p>
                   </div>
@@ -1019,52 +997,59 @@ function ChatContent() {
 
                 {/* Timeout Banner */}
                 {timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0 && (
-                  <div className="mb-3 rounded-card border border-amber-500/40 bg-amber-500/10 p-3.5 text-xs text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
+                  <div className="mb-3 rounded-[20px] border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
                       <Clock className="size-4 text-amber-400 shrink-0" />
-                      <div>
-                        <span className="font-bold text-amber-300">موقتاً محدود شده‌اید.</span>
-                        <span className="ms-1.5">
-                          {Math.ceil(timeoutRemainingSeconds / 60)} دقیقه دیگر می‌توانید پیام بفرستید.
-                        </span>
-                      </div>
+                      <span>
+                        موقتاً محدود شده‌اید ({Math.ceil(timeoutRemainingSeconds / 60)} دقیقه دیگر)
+                      </span>
                     </div>
-                    <div className="font-mono text-xs font-bold bg-black/60 border border-amber-500/30 px-3 py-1 rounded-control text-amber-300" dir="ltr">
+                    <span className="font-mono text-xs font-bold bg-black/60 px-2.5 py-0.5 rounded-full text-amber-300">
                       {Math.floor(timeoutRemainingSeconds / 60)}:
                       {String(timeoutRemainingSeconds % 60).padStart(2, "0")}
-                    </div>
+                    </span>
                   </div>
                 )}
 
-                {/* Attachment preview chip */}
+                {/* Attachment chip */}
                 {attachment && (
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-control border border-line bg-card px-3 py-1 text-xs text-foreground-2">
-                    <Paperclip className="size-3.5 text-foreground-3" />
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#161619] px-3 py-1 text-xs text-neutral-300">
+                    <Paperclip className="size-3 text-neutral-400" />
                     <span className="max-w-[180px] truncate">{attachment.name}</span>
                     <button
                       type="button"
                       onClick={() => setAttachment(null)}
-                      className="rounded p-0.5 hover:bg-white/10"
+                      className="rounded-full p-0.5 hover:bg-white/10"
                     >
-                      <X className="size-3 text-foreground-3" />
+                      <X className="size-3 text-neutral-400" />
                     </button>
                   </div>
                 )}
 
-                <div className="rounded-card border border-white/15 bg-[#111114] p-3 shadow-2xl focus-within:border-white/30 transition-all">
+                {/* The Capsule Composer Box */}
+                <div className="rounded-[26px] border border-white/10 bg-[#121215]/90 backdrop-blur-2xl p-3 sm:p-4 shadow-[0_20px_50px_rgba(0,0,0,0.7)] transition-all focus-within:border-white/25 focus-within:shadow-[0_25px_60px_rgba(0,0,0,0.9)]">
                   <textarea
                     ref={textareaRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
-                    placeholder="پیام یا پرامپت خود را بنویسید... (Enter برای ارسال، Shift+Enter خط بعد)"
-                    rows={2}
-                    className="w-full resize-none bg-transparent text-[14px] leading-6 text-white placeholder:text-neutral-500 focus:outline-none"
+                    placeholder="هر چیزی بپرسید..."
+                    rows={1}
+                    className="w-full resize-none bg-transparent px-2 text-[14px] leading-6 text-white placeholder:text-neutral-500 focus:outline-none min-h-[38px] max-h-36"
                   />
 
-                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  {/* Bottom Control Bar */}
+                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.04]">
+                    {/* Model Pill + Quality + Attachments */}
                     <div className="flex items-center gap-2">
+                      <ModelPicker
+                        groups={modelGroups}
+                        value={model}
+                        onChange={setModel}
+                        className="text-xs"
+                      />
+
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -1072,26 +1057,29 @@ function ChatContent() {
                         accept="image/*,text/*,.pdf"
                         onChange={handleFileChange}
                       />
+
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
-                        className="grid size-8 place-items-center rounded-control text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
-                        title="پیوست فایل یا تصویر"
+                        className="grid size-8 place-items-center rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                        title="پیوست فایل"
                       >
-                        <Paperclip className="size-4" />
+                        <Paperclip className="size-3.5" />
                       </button>
+
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
-                        className="grid size-8 place-items-center rounded-control text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+                        className="grid size-8 place-items-center rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
                         title="پیوست تصویر"
                       >
-                        <ImageIcon className="size-4" />
+                        <ImageIcon className="size-3.5" />
                       </button>
                     </div>
 
+                    {/* Circular Send Button */}
                     <button
                       type="button"
                       onClick={() => handleSend()}
@@ -1099,7 +1087,7 @@ function ChatContent() {
                         (!input.trim() && !attachment) ||
                         Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))
                       }
-                      className="grid size-8 place-items-center rounded-full bg-white text-black hover:bg-neutral-200 transition-all shadow disabled:opacity-40"
+                      className="grid size-8 place-items-center rounded-full bg-white text-black hover:bg-neutral-200 transition-all shadow disabled:opacity-30 disabled:hover:bg-white"
                       title="ارسال پیام"
                     >
                       <ArrowUp className="size-4 stroke-[2.5]" />
@@ -1108,23 +1096,24 @@ function ChatContent() {
                 </div>
               </div>
 
-              {/* Prompt Suggestion Pills */}
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-xl">
-                {SUGGESTIONS.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.title}
-                      type="button"
-                      onClick={() => handleSend(item.prompt)}
-                      className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs text-neutral-300 transition-all hover:border-white/30 hover:bg-white/[0.08] hover:text-white"
-                    >
-                      <Icon className="size-3.5 text-neutral-400 group-hover:text-white transition-colors" />
-                      <span>{item.title}</span>
-                    </button>
-                  );
-                })}
+              {/* Exact Suggestion Pills beneath Composer (Video 1 matching) */}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 max-w-xl">
+                {SUGGESTIONS.map((item) => (
+                  <button
+                    key={item.title}
+                    type="button"
+                    onClick={() => handleSend(item.prompt)}
+                    className="rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs text-neutral-300 transition-all hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
+                  >
+                    {item.title}
+                  </button>
+                ))}
               </div>
+
+              {/* Footnote below pills */}
+              <p className="mt-4 text-[11px] text-neutral-500">
+                گفتگوها فقط روی همین دستگاه ذخیره می‌شود.
+              </p>
             </div>
           ) : (
             /* ================= Message List ================= */
@@ -1135,14 +1124,13 @@ function ChatContent() {
                 if (isUser) {
                   return (
                     <div key={msg.id} className="ms-auto flex max-w-[85%] flex-col items-end sm:max-w-[75%]">
-                      <div className="rounded-card border border-white/10 bg-[#19191d] px-4 py-3 text-start text-[14px] leading-7 text-white shadow-sm">
+                      <div className="rounded-[22px] rounded-se-sm border border-white/10 bg-[#1a1a1f] px-4 py-3 text-start text-[14px] leading-7 text-white shadow-sm">
                         <p className="whitespace-pre-wrap">{msg.content}</p>
                       </div>
                     </div>
                   );
                 }
 
-                // Assistant Message (Full-width, clean typography)
                 return (
                   <div key={msg.id} className="me-auto flex w-full flex-col items-start text-start">
                     <div className="mb-2 flex items-center gap-2">
@@ -1163,27 +1151,25 @@ function ChatContent() {
                 );
               })}
 
-              {/* Claude-style Thinking/Typing Indicator */}
               {isThinking && <ClaudeThinkingIndicator />}
             </div>
           )}
         </div>
 
-        {/* ================= Docked Composer (Visible when messages exist) ================= */}
+        {/* ================= Bottom Docked Composer (When messages exist) ================= */}
         {messages.length > 0 && (
-          <div className="shrink-0 border-t border-line/60 bg-background/90 p-3 backdrop-blur-xl sm:p-4">
+          <div className="shrink-0 border-t border-white/[0.05] bg-background/80 p-3 backdrop-blur-xl sm:p-4">
             <div className="mx-auto max-w-3xl">
-              {/* Attachment chip */}
               {attachment && (
-                <div className="mb-2 inline-flex items-center gap-2 rounded-control border border-line bg-card px-3 py-1 text-xs text-foreground-2">
-                  <Paperclip className="size-3.5 text-foreground-3" />
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#161619] px-3 py-1 text-xs text-neutral-300">
+                  <Paperclip className="size-3 text-neutral-400" />
                   <span className="max-w-[180px] truncate">{attachment.name}</span>
                   <button
                     type="button"
                     onClick={() => setAttachment(null)}
-                    className="rounded p-0.5 hover:bg-white/10"
+                    className="rounded-full p-0.5 hover:bg-white/10"
                   >
-                    <X className="size-3 text-foreground-3" />
+                    <X className="size-3 text-neutral-400" />
                   </button>
                 </div>
               )}
@@ -1197,7 +1183,7 @@ function ChatContent() {
                     handleSend();
                   }
                 }}
-                className="relative flex items-end gap-2 rounded-card border border-white/15 bg-[#111114] p-2 shadow-sm transition-colors focus-within:border-white/35"
+                className="relative flex items-end gap-2 rounded-[24px] border border-white/10 bg-[#121215] p-2 shadow-sm transition-colors focus-within:border-white/25"
               >
                 <input
                   ref={fileInputRef}
@@ -1213,7 +1199,7 @@ function ChatContent() {
                   size="icon"
                   disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
                   onClick={() => fileInputRef.current?.click()}
-                  className="size-9 shrink-0 rounded-control text-foreground-3 hover:text-white"
+                  className="size-8 shrink-0 rounded-full text-neutral-400 hover:text-white"
                   title="پیوست فایل یا تصویر"
                 >
                   <Paperclip className="size-4" />
@@ -1225,15 +1211,9 @@ function ChatContent() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
-                  placeholder={
-                    user?.isBanned
-                      ? "حساب مسدود شده است."
-                      : timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0
-                        ? `شما موقتاً محدود شده‌اید (${Math.ceil(timeoutRemainingSeconds / 60)} دقیقه دیگر)`
-                        : "پیامی بنویسید یا برای تولید تصویر پرامپت وارد کنید..."
-                  }
+                  placeholder="هر چیزی بپرسید..."
                   rows={1}
-                  className="max-h-36 min-h-[38px] flex-1 resize-none bg-transparent py-2 text-[13.5px] leading-6 text-foreground placeholder:text-foreground-3 focus:outline-none"
+                  className="max-h-36 min-h-[36px] flex-1 resize-none bg-transparent py-1.5 text-[13.5px] leading-6 text-white placeholder:text-neutral-500 focus:outline-none"
                 />
 
                 {isStreaming ? (
@@ -1241,10 +1221,10 @@ function ChatContent() {
                     type="button"
                     size="icon"
                     onClick={handleStop}
-                    className="size-9 shrink-0 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                    className="size-8 shrink-0 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
                     title="توقف پاسخ"
                   >
-                    <Square className="size-4 fill-current" />
+                    <Square className="size-3.5 fill-current" />
                   </Button>
                 ) : (
                   <Button
@@ -1254,7 +1234,7 @@ function ChatContent() {
                       (!input.trim() && !attachment) ||
                       Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))
                     }
-                    className="size-9 shrink-0 rounded-full bg-white text-black hover:bg-neutral-200 shadow disabled:opacity-40"
+                    className="size-8 shrink-0 rounded-full bg-white text-black hover:bg-neutral-200 shadow disabled:opacity-30"
                     title="ارسال پیام"
                   >
                     <ArrowUp className="size-4 stroke-[2.5]" />
@@ -1262,9 +1242,9 @@ function ChatContent() {
                 )}
               </form>
 
-              <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-foreground-3">
-                <span>ارکا ممکن است خطا کند؛ خروجی‌های حساس را بررسی نمایید.</span>
-                <span className="hidden sm:inline">مدل: {model.split(":")[1] || model}</span>
+              <div className="mt-2 flex items-center justify-between px-2 text-[10.5px] text-neutral-500">
+                <span>ارکا ممکن است خطا کند؛ خروجی‌های مهم را بررسی فرمایید.</span>
+                <span className="hidden sm:inline font-mono">مدل: {model.split(":")[1] || model}</span>
               </div>
             </div>
           </div>
@@ -1278,8 +1258,8 @@ export default function ChatPage() {
   return (
     <React.Suspense
       fallback={
-        <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
-          <div className="size-6 animate-spin rounded-full border-2 border-line border-t-white" />
+        <div className="flex h-screen w-full items-center justify-center bg-[#070709] text-white">
+          <div className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
         </div>
       }
     >

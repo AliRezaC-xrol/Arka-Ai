@@ -285,7 +285,7 @@ export function UsersManager() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6" dir="rtl">
+    <div className="flex-1 overflow-y-auto p-8 space-y-8" dir="rtl">
       {/* Top Banner & Quick Metrics */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

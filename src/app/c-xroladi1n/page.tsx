@@ -80,7 +80,6 @@ export default function AdminPage() {
         setStats(data);
         setIsAdmin(true);
       } else {
-        // If not explicit check, clear stored token
         if (!explicitToken) {
           setStoredAdminToken(null);
         }
@@ -178,11 +177,10 @@ export default function AdminPage() {
     }
   };
 
-  // Initial loading spinner
   if (isAdmin === null) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#0a0a0a] text-foreground">
-        <div className="size-6 animate-spin rounded-full border-2 border-line border-t-white" />
+      <div className="flex h-screen w-full items-center justify-center bg-[#070709] text-white">
+        <div className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
       </div>
     );
   }
@@ -192,14 +190,14 @@ export default function AdminPage() {
   // =========================================================================
   if (!isAdmin) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#070707] px-4 text-foreground" dir="rtl">
-        <div className="w-full max-w-sm rounded-card border border-line bg-[#111111] p-7 shadow-2xl">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#070709] px-4 text-foreground" dir="rtl">
+        <div className="w-full max-w-sm rounded-[28px] border border-white/10 bg-[#111114] p-8 shadow-[0_24px_50px_rgba(0,0,0,0.8)]">
           <div className="text-center">
-            <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-line bg-[#18181b]">
+            <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-white/15 bg-white/5">
               <Lock className="size-5 text-white" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight">ورود به پنل مدیریت</h1>
-            <p className="mt-1 text-xs text-foreground-3">
+            <h1 className="text-lg font-bold tracking-tight text-white">ورود به پنل مدیریت</h1>
+            <p className="mt-1 text-xs text-neutral-400">
               دسترسی به این بخش نیازمند گذرواژه امنیتی سیستم است.
             </p>
           </div>
@@ -207,7 +205,7 @@ export default function AdminPage() {
           {loginError && (
             <div
               role="alert"
-              className="mt-4 flex items-start gap-2 rounded-control border border-red-500/30 bg-red-500/10 p-3 text-xs leading-5 text-red-300"
+              className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs leading-5 text-red-300"
             >
               <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
               <span>{loginError}</span>
@@ -216,7 +214,7 @@ export default function AdminPage() {
 
           <form onSubmit={handleLogin} className="mt-5 space-y-4">
             <div>
-              <label htmlFor="adminPassword" className="block text-xs font-medium text-foreground-2 mb-1.5">
+              <label htmlFor="adminPassword" className="block text-xs font-medium text-neutral-300 mb-1.5">
                 گذرواژه مدیریت
               </label>
               <Input
@@ -228,20 +226,20 @@ export default function AdminPage() {
                 dir="ltr"
                 autoFocus
                 required
-                className="h-10 text-center font-mono text-sm tracking-widest bg-black border-line"
+                className="h-10 text-center font-mono text-sm tracking-widest bg-black/60 border-white/10 text-white rounded-xl"
               />
             </div>
 
             <Button
               type="submit"
               disabled={loginLoading}
-              className="w-full h-10 bg-white font-semibold text-black hover:bg-neutral-200 text-xs"
+              className="w-full h-10 bg-white font-bold text-black hover:bg-neutral-200 text-xs rounded-xl shadow"
             >
               {loginLoading ? "در حال اعتبارسنجی..." : "ورود به پنل"}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-[11px] leading-5 text-foreground-3">
+          <p className="mt-6 text-center text-[11px] leading-5 text-neutral-500">
             ورودهای ناموفق ثبت و پس از ۵ بار تلاش، دسترسی قفل خواهد شد.
           </p>
         </div>
@@ -249,39 +247,36 @@ export default function AdminPage() {
     );
   }
 
-  // Find max count for chart scaling
   const maxChartCount = Math.max(1, ...chartData.map((d) => d.count));
 
   // =========================================================================
-  // Screen 2: Admin Dashboard Layout
+  // Screen 2: Admin Dashboard Layout (Spacious, Video 2-inspired)
   // =========================================================================
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-[#070707] text-foreground" dir="rtl">
+    <div className="flex h-dvh w-full overflow-hidden bg-[#070709] text-foreground" dir="rtl">
       {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-e border-line bg-[#0d0d0d] p-4">
-        {/* Brand */}
-        <div className="flex items-center gap-2.5 pb-5 border-b border-line">
+      <aside className="flex w-64 shrink-0 flex-col border-e border-white/5 bg-[#0b0b0e] p-5">
+        <div className="flex items-center gap-2.5 pb-5 border-b border-white/5">
           <ArkaMark className="size-6 text-white" />
           <div className="flex flex-col">
-            <span dir="ltr" className="font-display text-[15px] font-bold text-white">
+            <span dir="ltr" className="font-display text-[15px] font-bold text-white tracking-tight">
               ARKA
             </span>
-            <span className="text-[10px] font-semibold text-foreground-3 uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
               پنل مدیریت سیستم
             </span>
           </div>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="mt-4 flex-1 space-y-1">
+        <nav className="mt-5 flex-1 space-y-1.5">
           <button
             type="button"
             onClick={() => setActiveTab("dashboard")}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-xs font-medium transition-colors",
+              "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "dashboard"
-                ? "bg-white/10 text-white"
-                : "text-foreground-2 hover:bg-soft hover:text-white",
+                ? "bg-white text-black shadow-sm"
+                : "text-neutral-400 hover:bg-white/[0.04] hover:text-white",
             )}
           >
             <BarChart3 className="size-4" />
@@ -292,17 +287,20 @@ export default function AdminPage() {
             type="button"
             onClick={() => setActiveTab("users")}
             className={cn(
-              "flex w-full items-center justify-between rounded-control px-3 py-2 text-xs font-medium transition-colors",
+              "flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "users"
-                ? "bg-white/10 text-white"
-                : "text-foreground-2 hover:bg-soft hover:text-white",
+                ? "bg-white text-black shadow-sm"
+                : "text-neutral-400 hover:bg-white/[0.04] hover:text-white",
             )}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <Users className="size-4" />
               <span>کاربران</span>
             </span>
-            <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 text-[9.5px] text-emerald-400 font-medium">
+            <span className={cn(
+              "rounded-full px-2 py-0.2 text-[9.5px] font-mono",
+              activeTab === "users" ? "bg-black/10 text-black font-bold" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            )}>
               فعال
             </span>
           </button>
@@ -311,17 +309,20 @@ export default function AdminPage() {
             type="button"
             onClick={() => setActiveTab("providers")}
             className={cn(
-              "flex w-full items-center justify-between rounded-control px-3 py-2 text-xs font-medium transition-colors",
+              "flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "providers"
-                ? "bg-white/10 text-white"
-                : "text-foreground-2 hover:bg-soft hover:text-white",
+                ? "bg-white text-black shadow-sm"
+                : "text-neutral-400 hover:bg-white/[0.04] hover:text-white",
             )}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <Server className="size-4" />
               <span>پروایدرها و کلیدها</span>
             </span>
-            <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 text-[9.5px] text-emerald-400 font-medium">
+            <span className={cn(
+              "rounded-full px-2 py-0.2 text-[9.5px] font-mono",
+              activeTab === "providers" ? "bg-black/10 text-black font-bold" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            )}>
               فعال
             </span>
           </button>
@@ -330,65 +331,67 @@ export default function AdminPage() {
             type="button"
             onClick={() => setActiveTab("broadcasts")}
             className={cn(
-              "flex w-full items-center justify-between rounded-control px-3 py-2 text-xs font-medium transition-colors",
+              "flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "broadcasts"
-                ? "bg-white/10 text-white"
-                : "text-foreground-2 hover:bg-soft hover:text-white",
+                ? "bg-white text-black shadow-sm"
+                : "text-neutral-400 hover:bg-white/[0.04] hover:text-white",
             )}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <Radio className="size-4" />
               <span>پیام‌رسانی</span>
             </span>
-            <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 text-[9.5px] text-emerald-400 font-medium">
+            <span className={cn(
+              "rounded-full px-2 py-0.2 text-[9.5px] font-mono",
+              activeTab === "broadcasts" ? "bg-black/10 text-black font-bold" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            )}>
               فعال
             </span>
           </button>
         </nav>
 
-        {/* Admin Footer & Logout */}
-        <div className="border-t border-line pt-3">
+        <div className="border-t border-white/5 pt-4">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-control px-3 py-2 text-xs text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
           >
             <LogOut className="size-4" />
-            <span>خروج از مدیریت</span>
+            <span>خروج از پنل مدیریت</span>
           </button>
         </div>
       </aside>
 
-      {/* Main Admin Area */}
+      {/* Main Admin Content Area */}
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-[#0a0a0a] px-6">
-          <div className="flex items-center gap-3">
+        {/* Header */}
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/5 bg-[#09090c] px-8">
+          <div className="flex items-center gap-3.5">
             <h1 className="text-sm font-bold text-white">
               {activeTab === "providers"
-                ? "مدیریت پروایدرهای هوش مصنوعی و کلیدها"
+                ? "مدیریت پروایدرهای متمرکز و خوشه‌های چندکلیدی"
                 : activeTab === "users"
-                  ? "مدیریت کاربران سیستم"
+                  ? "مدیریت و نظارت بر کاربران سیستم"
                   : activeTab === "broadcasts"
                     ? "پیام‌رسانی و اعلان‌های همگانی"
-                    : "داشبورد نظارت و آمار سیستم"}
+                    : "داشبورد نظارت و آمار سامانه"}
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-0.5 text-[11px] font-medium text-emerald-400">
               <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              سرور فعال
+              سرور پایدار و فعال
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {activeTab === "dashboard" && (
               <Button
                 size="sm"
                 variant="outline"
                 disabled={statsLoading}
                 onClick={refreshAll}
-                className="gap-1.5 text-xs h-8"
+                className="gap-2 text-xs h-8 rounded-full border-white/10 hover:border-white/30 text-neutral-300 hover:text-white"
               >
-                <RefreshCw className={cn("size-3", statsLoading && "animate-spin")} />
+                <RefreshCw className={cn("size-3.5", statsLoading && "animate-spin")} />
                 <span>به‌روزرسانی داده‌ها</span>
               </Button>
             )}
@@ -402,201 +405,209 @@ export default function AdminPage() {
         ) : activeTab === "broadcasts" ? (
           <BroadcastsManager />
         ) : (
-          /* Dashboard Content Area */
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Stats Cards Grid */}
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {/* 1. Total Users */}
-            <div className="rounded-card border border-white/10 bg-[#121215] p-5 shadow-sm transition-colors hover:border-white/20">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">کل کاربران سامانه</span>
-                <div className="size-8 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-white">
-                  <Users className="size-4" />
+          /* Dashboard Content Area with Generous Spacing */
+          <div className="flex-1 overflow-y-auto p-8 space-y-8">
+            {/* 5 KPI Metric Cards (Rounded [24px], Spacious) */}
+            <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {/* 1. Total Users */}
+              <div className="rounded-[24px] border border-white/10 bg-[#101013] p-6 shadow-sm transition-all hover:border-white/20">
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span className="text-xs font-medium">کل کاربران سامانه</span>
+                  <div className="size-8 rounded-xl bg-white/[0.04] border border-white/10 grid place-items-center text-white">
+                    <Users className="size-4" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-white tracking-tight">
+                    {stats ? stats.totalUsers.toLocaleString("fa-IR") : "..."}
+                  </span>
+                  <span className="text-xs text-neutral-400">نفر</span>
+                </div>
+                <div className="mt-2 text-[11px] text-neutral-500 font-sans">
+                  حساب‌های فعال گوگل
                 </div>
               </div>
-              <div className="mt-4 flex items-baseline gap-1.5">
-                <span className="text-3xl font-black text-white tracking-tight">
-                  {stats ? stats.totalUsers.toLocaleString("fa-IR") : "..."}
-                </span>
-                <span className="text-xs text-neutral-400">نفر</span>
+
+              {/* 2. Total Messages */}
+              <div className="rounded-[24px] border border-white/10 bg-[#101013] p-6 shadow-sm transition-all hover:border-white/20">
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span className="text-xs font-medium">مجموع پیام‌ها</span>
+                  <div className="size-8 rounded-xl bg-white/[0.04] border border-white/10 grid place-items-center text-white">
+                    <MessageSquare className="size-4" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-white tracking-tight">
+                    {stats ? stats.totalMessages.toLocaleString("fa-IR") : "..."}
+                  </span>
+                  <span className="text-xs text-neutral-400">پیام</span>
+                </div>
+                <div className="mt-2 text-[11px] text-neutral-500 font-sans">
+                  ترافیک چت و استودیو
+                </div>
               </div>
-              <div className="mt-2 text-[11px] text-neutral-500 font-sans">
-                حساب‌های فعال گوگل
+
+              {/* 3. Online Users (last 5 min) */}
+              <div className="rounded-[24px] border border-white/10 bg-[#101013] p-6 shadow-sm transition-all hover:border-white/20">
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span className="text-xs font-medium">کاربران آنلاین</span>
+                  <div className="size-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 grid place-items-center text-emerald-400">
+                    <Activity className="size-4" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-emerald-400 tracking-tight">
+                    {stats ? stats.onlineUsers.toLocaleString("fa-IR") : "..."}
+                  </span>
+                  <span className="text-xs text-neutral-400">نفر</span>
+                </div>
+                <div className="mt-2 text-[11px] text-emerald-400/80 font-sans">
+                  فعال در ۵ دقیقه اخیر
+                </div>
+              </div>
+
+              {/* 4. Top User */}
+              <div className="rounded-[24px] border border-white/10 bg-[#101013] p-6 shadow-sm transition-all hover:border-white/20">
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span className="text-xs font-medium">کاربر پرمصرف</span>
+                  <div className="size-8 rounded-xl bg-amber-500/10 border border-amber-500/30 grid place-items-center text-amber-400">
+                    <Flame className="size-4" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="block truncate text-sm font-bold text-white">
+                    {stats?.topUser ? stats.topUser.name : "بدون پیام"}
+                  </span>
+                  <span className="text-xs text-neutral-400 mt-1 block">
+                    {stats?.topUser ? `${stats.topUser.messageCount.toLocaleString("fa-IR")} پیام ارسالی` : "-"}
+                  </span>
+                </div>
+              </div>
+
+              {/* 5. Server Uptime */}
+              <div className="rounded-[24px] border border-white/10 bg-[#101013] p-6 shadow-sm transition-all hover:border-white/20">
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span className="text-xs font-medium">آپ‌تایم سامانه</span>
+                  <div className="size-8 rounded-xl bg-white/[0.04] border border-white/10 grid place-items-center text-white">
+                    <Clock className="size-4" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="block truncate font-mono text-sm font-bold text-white" dir="ltr">
+                    {stats ? stats.uptime : "..."}
+                  </span>
+                  <span className="text-[11px] text-emerald-400 mt-1 block">
+                    وضعیت پایدار سرور
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* 2. Total Messages */}
-            <div className="rounded-card border border-white/10 bg-[#121215] p-5 shadow-sm transition-colors hover:border-white/20">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">مجموع پیام‌ها</span>
-                <div className="size-8 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-white">
-                  <MessageSquare className="size-4" />
+            {/* Registration Trend Chart Card (Inspired by Video 2) */}
+            <div className="rounded-[28px] border border-white/10 bg-[#101013] p-8 shadow-sm">
+              <div className="flex flex-col justify-between gap-5 border-b border-white/5 pb-6 sm:flex-row sm:items-center">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+                      {chartTotal.toLocaleString("fa-IR")}
+                    </span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-neutral-300 font-medium">
+                      کاربر ثبت‌شده
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-neutral-400">
+                    روند پیوستن کاربران جدید به سامانه هوش مصنوعی ارکا
+                  </p>
+                </div>
+
+                {/* Video 2-Style Segmented Pill */}
+                <div className="inline-flex items-center rounded-full border border-white/15 bg-black/60 p-1 text-xs">
+                  {[
+                    { label: "۷ روز", days: 7 },
+                    { label: "۳۰ روز", days: 30 },
+                    { label: "۹۰ روز", days: 90 },
+                  ].map((tab) => (
+                    <button
+                      key={tab.days}
+                      type="button"
+                      onClick={() => setChartDays(tab.days)}
+                      className={cn(
+                        "rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200",
+                        chartDays === tab.days
+                          ? "bg-white text-black shadow-md scale-105"
+                          : "text-neutral-400 hover:text-white",
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="mt-4 flex items-baseline gap-1.5">
-                <span className="text-3xl font-black text-white tracking-tight">
-                  {stats ? stats.totalMessages.toLocaleString("fa-IR") : "..."}
-                </span>
-                <span className="text-xs text-neutral-400">پیام</span>
-              </div>
-              <div className="mt-2 text-[11px] text-neutral-500 font-sans">
-                ترافیک چت و استودیو
-              </div>
-            </div>
 
-            {/* 3. Online Users (last 5 min) */}
-            <div className="rounded-card border border-white/10 bg-[#121215] p-5 shadow-sm transition-colors hover:border-white/20">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">کاربران آنلاین</span>
-                <div className="size-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 grid place-items-center text-emerald-400">
-                  <Activity className="size-4" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-baseline gap-1.5">
-                <span className="text-3xl font-black text-emerald-400 tracking-tight">
-                  {stats ? stats.onlineUsers.toLocaleString("fa-IR") : "..."}
-                </span>
-                <span className="text-xs text-neutral-400">نفر</span>
-              </div>
-              <div className="mt-2 text-[11px] text-emerald-400/80 font-sans">
-                فعال در ۵ دقیقه اخیر
-              </div>
-            </div>
+              {/* Visual Chart with Guide Lines */}
+              <div className="mt-8">
+                {chartLoading ? (
+                  <div className="flex h-56 items-center justify-center">
+                    <div className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                  </div>
+                ) : chartData.length === 0 ? (
+                  <div className="flex h-56 items-center justify-center text-xs text-neutral-500">
+                    داده‌ای برای این بازه یافت نشد.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="relative h-56 flex flex-col justify-between">
+                      {/* Hairline horizontal dotted guidelines */}
+                      <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+                        <div className="border-b border-dashed border-white/30 w-full" />
+                        <div className="border-b border-dashed border-white/30 w-full" />
+                        <div className="border-b border-dashed border-white/30 w-full" />
+                        <div className="border-b border-white/40 w-full" />
+                      </div>
 
-            {/* 4. Top User */}
-            <div className="rounded-card border border-white/10 bg-[#121215] p-5 shadow-sm transition-colors hover:border-white/20">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">کاربر پرمصرف</span>
-                <div className="size-8 rounded-lg bg-amber-500/10 border border-amber-500/30 grid place-items-center text-amber-400">
-                  <Flame className="size-4" />
-                </div>
-              </div>
-              <div className="mt-3.5">
-                <span className="block truncate text-sm font-bold text-white">
-                  {stats?.topUser ? stats.topUser.name : "بدون پیام"}
-                </span>
-                <span className="text-xs text-neutral-400 mt-1 block">
-                  {stats?.topUser ? `${stats.topUser.messageCount.toLocaleString("fa-IR")} پیام ارسالی` : "-"}
-                </span>
-              </div>
-            </div>
+                      {/* Slender modern bars */}
+                      <div className="relative z-10 flex h-full items-end gap-1.5 overflow-x-auto pb-1 pt-4">
+                        {chartData.map((item) => {
+                          const heightPercent = Math.max(
+                            6,
+                            Math.round((item.count / maxChartCount) * 100),
+                          );
 
-            {/* 5. Server Uptime */}
-            <div className="rounded-card border border-white/10 bg-[#121215] p-5 shadow-sm transition-colors hover:border-white/20">
-              <div className="flex items-center justify-between text-neutral-400">
-                <span className="text-xs font-medium">آپ‌تایم سامانه</span>
-                <div className="size-8 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-white">
-                  <Clock className="size-4" />
-                </div>
-              </div>
-              <div className="mt-3.5">
-                <span className="block truncate font-mono text-sm font-bold text-white" dir="ltr">
-                  {stats ? stats.uptime : "..."}
-                </span>
-                <span className="text-[11px] text-emerald-400 mt-1 block">
-                  وضعیت پایدار سرور
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Registration Trend Chart Card */}
-          <div className="rounded-card border border-white/10 bg-[#111114] p-6 shadow-sm">
-            <div className="flex flex-col justify-between gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center">
-              <div>
-                <h2 className="text-sm font-bold text-white">روند ثبت‌نام کاربران جدید</h2>
-                <p className="mt-1 text-xs text-neutral-400">
-                  مجموع {chartTotal.toLocaleString("fa-IR")} حساب کاربری ایجاد شده در سامانه
-                </p>
-              </div>
-
-              {/* Range Selector */}
-              <div className="flex items-center gap-1 rounded-control border border-white/10 bg-black/60 p-1 text-xs">
-                {[7, 30, 90].map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setChartDays(d)}
-                    className={cn(
-                      "rounded px-3 py-1 text-xs transition-colors",
-                      chartDays === d
-                        ? "bg-white text-black font-semibold shadow-sm"
-                        : "text-neutral-400 hover:text-white",
-                    )}
-                  >
-                    {d} روزه
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Visual Chart */}
-            <div className="mt-6">
-              {chartLoading ? (
-                <div className="flex h-56 items-center justify-center">
-                  <div className="size-6 animate-spin rounded-full border-2 border-line border-t-white" />
-                </div>
-              ) : chartData.length === 0 ? (
-                <div className="flex h-56 items-center justify-center text-xs text-foreground-3">
-                  داده‌ای برای این بازه یافت نشد.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Chart with horizontal guideline lines */}
-                  <div className="relative h-52 flex flex-col justify-between">
-                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
-                      <div className="border-b border-dashed border-white/30 w-full" />
-                      <div className="border-b border-dashed border-white/30 w-full" />
-                      <div className="border-b border-dashed border-white/30 w-full" />
-                      <div className="border-b border-white/40 w-full" />
-                    </div>
-
-                    {/* Bar columns */}
-                    <div className="relative z-10 flex h-full items-end gap-1.5 overflow-x-auto pb-1 pt-4">
-                      {chartData.map((item) => {
-                        const heightPercent = Math.max(
-                          6,
-                          Math.round((item.count / maxChartCount) * 100),
-                        );
-
-                        return (
-                          <div
-                            key={item.date}
-                            className="group relative flex flex-1 flex-col items-center justify-end h-full min-w-[12px]"
-                          >
-                            {/* Hover Tooltip */}
-                            <div className="pointer-events-none absolute -top-8 z-20 hidden whitespace-nowrap rounded border border-white/20 bg-neutral-900 px-2 py-0.5 text-[10.5px] font-mono text-white shadow-lg group-hover:block">
-                              {item.label}: {item.count} کاربر
-                            </div>
-
-                            {/* Bar */}
+                          return (
                             <div
-                              style={{ height: `${heightPercent}%` }}
-                              className={cn(
-                                "w-full rounded-t-[3px] transition-all duration-300",
-                                item.count > 0
-                                  ? "bg-white hover:bg-neutral-200 shadow-[0_0_8px_rgba(255,255,255,0.3)]"
-                                  : "bg-white/10 hover:bg-white/20",
-                              )}
-                            />
-                          </div>
-                        );
-                      })}
+                              key={item.date}
+                              className="group relative flex flex-1 flex-col items-center justify-end h-full min-w-[12px]"
+                            >
+                              <div className="pointer-events-none absolute -top-8 z-20 hidden whitespace-nowrap rounded-lg border border-white/20 bg-neutral-900 px-2.5 py-1 text-[11px] font-mono text-white shadow-xl group-hover:block">
+                                {item.label}: {item.count} کاربر
+                              </div>
+
+                              <div
+                                style={{ height: `${heightPercent}%` }}
+                                className={cn(
+                                  "w-full rounded-t-[4px] transition-all duration-300",
+                                  item.count > 0
+                                    ? "bg-white hover:bg-neutral-200 shadow-[0_0_12px_rgba(255,255,255,0.35)]"
+                                    : "bg-white/10 hover:bg-white/20",
+                                )}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between border-t border-white/10 pt-3 text-[11px] font-mono text-neutral-400">
+                      <span>{chartData[0]?.label}</span>
+                      <span>{chartData[Math.floor(chartData.length / 2)]?.label}</span>
+                      <span>{chartData[chartData.length - 1]?.label}</span>
                     </div>
                   </div>
-
-                  {/* X-axis labels */}
-                  <div className="flex justify-between border-t border-white/10 pt-2 text-[10.5px] font-mono text-neutral-400">
-                    <span>{chartData[0]?.label}</span>
-                    <span>{chartData[Math.floor(chartData.length / 2)]?.label}</span>
-                    <span>{chartData[chartData.length - 1]?.label}</span>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </main>
     </div>
   );

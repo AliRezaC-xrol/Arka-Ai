@@ -63,44 +63,42 @@ export function GrokLogo({ className }: { className?: string }) {
 }
 
 export const PROVIDERS_LIST: ProviderLogoItem[] = [
-  { id: "openai", name: "OpenAI", subname: "GPT-4o & o1", icon: OpenAILogo },
-  { id: "claude", name: "Claude", subname: "Sonnet 3.7 & 3.5", icon: ClaudeLogo },
-  { id: "gemini", name: "Gemini", subname: "Flash 2.5 & Pro", icon: GeminiLogo },
+  { id: "openai", name: "OpenAI", subname: "GPT-4o", icon: OpenAILogo },
+  { id: "claude", name: "Claude", subname: "Sonnet 3.7", icon: ClaudeLogo },
+  { id: "gemini", name: "Gemini", subname: "Flash 2.5", icon: GeminiLogo },
   { id: "deepseek", name: "DeepSeek", subname: "R1 & V3", icon: DeepSeekLogo },
-  { id: "flux", name: "FLUX.1", subname: "Schnell / Together", badge: "تصویر", icon: FluxLogo },
-  { id: "grok", name: "Grok", subname: "Grok 2 / xAI", icon: GrokLogo },
+  { id: "flux", name: "FLUX.1", subname: "Image Studio", badge: "تصویر", icon: FluxLogo },
+  { id: "grok", name: "Grok", subname: "xAI 2", icon: GrokLogo },
 ];
 
 export function ProviderLogosRow({ className }: { className?: string }) {
   return (
-    <div className={cn("w-full overflow-hidden", className)}>
-      <div dir="ltr" className="marquee flex items-center gap-12 sm:gap-16 [mask-image:linear-gradient(90deg,transparent,#000_15%,#000_85%,transparent)]">
+    <div className={cn("w-full overflow-hidden select-none", className)}>
+      <div dir="ltr" className="marquee flex items-center gap-6 sm:gap-8 [mask-image:linear-gradient(90deg,transparent,#000_15%,#000_85%,transparent)]">
         {[0, 1].map((copy) => (
-          <div key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-12 sm:gap-16 pe-12 sm:pe-16">
+          <div key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-6 sm:gap-8 pe-6 sm:pe-8">
             {PROVIDERS_LIST.map((p) => {
               const Icon = p.icon;
               return (
                 <div
                   key={p.id}
-                  className="group flex items-center gap-3.5 rounded-card border border-white/10 bg-white/[0.02] px-4 py-2.5 transition-all duration-300 hover:border-white/30 hover:bg-white/[0.06]"
+                  className="group flex items-center gap-2.5 rounded-full border border-white/10 bg-[#121215]/80 px-3 py-1.5 transition-all duration-200 hover:border-white/30 hover:bg-white/[0.08]"
                 >
-                  <div className="grid size-9 place-items-center rounded-xl border border-white/15 bg-white/[0.04] text-white transition-colors group-hover:bg-white group-hover:text-black">
-                    <Icon className="size-4" />
+                  <div className="grid size-6 place-items-center rounded-full bg-white/10 text-white transition-colors group-hover:bg-white group-hover:text-black">
+                    <Icon className="size-3" />
                   </div>
-                  <div className="text-start">
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-[15px] font-bold text-white tracking-[-0.01em]">
-                        {p.name}
-                      </span>
-                      {p.badge && (
-                        <span className="rounded bg-white/10 px-1.5 py-0.2 text-[9.5px] font-medium text-neutral-300">
-                          {p.badge}
-                        </span>
-                      )}
-                    </div>
-                    <span className="block text-[11px] text-neutral-400 font-mono">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-display text-[13px] font-bold text-white tracking-tight">
+                      {p.name}
+                    </span>
+                    <span className="text-[10.5px] text-neutral-400 font-mono">
                       {p.subname}
                     </span>
+                    {p.badge && (
+                      <span className="rounded-full bg-white/15 px-1.5 py-0.2 text-[9px] font-medium text-neutral-200">
+                        {p.badge}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
