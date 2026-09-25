@@ -133,6 +133,28 @@ export async function verifyAdminSession(rawToken?: string | null): Promise<bool
 }
 
 /**
+ * Extracts admin token from cookie OR authorization header (x-admin-token)
+ * ensuring seamless auth in iframes, cross-origin previews and native browsers.
+ */
+export function getAdminTokenFromRequest(request: {
+  cookies: { get: (name: string) => { value: string } | undefined };
+  headers: { get: (name: string) => string | null };
+}): string | undefined {
+  const cookieVal = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  if (cookieVal) return cookieVal;
+
+  const headerVal = request.headers.get("x-admin-token");
+  if (headerVal) return headerVal;
+
+  const authHeader = request.headers.get("authorization");
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.slice(7).trim();
+  }
+
+  return undefined;
+}
+
+/**
  * Fast verification from cookieStore for server components
  */
 export async function isAuthenticatedAdmin(): Promise<boolean> {
@@ -145,12 +167,11 @@ export async function isAuthenticatedAdmin(): Promise<boolean> {
  * Sets admin session cookie on a response
  */
 export function setAdminCookie(response: NextResponse, token: string) {
-  const isProd = process.env.NODE_ENV === "production";
   response.cookies.set({
     name: ADMIN_COOKIE_NAME,
     value: token,
     httpOnly: true,
-    secure: isProd,
+    secure: false,
     sameSite: "lax",
     path: "/",
     maxAge: ADMIN_SESSION_HOURS * 3600,
@@ -166,7 +187,7 @@ export function clearAdminCookie(response: NextResponse) {
     name: ADMIN_COOKIE_NAME,
     value: "",
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false,
     sameSite: "lax",
     path: "/",
     maxAge: 0,

@@ -1,5 +1,7 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
+
 import * as React from "react";
 import {
   Ban,
@@ -130,7 +132,7 @@ export function UsersManager() {
       url.searchParams.set("status", statusFilter);
       url.searchParams.set("sort", sortBy);
 
-      const res = await fetch(url.toString());
+      const res = await adminFetch(url.toString());
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users || []);
@@ -152,7 +154,7 @@ export function UsersManager() {
     setSelectedUserId(userId);
     setDetailsLoading(true);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`);
+      const res = await adminFetch(`/api/admin/users/${userId}`);
       if (res.ok) {
         const data = await res.json();
         setUserDetails(data.user);
@@ -169,7 +171,7 @@ export function UsersManager() {
     if (!banUserTarget) return;
     setBanSubmitting(true);
     try {
-      const res = await fetch(`/api/admin/users/${banUserTarget.id}/ban`, {
+      const res = await adminFetch(`/api/admin/users/${banUserTarget.id}/ban`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: banReasonInput || "مسدودسازی توسط مدیر سیستم" }),
@@ -193,7 +195,7 @@ export function UsersManager() {
   const handleQuickUnban = async (user: AdminUserListItem | { id: string }) => {
     setActionLoadingId(user.id);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/unban`, {
+      const res = await adminFetch(`/api/admin/users/${user.id}/unban`, {
         method: "POST",
       });
       if (res.ok) {
@@ -222,7 +224,7 @@ export function UsersManager() {
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${timeoutUserTarget.id}/timeout`, {
+      const res = await adminFetch(`/api/admin/users/${timeoutUserTarget.id}/timeout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -249,7 +251,7 @@ export function UsersManager() {
   const handleQuickRemoveTimeout = async (user: AdminUserListItem | { id: string }) => {
     setActionLoadingId(user.id);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/remove-timeout`, {
+      const res = await adminFetch(`/api/admin/users/${user.id}/remove-timeout`, {
         method: "POST",
       });
       if (res.ok) {

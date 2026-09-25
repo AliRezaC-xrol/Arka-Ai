@@ -1,5 +1,7 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
+
 import * as React from "react";
 import {
   AlertCircle,
@@ -121,7 +123,7 @@ export function ProvidersManager() {
   // Fetch Providers
   const fetchProviders = React.useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/providers");
+      const res = await adminFetch("/api/admin/providers");
       if (!res.ok) throw new Error("دریافت پروایدرها با خطا مواجه شد.");
       const data = await res.json();
       setProviders(data.providers || []);
@@ -141,7 +143,7 @@ export function ProvidersManager() {
       if (selectedAnalyticsProviderId) {
         url.searchParams.set("providerId", selectedAnalyticsProviderId);
       }
-      const res = await fetch(url.toString());
+      const res = await adminFetch(url.toString());
       if (res.ok) {
         const data = await res.json();
         setUsageSummary(data.summary || null);
@@ -172,7 +174,7 @@ export function ProvidersManager() {
         prev.map((p) => (p.id === provider.id ? { ...p, isActive: newStatus } : p)),
       );
 
-      const res = await fetch(`/api/admin/providers/${provider.id}`, {
+      const res = await adminFetch(`/api/admin/providers/${provider.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: newStatus }),
@@ -194,7 +196,7 @@ export function ProvidersManager() {
     setFormError(null);
 
     try {
-      const res = await fetch("/api/admin/providers", {
+      const res = await adminFetch("/api/admin/providers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -231,7 +233,7 @@ export function ProvidersManager() {
     setFormError(null);
 
     try {
-      const res = await fetch(`/api/admin/providers/${editingProvider.id}`, {
+      const res = await adminFetch(`/api/admin/providers/${editingProvider.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -265,7 +267,7 @@ export function ProvidersManager() {
     setFormError(null);
 
     try {
-      const res = await fetch(`/api/admin/providers/${addingKeyProvider.id}/keys`, {
+      const res = await adminFetch(`/api/admin/providers/${addingKeyProvider.id}/keys`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -293,7 +295,7 @@ export function ProvidersManager() {
   const handleResetKeyStatus = async (providerId: string, keyId: string, currentStatus: string) => {
     const nextStatus = currentStatus === "active" ? "exhausted" : "active";
     try {
-      const res = await fetch(`/api/admin/providers/${providerId}/keys/${keyId}`, {
+      const res = await adminFetch(`/api/admin/providers/${providerId}/keys/${keyId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),
@@ -311,7 +313,7 @@ export function ProvidersManager() {
     if (!deletingProvider) return;
     setFormSubmitLoading(true);
     try {
-      const res = await fetch(`/api/admin/providers/${deletingProvider.id}`, {
+      const res = await adminFetch(`/api/admin/providers/${deletingProvider.id}`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -334,7 +336,7 @@ export function ProvidersManager() {
     if (!deletingKey) return;
     setFormSubmitLoading(true);
     try {
-      const res = await fetch(`/api/admin/providers/${deletingKey.providerId}/keys/${deletingKey.key.id}`, {
+      const res = await adminFetch(`/api/admin/providers/${deletingKey.providerId}/keys/${deletingKey.key.id}`, {
         method: "DELETE",
       });
       if (res.ok) {

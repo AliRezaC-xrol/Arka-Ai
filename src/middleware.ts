@@ -32,7 +32,13 @@ export async function middleware(request: NextRequest) {
     (pathname.startsWith("/api/admin/") && pathname !== "/api/admin/login") ||
     pathname.startsWith("/c-xroladi1n/")
   ) {
-    const adminToken = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+    const adminToken =
+      request.cookies.get(ADMIN_COOKIE_NAME)?.value ||
+      request.headers.get("x-admin-token") ||
+      (request.headers.get("authorization")?.startsWith("Bearer ")
+        ? request.headers.get("authorization")?.slice(7).trim()
+        : undefined);
+
     if (!adminToken) {
       return NextResponse.json({ error: "Not Found" }, { status: 404 });
     }

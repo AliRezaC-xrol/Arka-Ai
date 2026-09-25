@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   resetAdminRateLimit(ip);
 
   const token = await createAdminSession();
-  const response = NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true, token });
   setAdminCookie(response, token);
 
   return response;

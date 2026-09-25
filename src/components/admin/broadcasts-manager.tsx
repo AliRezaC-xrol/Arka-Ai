@@ -1,5 +1,7 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
+
 import * as React from "react";
 import {
   AlertTriangle,
@@ -82,7 +84,7 @@ export function BroadcastsManager() {
   // Fetch broadcasts list
   const fetchMessages = React.useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/broadcasts");
+      const res = await adminFetch("/api/admin/broadcasts");
       if (res.ok) {
         const data = await res.json();
         setMessages(data.messages || []);
@@ -97,7 +99,7 @@ export function BroadcastsManager() {
   // Fetch users for recipient picker
   const fetchUsers = React.useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/users?limit=100");
+      const res = await adminFetch("/api/admin/users?limit=100");
       if (res.ok) {
         const data = await res.json();
         setAllUsers(data.users || []);
@@ -132,7 +134,7 @@ export function BroadcastsManager() {
     }
 
     try {
-      const res = await fetch("/api/admin/broadcasts", {
+      const res = await adminFetch("/api/admin/broadcasts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -166,7 +168,7 @@ export function BroadcastsManager() {
     if (!deletingMessage) return;
     setDeleteLoading(true);
     try {
-      const res = await fetch(`/api/admin/broadcasts/${deletingMessage.id}`, {
+      const res = await adminFetch(`/api/admin/broadcasts/${deletingMessage.id}`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -187,7 +189,7 @@ export function BroadcastsManager() {
   const handleDeleteForSingleRecipient = async (messageId: string, userId: string) => {
     setSingleDeleteLoadingId(userId);
     try {
-      const res = await fetch(`/api/admin/broadcasts/${messageId}/recipients/${userId}`, {
+      const res = await adminFetch(`/api/admin/broadcasts/${messageId}/recipients/${userId}`, {
         method: "DELETE",
       });
       if (res.ok) {

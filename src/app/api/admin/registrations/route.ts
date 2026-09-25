@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE_NAME, verifyAdminSession } from "@/lib/admin-auth";
+import { getAdminTokenFromRequest, verifyAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const token = getAdminTokenFromRequest(request);
   const isAuthed = await verifyAdminSession(token);
 
   if (!isAuthed) {

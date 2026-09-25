@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { ProvidersManager } from "@/components/admin/providers-manager";
 import { UsersManager } from "@/components/admin/users-manager";
 import { BroadcastsManager } from "@/components/admin/broadcasts-manager";
+import { adminFetch, setStoredAdminToken } from "@/lib/admin-fetch";
 import { cn } from "@/lib/utils";
 
 interface StatsData {
@@ -68,14 +69,21 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = React.useState<"dashboard" | "users" | "providers" | "broadcasts">("dashboard");
 
   // Check initial admin session by attempting to fetch stats
-  const checkSession = React.useCallback(async () => {
+  const checkSession = React.useCallback(async (explicitToken?: string) => {
     try {
-      const res = await fetch("/api/admin/stats");
+      if (explicitToken) {
+        setStoredAdminToken(explicitToken);
+      }
+      const res = await adminFetch("/api/admin/stats");
       if (res.ok) {
         const data = await res.json();
         setStats(data);
         setIsAdmin(true);
       } else {
+        // If not explicit check, clear stored token
+        if (!explicitToken) {
+          setStoredAdminToken(null);
+        }
         setIsAdmin(false);
       }
     } catch {
@@ -91,7 +99,7 @@ export default function AdminPage() {
   const loadChart = React.useCallback(async (days: number) => {
     setChartLoading(true);
     try {
-      const res = await fetch(`/api/admin/registrations?days=${days}`);
+      const res = await adminFetch(`/api/admin/registrations?days=${days}`);
       if (res.ok) {
         const data: ChartResponse = await res.json();
         setChartData(data.chartData || []);
@@ -131,9 +139,13 @@ export default function AdminPage() {
         return;
       }
 
+      if (data.token) {
+        setStoredAdminToken(data.token);
+      }
+
       setIsAdmin(true);
       setPassword("");
-      checkSession();
+      await checkSession(data.token);
     } catch {
       setLoginError("خطا در برقراری ارتباط با سرور.");
     } finally {
@@ -143,10 +155,11 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/admin/logout", { method: "POST" });
+      await adminFetch("/api/admin/logout", { method: "POST" });
     } catch {
       // ignore
     }
+    setStoredAdminToken(null);
     setIsAdmin(false);
     setStats(null);
   };
@@ -154,7 +167,7 @@ export default function AdminPage() {
   const refreshAll = async () => {
     setStatsLoading(true);
     try {
-      const res = await fetch("/api/admin/stats");
+      const res = await adminFetch("/api/admin/stats");
       if (res.ok) {
         const data = await res.json();
         setStats(data);

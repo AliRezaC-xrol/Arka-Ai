@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  ADMIN_COOKIE_NAME,
+  getAdminTokenFromRequest,
   formatUptime,
   getServerStartTime,
   verifyAdminSession,
@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const token = getAdminTokenFromRequest(request);
   const isAuthed = await verifyAdminSession(token);
 
   // Return 404 if not authenticated to prevent path disclosure

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE_NAME, verifyAdminSession } from "@/lib/admin-auth";
+import { getAdminTokenFromRequest, verifyAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 interface Params {
@@ -7,7 +7,7 @@ interface Params {
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
-  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const token = getAdminTokenFromRequest(request);
   const isAuthed = await verifyAdminSession(token);
   if (!isAuthed) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const token = getAdminTokenFromRequest(request);
   const isAuthed = await verifyAdminSession(token);
   if (!isAuthed) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
@@ -102,7 +102,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
-  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const token = getAdminTokenFromRequest(request);
   const isAuthed = await verifyAdminSession(token);
   if (!isAuthed) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });

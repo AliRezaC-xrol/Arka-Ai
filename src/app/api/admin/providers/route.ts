@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE_NAME, verifyAdminSession } from "@/lib/admin-auth";
+import { getAdminTokenFromRequest, verifyAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { encryptApiKey, maskApiKey } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const token = getAdminTokenFromRequest(request);
   const isAuthed = await verifyAdminSession(token);
   if (!isAuthed) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const token = getAdminTokenFromRequest(request);
   const isAuthed = await verifyAdminSession(token);
   if (!isAuthed) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
