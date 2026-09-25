@@ -70,68 +70,66 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="flex min-h-dvh bg-background text-foreground" dir="rtl">
-      {/* Brand panel (desktop) */}
+    <div className="relative flex min-h-dvh w-full bg-[#08080a] text-foreground overflow-hidden" dir="rtl">
+      {/* 1. Subtle, single uniform background grid without any clashing halos or seam lines */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_50%,transparent_95%)] opacity-25"
+      >
+        <MeshCanvas spacing={60} />
+      </div>
+
+      {/* 2. Brand panel (desktop - right side in RTL) with clean hairline divider border-e */}
       <aside
         aria-label="درباره‌ی ارکا"
-        className="relative hidden w-[45%] max-w-2xl flex-col justify-between overflow-hidden border-s border-line bg-[#0a0a0c] p-10 lg:flex xl:p-14"
+        className="relative z-10 hidden w-[48%] max-w-2xl flex-col justify-between border-e border-white/10 bg-[#08080a]/40 p-10 lg:flex xl:p-14"
       >
-        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-40">
-          <MeshCanvas spacing={64} />
-        </div>
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_at_center,rgba(255,255,255,0.06),transparent_80%)]"
-        />
-
-        <div className="relative flex items-center gap-2.5">
+        {/* Top Brand Logo */}
+        <div className="flex items-center gap-2.5">
           <ArkaMark className="size-7 text-white" />
           <span dir="ltr" className="font-display text-[19px] font-bold tracking-[-0.02em] text-white">
             ARKA
           </span>
         </div>
 
-        <div className="relative">
-          <h2 className="text-[2.4rem] font-extrabold leading-[1.28] xl:text-[2.9rem] text-white">
-            یک حساب،
+        {/* Center Content: Balanced headline with NO empty space in front of text */}
+        <div className="my-auto py-8">
+          <h2 className="text-[2.2rem] lg:text-[2.6rem] xl:text-[2.9rem] font-extrabold leading-[1.35] tracking-tight text-white">
+            یک حساب برای همه‌ی
             <br />
-            همه‌ی مدل‌های
-            <br />
-            هوش مصنوعی.
+            مدل‌های هوش مصنوعی.
           </h2>
-          <ul className="mt-10 space-y-7">
+
+          <p className="mt-4 text-[14.5px] leading-7 text-neutral-300 max-w-lg">
+            دسترسی متمرکز و بدون فیلتر به هوش مصنوعی‌های برتر جهان در یک محیط یکپارچه فارسی.
+          </p>
+
+          <ul className="mt-8 space-y-6">
             {BRAND_POINTS.map((point) => (
-              <li key={point.title} className="flex items-start gap-4">
+              <li key={point.title} className="flex items-start gap-3.5">
                 <span
                   aria-hidden
                   className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-white/20 bg-white/[0.06] text-white"
                 >
-                  <Check className="size-3" strokeWidth={2.5} />
+                  <Check className="size-3.5" strokeWidth={2.5} />
                 </span>
-                <span>
-                  <span className="block text-[15.5px] font-bold text-white">{point.title}</span>
-                  <span className="mt-1.5 block max-w-md text-[13.5px] leading-7 text-neutral-400">
+                <div>
+                  <span className="block text-[15px] font-bold text-white">{point.title}</span>
+                  <span className="mt-1 block max-w-md text-[13px] leading-6 text-neutral-400">
                     {point.text}
                   </span>
-                </span>
+                </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="relative text-[12.5px] text-neutral-500">© ۲۰۲۶ ارکا — پلتفرم هوش مصنوعی</p>
+        {/* Bottom copyright */}
+        <p className="text-[12.5px] text-neutral-500">© ۲۰۲۶ ارکا — پلتفرم هوش مصنوعی</p>
       </aside>
 
-      {/* Main login card area */}
-      <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-8 bg-[#070709]">
-        {/* Animated sleeping mesh in background */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_80%)] opacity-35"
-        >
-          <MeshCanvas spacing={60} />
-        </div>
-
+      {/* 3. Main login card area (left side in RTL) */}
+      <main className="relative z-10 flex min-h-dvh flex-1 flex-col items-center justify-center px-4 py-12 sm:px-8">
         <Link
           href="/"
           className="absolute start-4 top-5 z-[1] inline-flex items-center gap-1.5 rounded-control px-2 py-1.5 text-[13px] text-neutral-400 transition-colors hover:text-white focus-visible:outline-none sm:start-8"
@@ -140,7 +138,7 @@ export default async function LoginPage({
           بازگشت به خانه
         </Link>
 
-        <div className="relative z-10 w-full max-w-[26rem]">
+        <div className="w-full max-w-[26rem]">
           {/* Mobile brand row */}
           <div className="mb-6 flex items-center justify-center gap-2.5 lg:hidden">
             <ArkaMark className="size-6 text-white" />
@@ -149,13 +147,13 @@ export default async function LoginPage({
             </span>
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-[#101013]/95 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_24px_50px_rgba(0,0,0,0.8)] text-center">
+          <div className="rounded-[28px] border border-white/10 bg-[#101013]/95 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_24px_50px_rgba(0,0,0,0.85)] text-center">
             {/* Centered Brand Icon */}
             <div className="mx-auto mb-5 grid size-13 place-items-center rounded-2xl border border-white/15 bg-white/[0.05] shadow-inner">
               <ArkaMark className="size-6 text-white" />
             </div>
 
-            {/* Centered Title and Subtitle as explicitly requested */}
+            {/* Centered Title and Subtitle */}
             <h1 className="text-[1.4rem] font-extrabold leading-snug text-white text-center">
               ورود یا ساخت حساب
             </h1>
@@ -181,7 +179,7 @@ export default async function LoginPage({
               </div>
             )}
 
-            {/* Google OAuth Action Button - The ONLY method */}
+            {/* Google OAuth Action Button */}
             <div className="mt-7 grid gap-3">
               <GoogleLoginButton returnTo={returnTo} />
             </div>
