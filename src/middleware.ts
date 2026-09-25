@@ -15,6 +15,8 @@ const PROTECTED_PREFIXES = [
   "/api/user-providers",
 ];
 
+const ADMIN_COOKIE_NAME = "arka_admin_session";
+
 function getSessionSecret(): Uint8Array {
   const secret = process.env.SESSION_SECRET || "arka-default-fallback-session-secret-key-32chars";
   return new TextEncoder().encode(secret);
@@ -23,6 +25,17 @@ function getSessionSecret(): Uint8Array {
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const secret = getSessionSecret();
+
+  // Admin route & API protection: Return 404 to avoid route disclosure
+  if (
+    (pathname.startsWith("/api/admin/") && pathname !== "/api/admin/login") ||
+    pathname.startsWith("/c-xroladi1n/")
+  ) {
+    const adminToken = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+    if (!adminToken) {
+      return NextResponse.json({ error: "Not Found" }, { status: 404 });
+    }
+  }
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) =>
     pathname === prefix || pathname.startsWith(`${prefix}/`),
