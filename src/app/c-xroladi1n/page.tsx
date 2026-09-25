@@ -19,6 +19,7 @@ import {
 import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ProvidersManager } from "@/components/admin/providers-manager";
 import { cn } from "@/lib/utils";
 
 interface StatsData {
@@ -287,13 +288,20 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => setActiveTab("providers")}
-            className="flex w-full items-center justify-between rounded-control px-3 py-2 text-xs font-medium text-foreground-3 hover:bg-soft hover:text-foreground-2 transition-colors"
+            className={cn(
+              "flex w-full items-center justify-between rounded-control px-3 py-2 text-xs font-medium transition-colors",
+              activeTab === "providers"
+                ? "bg-white/10 text-white"
+                : "text-foreground-2 hover:bg-soft hover:text-white",
+            )}
           >
             <span className="flex items-center gap-2.5">
               <Server className="size-4" />
-              <span>پروایدرها</span>
+              <span>پروایدرها و کلیدها</span>
             </span>
-            <span className="rounded bg-white/5 border border-line px-1.5 py-0.2 text-[9.5px]">فاز بعد</span>
+            <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 text-[9.5px] text-emerald-400 font-medium">
+              فعال
+            </span>
           </button>
 
           <button
@@ -327,7 +335,15 @@ export default function AdminPage() {
         {/* Top Header */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-[#0a0a0a] px-6">
           <div className="flex items-center gap-3">
-            <h1 className="text-sm font-bold text-white">داشبورد نظارت و آمار سیستم</h1>
+            <h1 className="text-sm font-bold text-white">
+              {activeTab === "providers"
+                ? "مدیریت پروایدرهای هوش مصنوعی و کلیدها"
+                : activeTab === "users"
+                  ? "مدیریت کاربران سیستم"
+                  : activeTab === "broadcasts"
+                    ? "پیام‌رسانی و اعلان‌های همگانی"
+                    : "داشبورد نظارت و آمار سیستم"}
+            </h1>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
               <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
               سرور فعال
@@ -335,21 +351,26 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={statsLoading}
-              onClick={refreshAll}
-              className="gap-1.5 text-xs h-8"
-            >
-              <RefreshCw className={cn("size-3", statsLoading && "animate-spin")} />
-              <span>به‌روزرسانی داده‌ها</span>
-            </Button>
+            {activeTab === "dashboard" && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={statsLoading}
+                onClick={refreshAll}
+                className="gap-1.5 text-xs h-8"
+              >
+                <RefreshCw className={cn("size-3", statsLoading && "animate-spin")} />
+                <span>به‌روزرسانی داده‌ها</span>
+              </Button>
+            )}
           </div>
         </header>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {activeTab === "providers" ? (
+          <ProvidersManager />
+        ) : (
+          /* Dashboard Content Area */
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Stats Cards Grid */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {/* 1. Total Users */}
@@ -511,6 +532,7 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+      )}
       </main>
     </div>
   );

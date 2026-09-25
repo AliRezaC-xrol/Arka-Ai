@@ -177,6 +177,16 @@ function ChatContent() {
     }>
   >([]);
 
+  // Admin configured site providers
+  const [siteProviders, setSiteProviders] = React.useState<
+    Array<{
+      id: string;
+      name: string;
+      type: string;
+      models?: string | null;
+    }>
+  >([]);
+
   React.useEffect(() => {
     fetch("/api/user-providers")
       .then((res) => res.json())
@@ -184,10 +194,32 @@ function ChatContent() {
         setUserProviders(data.providers || []);
       })
       .catch(() => {});
+
+    fetch("/api/site-providers")
+      .then((res) => res.json())
+      .then((data) => {
+        setSiteProviders(data.providers || []);
+      })
+      .catch(() => {});
   }, []);
 
   const modelGroups: ModelGroup[] = React.useMemo(() => {
     const list: ModelGroup[] = [...BASE_MODEL_GROUPS];
+
+    // Admin site providers
+    for (const p of siteProviders) {
+      const pModels = p.models
+        ? p.models.split(",").map((m) => m.trim()).filter(Boolean)
+        : ["Default Model"];
+      list.push({
+        provider: p.name,
+        models: pModels,
+        isSiteProvider: true,
+        providerId: p.id,
+      });
+    }
+
+    // User personal providers
     const connected = userProviders.filter((p) => p.status === "connected");
     for (const p of connected) {
       const pModels = p.models
@@ -197,10 +229,11 @@ function ChatContent() {
         provider: p.name,
         models: pModels,
         isUserProvider: true,
+        providerId: p.id,
       });
     }
     return list;
-  }, [userProviders]);
+  }, [siteProviders, userProviders]);
 
   // Composer state
   const [input, setInput] = React.useState("");
@@ -439,6 +472,9 @@ function ChatContent() {
     const matchingProvider = userProviders.find(
       (p) => p.name === selectedProviderName && p.status === "connected",
     );
+    const matchingSiteProvider = siteProviders.find(
+      (p) => p.name === selectedProviderName,
+    );
 
     const tempUserMsgId = `user-${Date.now()}`;
     const userMsg: ChatMessage = {
@@ -465,6 +501,7 @@ function ChatContent() {
           conversationId: activeId || undefined,
           message: textToSend,
           model: currentModelName,
+          providerId: matchingSiteProvider?.id,
           userProviderId: matchingProvider?.id,
           attachment: attachment?.url,
         }),

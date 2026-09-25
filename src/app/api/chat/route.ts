@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decryptApiKey } from "@/lib/crypto";
+import { executeWithFailover } from "@/lib/provider-failover";
 
 export const dynamic = "force-dynamic";
 
@@ -134,8 +135,10 @@ export async function POST(request: NextRequest) {
     conversationId?: string;
     message: string;
     model?: string;
+    providerId?: string;
     userProviderId?: string;
     attachment?: string;
+    simulateFailover?: boolean;
   };
 
   try {
@@ -239,7 +242,45 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Text/Code Streaming Response via SSE
-  const fullResponse = generateSmartResponse(prompt, model, personalProviderName);
+  let fullResponse = "";
+  let resolvedSiteProviderId = body.providerId;
+
+  if (!resolvedSiteProviderId && model) {
+    const parts = model.split(":");
+    if (parts.length > 1) {
+      const pName = parts[0];
+      const match = await prisma.provider.findFirst({
+        where: { name: pName, isActive: true },
+        select: { id: true },
+      });
+      if (match) {
+        resolvedSiteProviderId = match.id;
+      }
+    }
+  }
+
+  if (resolvedSiteProviderId) {
+    try {
+      const simulateHeader = request.headers.get("x-simulate-failover") === "true";
+      const failoverRes = await executeWithFailover({
+        providerId: resolvedSiteProviderId,
+        model,
+        prompt,
+        userId: user.id,
+        simulateFirstKeyFailure: simulateHeader || Boolean(body.simulateFailover),
+      });
+      fullResponse = failoverRes.response;
+    } catch (err: unknown) {
+      console.error("Site provider failover error:", err);
+      return NextResponse.json(
+        { error: (err as Error).message || "خطا در پردازش با پروایدر" },
+        { status: 502 },
+      );
+    }
+  } else {
+    fullResponse = generateSmartResponse(prompt, model, personalProviderName);
+  }
+
   const words = fullResponse.split(/(?<=\s)|(?<=\n)/);
 
   const encoder = new TextEncoder();

@@ -9,6 +9,8 @@ export interface ModelGroup {
   provider: string;
   models: string[];
   isUserProvider?: boolean;
+  isSiteProvider?: boolean;
+  providerId?: string;
 }
 
 interface ModelPickerProps {
@@ -36,6 +38,8 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
           provider: group.provider,
           model,
           isUserProvider: group.isUserProvider,
+          isSiteProvider: group.isSiteProvider,
+          providerId: group.providerId,
         })),
       ),
     [groups],
@@ -175,6 +179,11 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
                 {group.isUserProvider && (
                   <span className="rounded bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-[9.5px] font-medium text-amber-300">
                     پروایدر شخصی
+                  </span>
+                )}
+                {group.isSiteProvider && (
+                  <span className="rounded bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 text-[9.5px] font-medium text-emerald-300">
+                    پروایدر سایت
                   </span>
                 )}
               </li>

@@ -3,7 +3,6 @@ import {
   createSession,
   verifySessionToken,
   upsertGoogleUser,
-  SESSION_COOKIE_NAME,
 } from "../src/lib/auth";
 
 async function runTests() {
@@ -91,7 +90,7 @@ async function runTests() {
     const concurrentEmail = `race.${Date.now()}@example.com`;
     const concurrentGoogleId = `race_gid_${Date.now()}`;
 
-    const concurrentResults = await Promise.all(
+    await Promise.all(
       Array.from({ length: 8 }).map((_, idx) =>
         upsertGoogleUser({
           email: concurrentEmail,
