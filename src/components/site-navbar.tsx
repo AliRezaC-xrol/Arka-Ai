@@ -1,67 +1,38 @@
-"use client";
-
-import * as React from "react";
 import Link from "next/link";
 
-import { cn } from "@/lib/utils";
-
-/**
- * Marketing navbar (Phase 0 fix): sticky, transparent at the top of the
- * page; a hairline bottom border + blur backdrop fades in only after the
- * page is scrolled past the top. Uses the real vibefarsi Button for the
- * primary «شروع کنید» action.
- */
+/** apmix-style navbar: logo at start, links centred, actions at end. */
 export function SiteNavbar() {
-  const [scrolled, setScrolled] = React.useState(false);
-
-  React.useEffect(() => {
-    // Passive scroll listener: rAF-throttled so it runs at most once/frame.
-    let ticking = false;
-    const update = () => {
-      setScrolled(window.scrollY > 8);
-      ticking = false;
-    };
-    const onScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full transition-[background-color,border-color,backdrop-filter] duration-300",
-        scrolled
-          ? "border-b border-line bg-background/80 backdrop-blur-md"
-          : "border-b border-transparent bg-transparent",
-      )}
-    >
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
-        <Link
-          href="/"
-          dir="ltr" className="text-[20px] font-extrabold tracking-[-0.04em] text-foreground"
-          aria-label="Arka — صفحه‌ی اصلی"
-        >
-          Arka
+    <header className="sticky top-0 z-50 w-full border-b border-line bg-white/85 backdrop-blur-md">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
+        <Link href="/" aria-label="Arka — صفحه‌ی اصلی" className="flex items-center gap-2 rounded-sm">
+          <ArkaMark className="size-7" />
+          <span dir="ltr" className="font-display text-[19px] font-bold tracking-[-0.02em]">ARKA</span>
         </Link>
 
-        <nav className="flex items-center gap-1.5 sm:gap-2" aria-label="ناوبری اصلی">
-          <Link
-            href="/login"
-            className="rounded-control px-3 py-2 text-[13px] text-foreground-2 transition-colors duration-200 hover:bg-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            ورود
-          </Link>
-          <Link href="/login" className="btn-blue inline-flex h-9 items-center rounded-control px-4 text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-شروع کنید
-</Link>
+        <nav aria-label="ناوبری اصلی" className="hidden items-center gap-8 text-[14.5px] text-foreground-2 md:flex">
+          <a href="#features" className="rounded-sm hover:text-foreground">قابلیت‌ها</a>
+          <a href="#models" className="rounded-sm hover:text-foreground">مدل‌ها</a>
+          <a href="#usage" className="rounded-sm hover:text-foreground">مصرف</a>
+          <a href="#faq" className="rounded-sm hover:text-foreground">سوالات</a>
         </nav>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/login" className="rounded-control px-3 py-2 text-[14.5px] text-foreground hover:bg-soft">ورود</Link>
+          <Link href="/login" className="btn-ink inline-flex h-10 items-center rounded-control px-4 text-[14.5px] font-semibold sm:px-5">
+            شروع کنید
+          </Link>
+        </div>
       </div>
     </header>
+  );
+}
+
+export function ArkaMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden className={className}>
+      <path d="M16 3 29 28h-6.2L16 14.6 9.2 28H3L16 3Z" fill="currentColor" />
+      <path d="M11.5 22.5h9l2 4h-13l2-4Z" fill="currentColor" opacity="0.35" />
+    </svg>
   );
 }

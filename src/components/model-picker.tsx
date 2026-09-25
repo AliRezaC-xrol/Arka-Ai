@@ -141,7 +141,7 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           open
             ? "border-blue-line bg-blue-soft text-foreground"
-            : "border-line text-foreground-2 hover:border-white/20 hover:text-foreground",
+            : "border-line text-foreground-2 hover:border-black/20 hover:text-foreground",
         )}
       >
         {current && <ProviderGlyph provider={current.provider} />}
@@ -161,7 +161,7 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
           role="listbox"
           aria-label="انتخاب مدل"
           onKeyDown={onListKeyDown}
-          className="absolute bottom-full start-0 z-50 mb-2 max-h-80 w-72 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-card border border-line bg-popover p-1.5 shadow-[0_24px_48px_-24px_rgba(0,0,0,0.9)]"
+          className="absolute bottom-full start-0 z-50 mb-2 max-h-80 w-72 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-card border border-line bg-popover p-1.5 shadow-[0_16px_40px_-16px_rgba(0,0,0,0.25)]"
         >
           {groups.map((group, groupIndex) => (
             <React.Fragment key={group.provider}>

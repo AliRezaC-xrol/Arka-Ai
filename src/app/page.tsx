@@ -1,140 +1,113 @@
 import Link from "next/link";
-import { Check, Gauge, Image as ImageIcon, KeyRound, Lock, Sparkles } from "lucide-react";
+import { Check, Gauge, Image as ImageIcon, KeyRound, Lock } from "lucide-react";
 
+import { FaqList } from "@/components/faq-list";
 import { HeroWindow } from "@/components/chat-preview";
-import { SiteNavbar } from "@/components/site-navbar";
+import { ArkaMark, SiteNavbar } from "@/components/site-navbar";
 
-const PROVIDERS = [
-  { name: "OpenAI", sub: "GPT" },
-  { name: "Anthropic", sub: "Claude" },
-  { name: "Google", sub: "Gemini" },
-  { name: "xAI", sub: "Grok" },
-  { name: "DeepSeek", sub: "DeepSeek" },
-  { name: "Alibaba", sub: "Qwen" },
-  { name: "Mistral", sub: "Mistral" },
-  { name: "Ollama", sub: "Local" },
+const MODELS = [
+  { name: "GPT", org: "OpenAI" },
+  { name: "Claude", org: "Anthropic" },
+  { name: "Gemini", org: "Google" },
+  { name: "Grok", org: "xAI" },
+  { name: "DeepSeek", org: "DeepSeek" },
+  { name: "Qwen", org: "Alibaba" },
+  { name: "Mistral", org: "Mistral AI" },
+  { name: "Llama", org: "Meta" },
 ];
 
 const FEATURES = [
-  { icon: KeyRound, title: "یک محیط، همه‌ی مدل‌ها", text: "GPT، Claude، Gemini و DeepSeek کنار هم؛ فقط اسم مدل را عوض کن." },
-  { icon: Gauge, title: "جابه‌جایی خودکار", text: "اگر کلیدی به سقف برسد یا خطا بدهد، درخواست بی‌صدا با کلید بعدی ادامه پیدا می‌کند." },
-  { icon: ImageIcon, title: "تصویر در همان گفتگو", text: "پرامپت بنویس و تصویر را کنار متن ببین؛ بدون رفتن به سایت دیگر." },
-  { icon: Lock, title: "کلیدهای رمزنگاری‌شده", text: "کلیدها با AES-256-GCM ذخیره می‌شوند و گفتگوها فقط برای خودت قابل دیدن است." },
+  { icon: KeyRound, title: "یک حساب، همه‌ی مدل‌ها", text: "GPT، Claude، Gemini، Grok و DeepSeek در یک محیط. فقط مدل را عوض کن، بقیه‌چیز همان است." },
+  { icon: Gauge, title: "جابه‌جایی خودکار", text: "اگر کلیدی به سقف برسد یا خطا بدهد، ارکا بی‌صدا سراغ کلید بعدی می‌رود و گفتگو قطع نمی‌شود." },
+  { icon: ImageIcon, title: "تصویر در همان گفتگو", text: "پرامپت بنویس و تصویر را کنار متن ببین؛ بدون رفتن به سایت یا اشتراک دیگر." },
+  { icon: Lock, title: "امن و خصوصی", text: "کلیدها با AES-256-GCM رمزنگاری می‌شوند و گفتگوهایت فقط برای خودت قابل دیدن است." },
 ];
 
 const STEPS = [
-  { title: "وارد شو", text: "با ایمیل یا گوگل در کمتر از یک دقیقه حساب بساز." },
-  { title: "کلیدت را وصل کن", text: "کلید API هر پروایدری را اضافه کن یا از پروایدرهای آماده استفاده کن." },
+  { title: "حساب بساز", text: "با ایمیل یا گوگل در کمتر از یک دقیقه وارد شو." },
+  { title: "کلید وصل کن", text: "کلید هر پروایدری را اضافه کن یا از پروایدرهای آماده استفاده کن." },
   { title: "گفتگو کن", text: "مدل را از داخل کادر نوشتن انتخاب کن و شروع کن." },
 ];
 
-function Waves() {
-  return (
-    <div aria-hidden className="waves">
-      <svg viewBox="0 0 1440 900" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="wv" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0" stopColor="#1f6fff" stopOpacity="0" />
-            <stop offset="0.35" stopColor="#1f6fff" stopOpacity="0.9" />
-            <stop offset="0.6" stopColor="#6aa6ff" stopOpacity="1" />
-            <stop offset="1" stopColor="#1f6fff" stopOpacity="0" />
-          </linearGradient>
-          <filter id="wblur" x="-10%" y="-50%" width="120%" height="200%">
-            <feGaussianBlur stdDeviation="14" />
-          </filter>
-        </defs>
-        <g fill="none" stroke="url(#wv)">
-          <path d="M-50 180 C 300 120, 520 420, 820 520 S 1300 700, 1500 880" strokeWidth="60" opacity="0.28" filter="url(#wblur)" />
-          <path d="M-50 180 C 300 120, 520 420, 820 520 S 1300 700, 1500 880" strokeWidth="2" opacity="0.9" />
-          <path d="M-50 230 C 280 170, 540 460, 830 560 S 1290 730, 1500 920" strokeWidth="1.2" opacity="0.55" />
-          <path d="M-50 130 C 320 80, 500 380, 810 480 S 1310 660, 1500 840" strokeWidth="1" opacity="0.35" />
-        </g>
-      </svg>
-    </div>
-  );
-}
+const USAGE = [
+  { name: "Claude", value: "۲۹٫۱ هزار", pct: 39 },
+  { name: "GPT", value: "۲۲٫۴ هزار", pct: 30 },
+  { name: "Gemini", value: "۱۳٫۴ هزار", pct: 18 },
+  { name: "DeepSeek", value: "۹٫۷ هزار", pct: 13 },
+];
+
+const FAQ = [
+  { q: "آیا برای هر پروایدر حساب جدا لازم دارم؟", a: "نه. می‌توانی از پروایدرهای آماده‌ی ارکا استفاده کنی یا فقط کلید API پروایدرهایی را که خودت داری اضافه کنی." },
+  { q: "کلیدهای من کجا ذخیره می‌شوند؟", a: "کلیدها با AES-256-GCM رمزنگاری و فقط سمت سرور استفاده می‌شوند؛ هیچ‌وقت به مرورگر برگردانده نمی‌شوند." },
+  { q: "اگر یک کلید از کار بیفتد چه می‌شود؟", a: "ارکا به‌طور خودکار درخواست را با کلید بعدی همان پروایدر ادامه می‌دهد و تو چیزی حس نمی‌کنی." },
+  { q: "تولید تصویر هم دارد؟", a: "بله. مدل‌های تصویری پروایدرهای متصل، مستقیم داخل همان گفتگو در دسترس‌اند." },
+  { q: "چطور حسابم را حذف کنم؟", a: "از بخش تنظیمات حساب، با یک کلیک؛ همه‌ی گفتگوها و کلیدها برای همیشه پاک می‌شوند." },
+];
 
 export default function Home() {
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-x-clip">
+    <div className="flex min-h-dvh flex-col bg-white text-foreground">
       <SiteNavbar />
 
-      <div aria-hidden className="edge-blur edge-blur--top">
-        <span /><span /><span /><span /><span />
-      </div>
-
       <main className="flex-1">
-        {/* ================= Hero: text at start (right), product at end ================= */}
-        <section aria-labelledby="hero-title" className="relative -mt-16 overflow-hidden border-b border-line pt-16">
-          <div aria-hidden className="mesh" />
-          <Waves />
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent" />
-
-          <div className="hero-dissolve relative z-[1] mx-auto grid w-full max-w-7xl items-center gap-14 px-5 pb-24 pt-16 sm:px-8 lg:grid-cols-[1fr_1.15fr] lg:gap-12 lg:pb-32 lg:pt-28">
+        {/* ================= Hero ================= */}
+        <section aria-labelledby="hero-title" className="relative overflow-hidden border-b border-line">
+          <div aria-hidden className="mesh-light" />
+          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-14 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:pb-28 lg:pt-24">
             <div>
-              <Link
-                href="/login"
-                className="enter inline-flex items-center gap-2.5 rounded-full border border-line bg-white/[0.03] py-1 pe-3.5 ps-1 text-[13px] text-foreground-2 transition-colors hover:border-white/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="rounded-full bg-blue px-2 py-0.5 text-[11px] font-bold text-white">رایگان</span>
+              <Link href="/login" className="enter inline-flex items-center gap-2.5 rounded-full border border-line bg-white py-1 pe-3.5 ps-1 text-[13.5px] hover:border-black/20">
+                <span className="rounded-full bg-[#0a0a0a] px-2.5 py-0.5 text-[11px] font-bold text-white">رایگان</span>
                 ۱۰۰ پیام رایگان بعد از ثبت‌نام
               </Link>
 
-              <h1 id="hero-title" className="enter-mark mt-7">
-                <span dir="ltr" className="block text-right text-[4.5rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-white sm:text-[6.5rem] lg:text-[7.5rem]">
-                  Arka
-                </span>
-                <span className="mt-4 block text-[2rem] font-bold leading-[1.35] sm:text-[2.75rem]">
-                  همه‌ی مدل‌های هوش مصنوعی، در یک گفتگو.
-                </span>
+              <h1 id="hero-title" className="enter mt-7 text-[2.6rem] font-extrabold leading-[1.25] tracking-[-0.01em] sm:text-[3.5rem] lg:text-[4rem]" style={{ ["--enter-delay" as string]: "80ms" }}>
+                یک حساب
+                <br />
+                برای همه‌ی مدل‌های
+                <br />
+                هوش مصنوعی.
               </h1>
 
-              <p className="enter mt-6 max-w-xl text-[17px] leading-8 text-foreground-2" style={{ ["--enter-delay" as string]: "420ms" }}>
-                GPT، Claude، Gemini، Grok، DeepSeek و Qwen را در یک محیط تمیز فارسی داشته باش؛
-                با کلید خودت یا پروایدرهای آماده.
+              <p className="enter mt-6 max-w-xl text-[17px] leading-[1.95] text-foreground-2 sm:text-[18px]" style={{ ["--enter-delay" as string]: "180ms" }}>
+                GPT، Claude، Gemini، Grok، DeepSeek و Qwen را در یک محیط تمیز و کاملاً فارسی داشته باش؛
+                با کلید خودت یا پروایدرهای آماده‌ی ارکا.
               </p>
 
-              <div className="enter mt-9 flex flex-wrap gap-3" style={{ ["--enter-delay" as string]: "560ms" }}>
-                <Link href="/login" className="btn-blue inline-flex h-12 items-center rounded-control px-7 text-[15px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-                  شروع رایگان
-                </Link>
-                <Link href="/chat" className="btn-quiet inline-flex h-12 items-center rounded-control px-7 text-[15px] font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  دیدن محیط چت
-                </Link>
+              <div className="enter mt-9 flex flex-wrap gap-3" style={{ ["--enter-delay" as string]: "260ms" }}>
+                <Link href="/login" className="btn-ink inline-flex h-12 items-center rounded-control px-6 text-[15px] font-semibold">شروع رایگان</Link>
+                <Link href="/chat" className="btn-line inline-flex h-12 items-center rounded-control px-6 text-[15px] font-semibold">دیدن محیط چت</Link>
               </div>
 
-              <ul className="enter mt-9 space-y-2.5 text-[14.5px] text-foreground-2" style={{ ["--enter-delay" as string]: "680ms" }}>
+              <ul className="enter mt-9 space-y-3 text-[15px]" style={{ ["--enter-delay" as string]: "340ms" }}>
                 {["سازگار با OpenAI، Anthropic و Google", "جابه‌جایی خودکار بین کلیدها", "بدون نیاز به کارت بانکی"].map((t) => (
-                  <li key={t} className="flex items-center gap-2.5">
-                    <Check aria-hidden className="size-4 text-blue" strokeWidth={2.5} />
+                  <li key={t} className="flex items-center gap-3">
+                    <Check aria-hidden className="size-4" strokeWidth={2.25} />
                     {t}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="enter" style={{ ["--enter-delay" as string]: "300ms" }}>
+            <div className="enter" style={{ ["--enter-delay" as string]: "200ms" }}>
               <HeroWindow />
             </div>
           </div>
         </section>
 
-        {/* ================= Model families ================= */}
-        <section aria-labelledby="models-title" className="border-b border-line bg-elevated py-10">
+        {/* ================= Models strip ================= */}
+        <section id="models" aria-labelledby="models-title" className="scroll-mt-16 border-b border-line py-10">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8">
-            <h2 id="models-title" className="text-[14px] font-medium text-foreground-3">مدل‌هایی که در ارکا در دسترس‌اند</h2>
-            <Link href="/chat" className="rounded-sm text-[14px] font-medium text-foreground-2 hover:text-foreground">همه‌ی مدل‌ها</Link>
+            <h2 id="models-title" className="text-[13.5px] font-medium text-foreground-3">مدل‌هایی که در ارکا در دسترس‌اند</h2>
+            <Link href="/chat" className="text-[14px] font-semibold hover:underline">همه‌ی مدل‌ها</Link>
           </div>
-          <div className="mt-7 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]">
+          <div className="mt-8 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
             <div dir="ltr" className="marquee-track flex w-max gap-16 pe-16">
-              {[...PROVIDERS, ...PROVIDERS].map((p, i) => (
-                <div key={i} className="flex items-center gap-3 whitespace-nowrap">
-                  <span className="grid size-9 place-items-center rounded-[9px] border border-line bg-card text-[15px] font-bold text-foreground-2">
-                    {p.sub.charAt(0)}
-                  </span>
+              {[...MODELS, ...MODELS].map((m, i) => (
+                <div key={i} className="flex items-center gap-3 whitespace-nowrap opacity-80">
+                  <span className="grid size-9 place-items-center rounded-full border border-line font-display text-[14px] font-bold">{m.name.charAt(0)}</span>
                   <span>
-                    <span className="block text-[17px] font-bold leading-5 text-foreground-2">{p.sub}</span>
-                    <span className="block text-[12px] text-foreground-3">{p.name}</span>
+                    <span className="block font-display text-[19px] font-bold leading-6 tracking-[-0.02em]">{m.name}</span>
+                    <span className="block text-[12px] text-foreground-3">{m.org}</span>
                   </span>
                 </div>
               ))}
@@ -142,85 +115,146 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ================= Why Arka ================= */}
-        <section id="features" aria-labelledby="features-title" className="mx-auto w-full max-w-7xl scroll-mt-20 px-5 py-24 sm:px-8 lg:py-32">
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-end">
-            <h2 id="features-title" className="text-[2.25rem] font-bold leading-[1.3] sm:text-[3rem]">
-              یک حساب. همه‌ی مدل‌ها. همه به فارسی.
-            </h2>
-            <p className="max-w-xl text-[17px] leading-8 text-foreground-2 lg:justify-self-end">
-              دیگر لازم نیست برای هر مدل یک اشتراک جدا بخری و بین چند سایت جابه‌جا شوی. همه‌چیز در یک محیط راست‌چین و تمیز.
-            </p>
-          </div>
-
-          <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURES.map((f) => (
-              <article key={f.title} className="rounded-card border border-line bg-elevated p-7 transition-colors duration-150 hover:border-white/15">
-                <span className="icon-tile grid size-11 place-items-center rounded-control">
-                  <f.icon aria-hidden className="size-5" strokeWidth={1.9} />
-                </span>
-                <h3 className="mt-7 text-[18px] font-bold">{f.title}</h3>
-                <p className="mt-3 text-[14.5px] leading-7 text-foreground-2">{f.text}</p>
-              </article>
-            ))}
+        {/* ================= Why ================= */}
+        <section id="features" aria-labelledby="features-title" className="scroll-mt-16 bg-[#f7f7f7]">
+          <div className="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8 lg:py-28">
+            <div className="grid gap-6 lg:grid-cols-2 lg:items-end">
+              <div>
+                <p className="text-[13.5px] font-semibold text-foreground-3">چرا ارکا</p>
+                <h2 id="features-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">یک حساب. همه‌ی مدل‌ها. به فارسی.</h2>
+              </div>
+              <p className="max-w-xl text-[17px] leading-[1.95] text-foreground-2">
+                دیگر لازم نیست برای هر مدل یک اشتراک جدا بخری و بین چند سایت جابه‌جا شوی. همه‌چیز در یک محیط راست‌چین و تمیز.
+              </p>
+            </div>
+            <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {FEATURES.map((f) => (
+                <article key={f.title} className="rounded-card border border-line bg-white p-7">
+                  <span className="grid size-11 place-items-center rounded-control bg-[#0a0a0a] text-white">
+                    <f.icon aria-hidden className="size-5" strokeWidth={1.8} />
+                  </span>
+                  <h3 className="mt-7 text-[18px] font-bold">{f.title}</h3>
+                  <p className="mt-3 text-[14.5px] leading-7 text-foreground-2">{f.text}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* ================= How it works ================= */}
-        <section aria-labelledby="steps-title" className="border-y border-line bg-elevated">
-          <div className="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8 lg:py-28">
-            <h2 id="steps-title" className="text-[2.25rem] font-bold leading-[1.3] sm:text-[3rem]">در یک دقیقه شروع کن</h2>
-            <ol className="mt-14 grid gap-px overflow-hidden rounded-card border border-line bg-line md:grid-cols-3">
+        <section aria-labelledby="steps-title" className="border-b border-line bg-[#f7f7f7]">
+          <div className="mx-auto w-full max-w-7xl px-5 pb-24 sm:px-8 lg:pb-28">
+            <p className="text-[13.5px] font-semibold text-foreground-3">چطور کار می‌کند</p>
+            <h2 id="steps-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">در یک دقیقه شروع کن.</h2>
+            <ol className="mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
               {STEPS.map((s, i) => (
-                <li key={s.title} className="bg-background p-8">
-                  <span className="font-mono text-[14px] font-bold text-blue">{(i + 1).toLocaleString("fa-IR")}</span>
-                  <h3 className="mt-4 text-[20px] font-bold">{s.title}</h3>
-                  <p className="mt-2 text-[15px] leading-7 text-foreground-2">{s.text}</p>
+                <li key={s.title}>
+                  <div className="flex items-center gap-4">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full border border-black/80 bg-white text-[15px] font-bold">{(i + 1).toLocaleString("fa-IR")}</span>
+                    {i < STEPS.length - 1 && <span aria-hidden className="hidden h-px flex-1 bg-black/10 md:block" />}
+                  </div>
+                  <h3 className="mt-6 text-[19px] font-bold">{s.title}</h3>
+                  <p className="mt-2 max-w-xs text-[15px] leading-7 text-foreground-2">{s.text}</p>
                 </li>
               ))}
             </ol>
           </div>
         </section>
 
-        {/* ================= CTA ================= */}
-        <section className="relative overflow-hidden">
-          <div aria-hidden className="mesh" />
-          <div className="relative mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-8 px-5 py-24 sm:px-8 lg:flex-row lg:items-center lg:py-28">
+        {/* ================= Usage ================= */}
+        <section id="usage" aria-labelledby="usage-title" className="scroll-mt-16">
+          <div className="mx-auto grid w-full max-w-7xl items-center gap-14 px-5 py-24 sm:px-8 lg:grid-cols-2 lg:py-28">
             <div>
-              <h2 className="text-[2.25rem] font-bold leading-[1.3] sm:text-[3rem]">آماده‌ی شروعی؟</h2>
-              <p className="mt-3 text-[17px] leading-8 text-foreground-2">ساخت حساب رایگان است و کارت بانکی لازم نیست.</p>
+              <p className="text-[13.5px] font-semibold text-foreground-3">مصرف</p>
+              <h2 id="usage-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">عددی که واقعاً<br />می‌شود خواندش.</h2>
+              <p className="mt-6 max-w-lg text-[17px] leading-[1.95] text-foreground-2">
+                مصرف همه‌ی مدل‌ها و همه‌ی کلیدها یک‌جا دیده می‌شود. سقف روزانه یا هفتگی نداری، مگر اینکه خودت بگذاری.
+              </p>
+              <ul className="mt-8 space-y-3.5 text-[15px]">
+                {["مصرف هر مدل جدا نمایش داده می‌شود", "برای هر کلید سقف دلخواه بگذار", "هشدار قبل از رسیدن به سقف"].map((t) => (
+                  <li key={t} className="flex items-center gap-3"><Check aria-hidden className="size-4" strokeWidth={2.25} />{t}</li>
+                ))}
+              </ul>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/login" className="btn-blue inline-flex h-12 items-center gap-2 rounded-control px-7 text-[15px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-                <Sparkles aria-hidden className="size-4" />
-                ساخت حساب رایگان
-              </Link>
-              <Link href="/chat" className="btn-quiet inline-flex h-12 items-center rounded-control px-7 text-[15px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                امتحان نسخه‌ی نمایشی
-              </Link>
+
+            <div className="card-soft rounded-card p-7 sm:p-8" aria-label="نمونه‌ی داشبورد مصرف">
+              <div className="flex items-start justify-between gap-4">
+                <p className="text-[13px] font-semibold text-foreground-3">این ماه</p>
+                <span className="rounded-full bg-[#f2f2f2] px-3 py-1 text-[12px] font-medium">۱۲ روز تا شروع دوباره</span>
+              </div>
+              <p className="mt-3 flex flex-wrap items-baseline gap-x-3">
+                <span className="font-display text-[3.25rem] font-bold leading-none tracking-[-0.03em] sm:text-[4rem]">۷۴٫۶ هزار</span>
+                <span className="text-[16px] text-foreground-2">از ۱۲۰ هزار پیام</span>
+              </p>
+              <div className="mt-7 h-2.5 overflow-hidden rounded-full bg-[#efefef]">
+                <div className="h-full w-[62%] rounded-full bg-[#0a0a0a]" />
+              </div>
+              <div className="mt-2 flex justify-between text-[12px] text-foreground-3"><span>۰</span><span className="text-foreground">٪۶۲</span><span>۱۲۰ هزار</span></div>
+
+              <p className="mt-8 text-[13px] font-semibold text-foreground-3">مصرف به تفکیک مدل</p>
+              <ul className="mt-4 space-y-3.5">
+                {USAGE.map((u) => (
+                  <li key={u.name} className="grid grid-cols-[5.5rem_1fr_4.5rem] items-center gap-4 text-[14px]">
+                    <span dir="ltr" className="text-right font-medium">{u.name}</span>
+                    <span className="h-1.5 overflow-hidden rounded-full bg-[#efefef]"><span className="block h-full rounded-full bg-[#262626]" style={{ width: `${u.pct * 2}%` }} /></span>
+                    <span className="text-left font-medium">{u.value}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
+          </div>
+        </section>
+
+        {/* ================= FAQ ================= */}
+        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-16 border-t border-line">
+          <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-24 sm:px-8 lg:grid-cols-[1fr_2fr] lg:py-28">
+            <div>
+              <p className="text-[13.5px] font-semibold text-foreground-3">سوالات متداول</p>
+              <h2 id="faq-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">سوال‌ها،<br />با جواب.</h2>
+            </div>
+            <FaqList items={FAQ} />
+          </div>
+        </section>
+
+        {/* ================= Dark CTA band ================= */}
+        <section className="relative overflow-hidden bg-[#0a0a0a] text-white">
+          <div aria-hidden className="mesh-dark" />
+          <div className="relative mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-8 px-5 py-20 sm:px-8 lg:flex-row lg:items-center lg:py-28">
+            <div>
+              <h2 className="text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">همین حالا شروع کن.<br />هر وقت خواستی عوضش کن.</h2>
+              <p className="mt-4 text-[18px] text-white/65">حساب بساز، کلید وصل کن و با هر مدلی که خواستی گفتگو کن.</p>
+            </div>
+            <Link href="/login" className="inline-flex h-12 shrink-0 items-center rounded-control bg-white px-7 text-[15px] font-semibold text-[#0a0a0a] transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black">
+              شروع کنید
+            </Link>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-line bg-elevated">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[1.5fr_1fr_1fr]">
+      <footer className="bg-white">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[2fr_1fr_1fr]">
           <div>
-            <span dir="ltr" className="text-[22px] font-extrabold tracking-[-0.04em]">Arka</span>
-            <p className="mt-3 max-w-xs text-[14px] leading-7 text-foreground-3">یک حساب برای همه‌ی مدل‌های هوش مصنوعی، با رابط کاملاً فارسی.</p>
+            <div className="flex items-center gap-2">
+              <ArkaMark className="size-7" />
+              <span dir="ltr" className="font-display text-[19px] font-bold tracking-[-0.02em]">ARKA</span>
+            </div>
+            <p className="mt-4 max-w-xs text-[14.5px] leading-7 text-foreground-2">یک حساب برای همه‌ی مدل‌های هوش مصنوعی، با رابط کاملاً فارسی.</p>
           </div>
-          <nav aria-label="محصول" className="space-y-3 text-[14px]">
-            <p className="font-semibold text-foreground">محصول</p>
-            <Link href="/chat" className="block text-foreground-3 hover:text-foreground">محیط چت</Link>
-            <a href="#features" className="block text-foreground-3 hover:text-foreground">قابلیت‌ها</a>
+          <nav aria-label="محصول" className="space-y-3 text-[14.5px]">
+            <p className="text-[13px] font-semibold text-foreground-3">محصول</p>
+            <Link href="/chat" className="block hover:underline">محیط چت</Link>
+            <a href="#models" className="block hover:underline">مدل‌ها</a>
+            <a href="#usage" className="block hover:underline">مصرف</a>
           </nav>
-          <nav aria-label="قوانین" className="space-y-3 text-[14px]">
-            <p className="font-semibold text-foreground">قوانین</p>
-            <a href="#" className="block text-foreground-3 hover:text-foreground">حریم خصوصی</a>
-            <a href="#" className="block text-foreground-3 hover:text-foreground">شرایط استفاده</a>
+          <nav aria-label="قوانین" className="space-y-3 text-[14.5px]">
+            <p className="text-[13px] font-semibold text-foreground-3">قوانین</p>
+            <a href="#" className="block hover:underline">شرایط استفاده</a>
+            <a href="#" className="block hover:underline">حریم خصوصی</a>
           </nav>
         </div>
-        <div className="border-t border-line py-5 text-center text-[13px] text-foreground-3">© ۲۰۲۶ Arka</div>
+        <div className="border-t border-line">
+          <p className="mx-auto max-w-7xl px-5 py-6 text-[13px] text-foreground-3 sm:px-8">© ۲۰۲۶ Arka. همه‌ی حقوق محفوظ است.</p>
+        </div>
       </footer>
     </div>
   );

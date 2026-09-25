@@ -834,3 +834,138 @@
 @media (prefers-reduced-motion: reduce) {
   .waves svg { animation: none !important; }
 }
+
+/* ==================================================================
+   Round 6 — apmix.ai-style monochrome: white + black only.
+   These overrides come last so they win over earlier token blocks.
+   The "accent" tokens keep their names (used across components) but
+   now resolve to ink black — there is no chromatic colour anywhere.
+   ================================================================== */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-elevated: #f7f7f7;
+  --bg-card: #ffffff;
+  --text: #0a0a0a;
+  --text-2: #525252;
+  --text-3: #8a8a8a;
+  --border: rgba(0, 0, 0, 0.09);
+  --hover: rgba(0, 0, 0, 0.04);
+  --input: rgba(0, 0, 0, 0.12);
+  --accent-blue: #0a0a0a;
+  --accent-blue-hover: #262626;
+  --accent-soft: rgba(0, 0, 0, 0.05);
+  --accent-line: rgba(0, 0, 0, 0.2);
+  --accent-glow: rgba(0, 0, 0, 0.12);
+  --primary: #0a0a0a;
+  --primary-foreground: #ffffff;
+  --ring: #0a0a0a;
+  --popover: #ffffff;
+  --muted: #f5f5f5;
+  --secondary: #f5f5f5;
+}
+
+html { color-scheme: light; }
+
+* {
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+::selection { background-color: rgba(0, 0, 0, 0.12); }
+
+.font-display {
+  font-family: var(--font-sora), -apple-system, BlinkMacSystemFont, var(--font-vazirmatn), sans-serif;
+}
+
+.mesh-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='92' height='79.67'%3E%3Cpath d='M0 0L46 79.67L92 0M0 79.67L46 0L92 79.67M0 39.84H92' fill='none' stroke='%23000' stroke-opacity='0.07' stroke-width='0.7'/%3E%3Ccircle cx='46' cy='0' r='1.3' fill='%23000' fill-opacity='0.18'/%3E%3Ccircle cx='0' cy='39.84' r='1.3' fill='%23000' fill-opacity='0.18'/%3E%3Ccircle cx='92' cy='39.84' r='1.3' fill='%23000' fill-opacity='0.18'/%3E%3C/svg%3E");
+  background-size: 92px 79.67px;
+  mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+}
+
+.mesh-dark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='92' height='79.67'%3E%3Cpath d='M0 0L46 79.67L92 0M0 79.67L46 0L92 79.67M0 39.84H92' fill='none' stroke='%23fff' stroke-opacity='0.08' stroke-width='0.7'/%3E%3Ccircle cx='46' cy='0' r='1.3' fill='%23fff' fill-opacity='0.25'/%3E%3C/svg%3E");
+  background-size: 92px 79.67px;
+}
+
+.btn-ink {
+  background: #0a0a0a;
+  color: #fff;
+  transition: background-color 150ms ease, transform 120ms ease;
+}
+.btn-ink:hover { background: #262626; }
+.btn-ink:active { transform: scale(0.98); }
+
+.btn-line {
+  background: #fff;
+  color: #0a0a0a;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.btn-line:hover { background: #f5f5f5; border-color: rgba(0, 0, 0, 0.2); }
+
+.card-soft {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -18px rgba(0, 0, 0, 0.18);
+}
+
+/* Re-point round 4/5 helpers to monochrome so nothing blue survives. */
+.btn-blue {
+  background: #0a0a0a;
+  color: #fff;
+  box-shadow: none;
+  filter: none;
+}
+.btn-blue:hover { background: #262626; filter: none; }
+
+.bubble-user {
+  background: #0a0a0a;
+  color: #fff;
+  box-shadow: none;
+}
+
+.orb {
+  background: #0a0a0a;
+  box-shadow: none;
+  color: #fff;
+}
+
+.icon-tile {
+  background: #0a0a0a;
+  box-shadow: none;
+  color: #fff;
+}
+
+.sidebar-bg { background: #fafafa; }
+
+.composer-ring {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 16px 40px -24px rgba(0, 0, 0, 0.25);
+}
+.composer-ring:focus-within {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06), 0 16px 40px -24px rgba(0, 0, 0, 0.3);
+}
+
+.thinking-orb { background: #fff; box-shadow: none; }
+
+.thinking-text {
+  background: linear-gradient(90deg, #a3a3a3 0%, #0a0a0a 50%, #a3a3a3 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.edge-blur > span:nth-child(5) {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.85), transparent);
+}

@@ -288,7 +288,7 @@ HTML تمیز و برند‌شده (مشکی/سفید مطابق پالت Arka)�
   --text: #ffffff; --text-2: #a0a0a0; --text-3: #6b6b6b;
   --border: rgba(255,255,255,.10); --hover: rgba(255,255,255,.06);
   --radius-control: 10px; --radius-card: 16px;
-  --accent-blue: #2f7bff; /* تنها رنگ تأکیدی: اکشن اصلی، حالت فعال، focus ring، glow کم */
+  --accent-blue: #0a0a0a; /* دور ۶: سایت تک‌رنگ سفید/مشکی به سبک apmix.ai */
   --font-sans: -apple-system, BlinkMacSystemFont, "Vazirmatn", system-ui, sans-serif;
 }
 ```

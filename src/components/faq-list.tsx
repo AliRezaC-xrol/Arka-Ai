@@ -1,0 +1,47 @@
+"use client";
+
+import * as React from "react";
+import { Plus } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+/** apmix-style accordion: one item open at a time, keyboard accessible. */
+export function FaqList({ items }: { items: { q: string; a: string }[] }) {
+  const [open, setOpen] = React.useState(0);
+  const baseId = React.useId();
+
+  return (
+    <div className="card-soft rounded-card px-6 sm:px-8">
+      {items.map((item, i) => {
+        const isOpen = open === i;
+        return (
+          <div key={item.q} className={cn(i > 0 && "border-t border-line")}>
+            <h3>
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                aria-controls={`${baseId}-${i}`}
+                onClick={() => setOpen(isOpen ? -1 : i)}
+                className="flex w-full items-center justify-between gap-6 py-6 text-start text-[17px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 rounded-sm"
+              >
+                {item.q}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "grid size-8 shrink-0 place-items-center rounded-full border transition-colors duration-150",
+                    isOpen ? "border-black bg-[#0a0a0a] text-white" : "border-line text-foreground-2",
+                  )}
+                >
+                  <Plus className={cn("size-4 transition-transform duration-200", isOpen && "rotate-45")} />
+                </span>
+              </button>
+            </h3>
+            <div id={`${baseId}-${i}`} role="region" hidden={!isOpen} className="-mt-2 pb-6 pe-12 text-[15px] leading-[1.9] text-foreground-2">
+              {item.a}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
