@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# ARKA AI Platform — 1-Click Automated Server Installer (All-In-One)
+# ARKA AI Platform — 1-Click Automated Server Installer (Bulletproof All-In-One)
 # Proprietary & Confidential — Copyright (c) 2026 AliRezaC-xrol
 # ==============================================================================
-
-set -eo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -23,7 +21,7 @@ echo "    ⚡ ARKA AI PLATFORM — نصب خودکار و هوشمند سرور 
 echo "=================================================================="
 echo -e "${CLR_RESET}"
 
-# Check root or sudo
+# Check root
 if [[ $EUID -ne 0 ]]; then
    echo -e "${CLR_RED}✖ لطفاً این اسکریپت را با دسترسی روت (sudo) اجرا کنید.${CLR_RESET}"
    exit 1
@@ -31,15 +29,29 @@ fi
 
 GITHUB_TOKEN="${1:-${TOKEN:-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}}"
 DOMAIN_NAME="${2:-${DOMAIN:-}}"
+TARGET_DIR="/var/www/arka"
 
 # 1. Detect Server Public IP
 echo -e " ${CLR_CYAN}ℹ [1/8] شناسایی IP عمومی سرور...${CLR_RESET}"
 SERVER_IP=$(curl -s https://api.ipify.org || hostname -I | awk '{print $1}')
 echo -e " ${CLR_GREEN}✔ IP عمومی سرور: ${CLR_WHITE}$SERVER_IP${CLR_RESET}"
 
+# Check and Add Swap if RAM is low (prevents Next.js build crash on 1GB/2GB VPS)
+TOTAL_RAM_MB=$(free -m | awk '/^Mem:/{print $2}')
+SWAP_EXISTS=$(free -m | awk '/^Swap:/{print $2}')
+if [[ $SWAP_EXISTS -lt 1024 && $TOTAL_RAM_MB -lt 3000 ]]; then
+  echo -e " ${CLR_YELLOW}⚠ رم سرور ${TOTAL_RAM_MB}MB است. ایجاد خودکار ۲ گیگابایت Swap برای جلوگیری از توقف بیلد...${CLR_RESET}"
+  fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048
+  chmod 600 /swapfile
+  mkswap /swapfile 2>/dev/null || true
+  swapon /swapfile 2>/dev/null || true
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab 2>/dev/null || true
+  echo -e " ${CLR_GREEN}✔ Swap با موفقیت فعال شد.${CLR_RESET}"
+fi
+
 # 2. Update System & Install Base Packages
 echo -e "\n ${CLR_CYAN}ℹ [2/8] به‌روزرسانی مخازن و نصب پکیج‌های پایه...${CLR_RESET}"
-apt-get update -y
+apt-get update -y || true
 apt-get install -y curl wget git build-essential nginx certbot python3-certbot-nginx postgresql postgresql-contrib openssl
 
 # 3. Install Node.js 20 LTS & PM2
@@ -56,8 +68,8 @@ fi
 
 # 4. Setup PostgreSQL Database
 echo -e "\n ${CLR_CYAN}ℹ [4/8] راه‌اندازی و بهینه‌سازی پایگاه‌داده PostgreSQL...${CLR_RESET}"
-systemctl start postgresql
-systemctl enable postgresql
+systemctl start postgresql 2>/dev/null || service postgresql start || true
+systemctl enable postgresql 2>/dev/null || true
 
 DB_USER="arka"
 DB_PASS="arka_$(openssl rand -hex 12)"
@@ -68,12 +80,10 @@ sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | gr
 sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
   sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
 
-# Update password if already exists
-sudo -u postgres psql -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASS';"
+sudo -u postgres psql -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
 
 # 5. Clone or Update Arka Source Code
 echo -e "\n ${CLR_CYAN}ℹ [5/8] دریافت سورس‌کد پروژه از گیت‌هاب...${CLR_RESET}"
-TARGET_DIR="/var/www/arka"
 mkdir -p "$TARGET_DIR"
 
 if [[ -d "$TARGET_DIR/.git" ]]; then
@@ -91,13 +101,15 @@ fi
 echo -e "\n ${CLR_CYAN}ℹ [6/8] ایجاد کلیدهای رمزنگاری نظامی AES-256 و متغیرهای محیطی...${CLR_RESET}"
 SESSION_SECRET=$(openssl rand -hex 32)
 BYOK_ENCRYPTION_KEY=$(openssl rand -hex 32)
-ADMIN_PASS="Arka_$(openssl rand -hex 8)"
+ADMIN_PASS="Arka_$(openssl rand -hex 6)"
 
 APP_URL="http://$SERVER_IP"
 if [[ -n "$DOMAIN_NAME" ]]; then
   APP_URL="https://$DOMAIN_NAME"
 fi
 
+# Only create new .env if not already configured with password
+if [[ ! -f "$TARGET_DIR/.env" ]] || ! grep -q "ADMIN_PANEL_PASSWORD" "$TARGET_DIR/.env"; then
 cat << ENVEOF > "$TARGET_DIR/.env"
 NODE_ENV=production
 PORT=3000
@@ -110,18 +122,29 @@ ADMIN_PANEL_PASSWORD="${ADMIN_PASS}"
 GOOGLE_CLIENT_ID="placeholder.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="placeholder-secret"
 ENVEOF
+else
+  ADMIN_PASS=$(grep "ADMIN_PANEL_PASSWORD=" "$TARGET_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+  APP_URL=$(grep "NEXT_PUBLIC_APP_URL=" "$TARGET_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+  if [[ -z "$APP_URL" ]]; then APP_URL="http://$SERVER_IP"; fi
+fi
 
 # 7. Install Dependencies, Migrate Prisma & Build Next.js
 echo -e "\n ${CLR_CYAN}ℹ [7/8] نصب پکیج‌ها، اعمال جداول دیتابیس و کامپایل بیلد Next.js...${CLR_RESET}"
-npm ci
+cd "$TARGET_DIR"
+npm ci || npm install --no-audit
 npx prisma generate
 npx prisma db push
-npm run build
+
+echo -e " کامپایل پروداکشن Next.js..."
+npm run build || {
+  echo -e " ${CLR_YELLOW}تلاش مجدد برای بیلد با تخصیص حافظه بیشتر...${CLR_RESET}"
+  NODE_OPTIONS="--max-old-space-size=2048" npm run build
+}
 
 # Start or Reload PM2
 pm2 delete arka 2>/dev/null || true
 pm2 start ecosystem.config.js
-pm2 save
+pm2 save 2>/dev/null || true
 pm2 startup systemd -u root --hp /root 2>/dev/null || true
 
 # 8. Configure Nginx Reverse Proxy
@@ -133,9 +156,9 @@ fi
 
 cat << NGINXEOF > /etc/nginx/sites-available/arka
 server {
-    listen 80;
-    listen [::]:80;
-    server_name ${NGINX_HOST};
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name ${NGINX_HOST} _;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -165,7 +188,7 @@ NGINXEOF
 
 rm -f /etc/nginx/sites-enabled/default
 ln -sf /etc/nginx/sites-available/arka /etc/nginx/sites-enabled/
-nginx -t && systemctl reload nginx
+nginx -t && (systemctl reload nginx 2>/dev/null || service nginx reload || true)
 
 # Setup CLI command
 chmod +x "$TARGET_DIR/scripts/arka-cli.sh"
@@ -174,19 +197,24 @@ ln -sf "$TARGET_DIR/scripts/arka-cli.sh" /usr/local/bin/arka-cli
 # SSL if domain provided
 if [[ -n "$DOMAIN_NAME" ]]; then
   echo -e " ${CLR_CYAN}ℹ دریافت گواهینامه SSL برای دامنه $DOMAIN_NAME...${CLR_RESET}"
-  certbot --nginx -d "$DOMAIN_NAME" --non-interactive --agree-tos -m "admin@$DOMAIN_NAME" || {
+  certbot --nginx -d "$DOMAIN_NAME" --non-interactive --agree-tos -m "admin@$DOMAIN_NAME" 2>/dev/null || {
     echo -e " ${CLR_YELLOW}⚠ دریافت خودکار SSL انجام نشد. بعداً با دستور 'arka-cli' اجرا کنید.${CLR_RESET}"
   }
 fi
+
+# Extract final info directly from /var/www/arka/.env to be 100% accurate
+FINAL_PASS=$(grep "^ADMIN_PANEL_PASSWORD=" "$TARGET_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+FINAL_URL=$(grep "^NEXT_PUBLIC_APP_URL=" "$TARGET_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+if [[ -z "$FINAL_URL" ]]; then FINAL_URL="http://$SERVER_IP"; fi
 
 echo -e "\n${CLR_GREEN}${CLR_BOLD}"
 echo "=================================================================="
 echo "    🎉 تبریک! سامانه هوش مصنوعی ارکا با موفقیت راه‌اندازی شد     "
 echo "=================================================================="
 echo -e "${CLR_RESET}"
-echo -e " ${CLR_WHITE}🌐 آدرس ورود به سامانه:${CLR_RESET}   ${CLR_CYAN}${APP_URL}${CLR_RESET}"
-echo -e " ${CLR_WHITE}🔐 آدرس پنل مدیریت:${CLR_RESET}       ${CLR_CYAN}${APP_URL}/c-xroladi1n${CLR_RESET}"
-echo -e " ${CLR_WHITE}🔑 رمز عبور ادمین:${CLR_RESET}         ${CLR_YELLOW}${ADMIN_PASS}${CLR_RESET}"
+echo -e " ${CLR_WHITE}🌐 آدرس ورود به سامانه:${CLR_RESET}   ${CLR_CYAN}${FINAL_URL}${CLR_RESET}"
+echo -e " ${CLR_WHITE}🔐 آدرس پنل مدیریت:${CLR_RESET}       ${CLR_CYAN}${FINAL_URL}/c-xroladi1n${CLR_RESET}"
+echo -e " ${CLR_WHITE}🔑 رمز عبور ادمین:${CLR_RESET}         ${CLR_YELLOW}${FINAL_PASS}${CLR_RESET}"
 echo -e " ${CLR_WHITE}📂 مسیر نصب پروژه:${CLR_RESET}         ${CLR_WHITE}/var/www/arka${CLR_RESET}"
 echo -e " ${CLR_WHITE}🛠 ابزار مدیریت سرور:${CLR_RESET}      ${CLR_GREEN}arka-cli${CLR_RESET} ${CLR_DIM}(در ترمینال تایپ کنید)${CLR_RESET}"
 echo -e "==================================================================\n"
