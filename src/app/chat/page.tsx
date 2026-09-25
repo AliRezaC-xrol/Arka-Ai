@@ -553,16 +553,17 @@ export default function ChatPage() {
           </div>
         ) : (
           /* ---------- Messages ---------- */
-          <div
-            onScroll={onScroll}
-            className="relative z-[1] min-h-0 flex-1 overflow-y-auto"
-            aria-label={`گفتگو: ${activeTitle ?? ""}`}
-          >
-            <div className="mx-auto flex w-full max-w-[46rem] flex-col gap-9 px-4 pb-10 pt-4 sm:px-6">
-              {messages.map((message) =>
-                message.role === "user" ? (
-                  /* Me: blue bubble on the START side (right in RTL), like every Persian messenger. */
-                  <div key={message.id} className="flex flex-col items-start">
+          <div className="relative z-[1] min-h-0 flex-1">
+            <div
+              onScroll={onScroll}
+              className="absolute inset-0 overflow-y-auto"
+              aria-label={`گفتگو: ${activeTitle ?? ""}`}
+            >
+              <div className="mx-auto flex w-full max-w-[46rem] flex-col gap-9 px-4 pb-16 pt-4 sm:px-6">
+                {messages.map((message) =>
+                  message.role === "user" ? (
+                    /* Me: bubble on the START side (right in RTL), like every Persian messenger. */
+                    <div key={message.id} className="msg-blur flex flex-col items-start">
                     <div className="msg-text bubble-user max-w-[88%] whitespace-pre-wrap rounded-[18px] rounded-ss-md px-4 py-2.5 text-[15px] leading-[1.9] sm:max-w-[78%]">
                       {message.content}
                     </div>
@@ -574,7 +575,7 @@ export default function ChatPage() {
                   </div>
                 ) : (
                   /* Assistant: card on the END side (left in RTL), avatar at the far edge. */
-                  <div key={message.id} className="flex flex-row-reverse items-start gap-3">
+                  <div key={message.id} className="msg-blur flex flex-row-reverse items-start gap-3">
                     <AssistantAvatar />
                     <div className="min-w-0 max-w-[88%] rounded-[18px] rounded-se-md border border-line bg-card px-4 py-3 sm:max-w-[82%]">
                       <MessageContent
@@ -592,7 +593,7 @@ export default function ChatPage() {
               )}
 
               {pendingFor === activeId && (
-                <div className="flex flex-row-reverse items-center gap-3">
+                <div className="msg-blur flex flex-row-reverse items-center gap-3">
                   <AssistantAvatar thinking />
                   <span className="thinking-text text-[14px] font-medium">
                     در حال فکر کردن…
@@ -601,6 +602,17 @@ export default function ChatPage() {
               )}
 
               <div ref={messagesEndRef} aria-hidden />
+              </div>
+            </div>
+
+            {/* Progressive edge blur: messages dissolve as they travel up
+                and re-resolve while scrolling back — same language as the
+                landing hero, monochrome. */}
+            <div aria-hidden className="chat-fade chat-fade--top pointer-events-none absolute inset-x-0 top-0 z-[2]">
+              <span /><span /><span /><span /><span />
+            </div>
+            <div aria-hidden className="chat-fade chat-fade--bottom pointer-events-none absolute inset-x-0 bottom-0 z-[2]">
+              <span /><span /><span />
             </div>
           </div>
         )}

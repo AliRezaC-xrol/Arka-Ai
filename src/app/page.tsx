@@ -32,13 +32,6 @@ const STEPS = [
   { title: "گفتگو کن", text: "مدل را از داخل کادر نوشتن انتخاب کن و شروع کن." },
 ];
 
-const USAGE = [
-  { name: "Claude", value: "۲۹٫۱ هزار", pct: 39 },
-  { name: "GPT", value: "۲۲٫۴ هزار", pct: 30 },
-  { name: "Gemini", value: "۱۳٫۴ هزار", pct: 18 },
-  { name: "DeepSeek", value: "۹٫۷ هزار", pct: 13 },
-];
-
 const FAQ = [
   { q: "آیا برای هر پروایدر حساب جدا لازم دارم؟", a: "نه. می‌توانی از پروایدرهای آماده‌ی ارکا استفاده کنی یا فقط کلید API پروایدرهایی را که خودت داری اضافه کنی." },
   { q: "کلیدهای من کجا ذخیره می‌شوند؟", a: "کلیدها با AES-256-GCM رمزنگاری و فقط سمت سرور استفاده می‌شوند؛ هیچ‌وقت به مرورگر برگردانده نمی‌شوند." },
@@ -155,56 +148,12 @@ export default function Home() {
           <StepsScroll steps={STEPS} />
         </section>
 
-        {/* ================= Usage ================= */}
-        <section id="usage" aria-labelledby="usage-title" className="scroll-mt-16">
-          <div className="mx-auto grid w-full max-w-7xl items-center gap-14 px-5 py-24 sm:px-8 lg:grid-cols-2 lg:py-28">
-            <Reveal>
-              <p className="text-[13.5px] font-semibold text-foreground-3">مصرف</p>
-              <h2 id="usage-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">عددی که واقعاً<br />می‌شود خواندش.</h2>
-              <p className="mt-6 max-w-lg text-[17px] leading-[1.95] text-foreground-2">
-                مصرف همه‌ی مدل‌ها و همه‌ی کلیدها یک‌جا دیده می‌شود. سقف روزانه یا هفتگی نداری، مگر اینکه خودت بگذاری.
-              </p>
-              <ul className="mt-8 space-y-3.5 text-[15px]">
-                {["مصرف هر مدل جدا نمایش داده می‌شود", "برای هر کلید سقف دلخواه بگذار", "هشدار قبل از رسیدن به سقف"].map((t) => (
-                  <li key={t} className="flex items-center gap-3"><Check aria-hidden className="size-4" strokeWidth={2.25} />{t}</li>
-                ))}
-              </ul>
-            </Reveal>
-
-            <Reveal delay={120} className="card-soft rounded-card p-7 sm:p-8">
-              <div className="flex items-start justify-between gap-4">
-                <p className="text-[13px] font-semibold text-foreground-3">این ماه</p>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[12px] font-medium">۱۲ روز تا شروع دوباره</span>
-              </div>
-              <p className="mt-3 flex flex-wrap items-baseline gap-x-3">
-                <span className="font-display text-[3.25rem] font-bold leading-none tracking-[-0.03em] sm:text-[4rem]">۷۴٫۶ هزار</span>
-                <span className="text-[16px] text-foreground-2">از ۱۲۰ هزار پیام</span>
-              </p>
-              <div className="mt-7 h-2.5 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-[62%] rounded-full bg-white" />
-              </div>
-              <div className="mt-2 flex justify-between text-[12px] text-foreground-3"><span>۰</span><span className="text-foreground">٪۶۲</span><span>۱۲۰ هزار</span></div>
-
-              <p className="mt-8 text-[13px] font-semibold text-foreground-3">مصرف به تفکیک مدل</p>
-              <ul className="mt-4 space-y-3.5">
-                {USAGE.map((u) => (
-                  <li key={u.name} className="grid grid-cols-[5.5rem_1fr_4.5rem] items-center gap-4 text-[14px]">
-                    <span dir="ltr" className="text-right font-medium">{u.name}</span>
-                    <span className="h-1.5 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-white/75" style={{ width: `${u.pct * 2}%` }} /></span>
-                    <span className="text-left font-medium">{u.value}</span>
-                  </li>
-                ))}
-              </ul>
-            </Reveal>
-          </div>
-        </section>
-
         {/* ================= FAQ ================= */}
-        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-16 border-t border-line">
+        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-16">
           <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-24 sm:px-8 lg:grid-cols-[1fr_2fr] lg:py-28">
             <div>
-              <p className="text-[13.5px] font-semibold text-foreground-3">سوالات متداول</p>
-              <h2 id="faq-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">سوال‌ها،<br />با جواب.</h2>
+              <p className="text-[13.5px] font-semibold text-foreground-3">پرسش‌های پرتکرار</p>
+              <h2 id="faq-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">سوالات متداول</h2>
             </div>
             <Reveal delay={100}>
               <FaqList items={FAQ} />

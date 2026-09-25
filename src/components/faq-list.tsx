@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -28,11 +28,16 @@ export function FaqList({ items }: { items: { q: string; a: string }[] }) {
                 <span
                   aria-hidden
                   className={cn(
-                    "grid size-8 shrink-0 place-items-center rounded-full border transition-colors duration-150",
+                    "grid size-8 shrink-0 place-items-center rounded-full border transition-[background-color,color,border-color] duration-200",
                     isOpen ? "border-white bg-white text-black" : "border-line text-foreground-2",
                   )}
                 >
-                  <Plus className={cn("size-4 transition-transform duration-200", isOpen && "rotate-45")} />
+                  <ChevronDown
+                    className={cn(
+                      "size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      isOpen && "rotate-180",
+                    )}
+                  />
                 </span>
               </button>
             </h3>
