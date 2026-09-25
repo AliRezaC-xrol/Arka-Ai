@@ -1189,3 +1189,26 @@ html { color-scheme: dark; }
     animation: none !important;
   }
 }
+
+/* ---------- Seamless Endless Marquee Loop ---------- */
+@keyframes arka-endless-ticker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.arka-endless-track {
+  display: flex;
+  width: max-content;
+  animation: arka-endless-ticker 36s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arka-endless-track {
+    animation: none !important;
+  }
+}
