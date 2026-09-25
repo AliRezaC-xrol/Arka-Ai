@@ -293,9 +293,19 @@ export default function ChatPage() {
     };
   }, []);
 
+  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  }, []);
+
   const selectConversation = (id: string) => {
     setActiveId(id);
-    setSidebarOpen(false);
+    // Mobile drawer: let the spotlight finish gliding to the new item,
+    // then slide the drawer out (instead of vanishing mid-animation).
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      closeTimer.current = setTimeout(() => setSidebarOpen(false), 260);
+    }
   };
 
   const startNewChat = () => {
@@ -406,13 +416,14 @@ export default function ChatPage() {
       </p>
 
       {/* Mobile backdrop */}
-      {sidebarOpen && (
-        <div
-          aria-hidden
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/60 md:hidden"
-        />
-      )}
+      <div
+        aria-hidden
+        onClick={() => setSidebarOpen(false)}
+        className={cn(
+          "fixed inset-0 z-30 bg-black/60 transition-opacity duration-300 md:hidden",
+          sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      />
 
       {/* ================= Sidebar ================= */}
       <aside
@@ -420,11 +431,14 @@ export default function ChatPage() {
         className={cn(
           "sidebar-bg w-72 shrink-0 flex-col gap-3.5 border-line p-4",
           "max-md:fixed max-md:inset-y-0 max-md:start-0 max-md:z-40 max-md:flex max-md:border-e",
-          "max-md:transition-transform max-md:duration-300 max-md:ease-(--motion-ease)",
+          // visibility flips only AFTER the slide-out finishes (delay on
+          // close, none on open), so the drawer glides out instead of
+          // disappearing instantly; it still leaves the tab order when closed.
+          "max-md:transition-[translate,transform,visibility] max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)]",
           "md:flex md:border-e",
           sidebarOpen
-            ? "max-md:translate-x-0"
-            : "max-md:translate-x-full max-md:invisible",
+            ? "max-md:visible max-md:translate-x-0 max-md:delay-0"
+            : "max-md:invisible max-md:translate-x-full max-md:[transition-delay:0ms,0ms,300ms]",
         )}
       >
         <div className="flex items-center justify-between px-1">

@@ -13,7 +13,7 @@ export function SiteNavbar() {
         <nav aria-label="ناوبری اصلی" className="hidden items-center gap-8 text-[14.5px] text-foreground-2 md:flex">
           <a href="#features" className="rounded-sm hover:text-foreground">قابلیت‌ها</a>
           <a href="#models" className="rounded-sm hover:text-foreground">مدل‌ها</a>
-          <a href="#usage" className="rounded-sm hover:text-foreground">مصرف</a>
+          <a href="#how" className="rounded-sm hover:text-foreground">چطور کار می‌کند</a>
           <a href="#faq" className="rounded-sm hover:text-foreground">سوالات</a>
         </nav>
 

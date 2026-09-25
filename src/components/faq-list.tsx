@@ -36,8 +36,21 @@ export function FaqList({ items }: { items: { q: string; a: string }[] }) {
                 </span>
               </button>
             </h3>
-            <div id={`${baseId}-${i}`} role="region" hidden={!isOpen} className="-mt-2 pb-6 pe-12 text-[15px] leading-[1.9] text-foreground-2">
-              {item.a}
+            {/* Smooth drawer: grid-rows 0fr → 1fr animates to the content's
+                real height without measuring. inert keeps closed answers
+                out of the tab/AT order. */}
+            <div
+              id={`${baseId}-${i}`}
+              role="region"
+              inert={!isOpen}
+              className={cn(
+                "grid transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+                isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+              )}
+            >
+              <div className="overflow-hidden">
+                <p className="-mt-2 pb-6 pe-12 text-[15px] leading-[1.9] text-foreground-2">{item.a}</p>
+              </div>
             </div>
           </div>
         );

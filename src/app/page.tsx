@@ -4,6 +4,7 @@ import { Check, Gauge, Image as ImageIcon, KeyRound, Lock } from "lucide-react";
 import { FaqList } from "@/components/faq-list";
 import { MeshCanvas } from "@/components/mesh-canvas";
 import { Reveal } from "@/components/reveal";
+import { StepsScroll } from "@/components/steps-scroll";
 import { HeroWindow } from "@/components/chat-preview";
 import { ArkaMark, SiteNavbar } from "@/components/site-navbar";
 
@@ -149,26 +150,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ================= How it works ================= */}
-        <section aria-labelledby="steps-title" className="border-b border-line bg-elevated">
-          <div className="mx-auto w-full max-w-7xl px-5 pb-24 sm:px-8 lg:pb-28">
-            <Reveal>
-              <p className="text-[13.5px] font-semibold text-foreground-3">چطور کار می‌کند</p>
-              <h2 id="steps-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">در یک دقیقه شروع کن.</h2>
-            </Reveal>
-            <ol className="mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
-              {STEPS.map((s, i) => (
-                <Reveal as="li" key={s.title} delay={i * 120}>
-                  <div className="flex items-center gap-4">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full border border-white/70 bg-background text-[15px] font-bold">{(i + 1).toLocaleString("fa-IR")}</span>
-                    {i < STEPS.length - 1 && <span aria-hidden className="hidden h-px flex-1 bg-white/10 md:block" />}
-                  </div>
-                  <h3 className="mt-6 text-[19px] font-bold">{s.title}</h3>
-                  <p className="mt-2 max-w-xs text-[15px] leading-7 text-foreground-2">{s.text}</p>
-                </Reveal>
-              ))}
-            </ol>
-          </div>
+        {/* ================= How it works (horizontal, scroll-driven) ================= */}
+        <section id="how" aria-labelledby="steps-title" className="scroll-mt-16 border-b border-line bg-elevated">
+          <StepsScroll steps={STEPS} />
         </section>
 
         {/* ================= Usage ================= */}
@@ -245,29 +229,18 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-line bg-background">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[2fr_1fr_1fr]">
-          <div>
-            <div className="flex items-center gap-2">
-              <ArkaMark className="size-7" />
-              <span dir="ltr" className="font-display text-[19px] font-bold tracking-[-0.02em]">ARKA</span>
-            </div>
-            <p className="mt-4 max-w-xs text-[14.5px] leading-7 text-foreground-2">یک حساب برای همه‌ی مدل‌های هوش مصنوعی، با رابط کاملاً فارسی.</p>
+      <footer className="border-t border-line">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-4 px-5 py-6 text-[13px] text-foreground-3 sm:flex-row sm:px-8">
+          <div className="flex items-center gap-2 text-foreground">
+            <ArkaMark className="size-5" />
+            <span dir="ltr" className="font-display text-[15px] font-bold tracking-[-0.02em]">ARKA</span>
+            <span className="ms-2 text-[13px] text-foreground-3">© ۲۰۲۶</span>
           </div>
-          <nav aria-label="محصول" className="space-y-3 text-[14.5px]">
-            <p className="text-[13px] font-semibold text-foreground-3">محصول</p>
-            <Link href="/chat" className="block hover:underline">محیط چت</Link>
-            <a href="#models" className="block hover:underline">مدل‌ها</a>
-            <a href="#usage" className="block hover:underline">مصرف</a>
+          <nav aria-label="پیوندهای پایین صفحه" className="flex items-center gap-6">
+            <Link href="/chat" className="rounded-sm hover:text-foreground">محیط چت</Link>
+            <a href="#" className="rounded-sm hover:text-foreground">شرایط استفاده</a>
+            <a href="#" className="rounded-sm hover:text-foreground">حریم خصوصی</a>
           </nav>
-          <nav aria-label="قوانین" className="space-y-3 text-[14.5px]">
-            <p className="text-[13px] font-semibold text-foreground-3">قوانین</p>
-            <a href="#" className="block hover:underline">شرایط استفاده</a>
-            <a href="#" className="block hover:underline">حریم خصوصی</a>
-          </nav>
-        </div>
-        <div className="border-t border-line">
-          <p className="mx-auto max-w-7xl px-5 py-6 text-[13px] text-foreground-3 sm:px-8">© ۲۰۲۶ Arka. همه‌ی حقوق محفوظ است.</p>
         </div>
       </footer>
     </div>
