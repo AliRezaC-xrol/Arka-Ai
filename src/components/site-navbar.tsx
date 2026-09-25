@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -54,13 +54,13 @@ export function SiteNavbar() {
         <nav className="flex items-center gap-1.5 sm:gap-2" aria-label="ناوبری اصلی">
           <Link
             href="/login"
-            className="rounded-control px-3 py-2 text-[13px] text-foreground-2 transition-colors duration-200 hover:bg-soft hover:text-foreground"
+            className="rounded-control px-3 py-2 text-[13px] text-foreground-2 transition-colors duration-200 hover:bg-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             ورود
           </Link>
-          <Link href="/login">
-            <Button size="sm">شروع کنید</Button>
-          </Link>
+          <Link href="/login" className={buttonClasses({ size: "sm", variant: "outline" })}>
+شروع کنید
+</Link>
         </nav>
       </div>
     </header>

@@ -3,7 +3,9 @@
 import * as React from "react";
 import {
   ArrowUp,
+  Check,
   Code,
+  Copy,
   Image as ImageIcon,
   Lightbulb,
   Menu,
@@ -98,6 +100,15 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  /** Display time (Persian digits). */
+  time?: string;
+}
+
+function nowTime() {
+  return new Date().toLocaleTimeString("fa-IR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /** Canned histories so selecting a conversation shows something real. */
@@ -106,12 +117,14 @@ const MOCK_THREADS: Record<string, ChatMessage[]> = {
     {
       id: "c1-m1",
       role: "user",
+      time: "۱۰:۲۴",
       content:
         "برای پیج طراحی محصول، سه ایده‌ی پست بنویس که تعامل بالایی بگیرد.",
     },
     {
       id: "c1-m2",
       role: "assistant",
+      time: "۱۰:۲۵",
       content:
         "۱. «قبل و بعد» — ری‌دیزاین واقعی را کنار نسخه‌ی قدیمی نشان بده.\n۲. «خطای رایج» — سه اشتباه رایج در طراحی فرم را با مثال باز کن.\n۳. «پشت صحنه» — یک صفحه را از اسکیس تا نسخه‌ی نهایی بساز.",
     },
@@ -120,11 +133,13 @@ const MOCK_THREADS: Record<string, ChatMessage[]> = {
     {
       id: "c2-m1",
       role: "user",
+      time: "۱۰:۲۴",
       content: "مقاله‌ی ترنسفورمرها را در پنج خط خلاصه کن.",
     },
     {
       id: "c2-m2",
       role: "assistant",
+      time: "۱۰:۲۵",
       content:
         "ترنسفورمرها به‌جای بازگشت، به «توجه» تکیه می‌کنند؛ هر توکن به همه‌ی توکن‌ها نگاه می‌کند. این موازی‌سازی آموزش را سریع‌تر می‌کند و کیفیت پاسخ‌های طولانی را بالاتر می‌برد. همین معماری، پایه‌ی تقریباً همه‌ی مدل‌های زبانی امروزی است.",
     },
@@ -133,31 +148,51 @@ const MOCK_THREADS: Record<string, ChatMessage[]> = {
     {
       id: "c3-m1",
       role: "user",
+      time: "۱۰:۲۴",
       content: "این ایمیل را مودبانه‌تر ولی کوتاه‌تر بازنویسی کن.",
     },
     {
       id: "c3-m2",
       role: "assistant",
+      time: "۱۰:۲۵",
       content:
         "«سلام، ممنون از پیگیریتان. فایل را بررسی کردم و دو نکته‌ی کوچک باقی مانده؛ اگر امروز اصلاح شود، فردا نهایی‌اش می‌کنیم. ممنون!»",
     },
   ],
 };
 
+MOCK_THREADS.c5 = [
+  {
+    id: "c5-m1",
+    role: "user",
+    time: "۱۶:۰۲",
+    content:
+      "این کوئری Prisma کند است. هر بار برای هر کاربر، گفتگوهایش را جدا می‌گیرم.\nچطور درستش کنم که فقط یک درخواست به دیتابیس برود؟\nجدول Conversation حدود ۲۰۰ هزار ردیف دارد.",
+  },
+  {
+    id: "c5-m2",
+    role: "assistant",
+    time: "۱۶:۰۳",
+    content:
+      "مشکل همان N+1 است: برای هر کاربر یک کوئری جدا اجرا می‌شود. با include همه را در یک رفت‌وبرگشت بگیر و فقط ستون‌های لازم را select کن:\n\n```ts\nconst users = await prisma.user.findMany({\n  select: {\n    id: true,\n    conversations: {\n      select: { id: true, title: true },\n      orderBy: { updatedAt: \"desc\" },\n      take: 20,\n    },\n  },\n});\n```\n\nیک ایندکس روی (userId, updatedAt) هم اضافه کن تا مرتب‌سازی از ایندکس خوانده شود.",
+  },
+];
+
 function genericThread(title: string): ChatMessage[] {
   return [
-    { id: "g-m1", role: "user", content: title },
+    { id: "g-m1", role: "user", content: title, time: "۰۹:۱۲" },
     {
       id: "g-m2",
       role: "assistant",
+      time: "۰۹:۱۳",
       content:
-        "این یک پاسخ نمایشی است — در نسخه‌ی نهایی، پاسخ واقعی مدل همین‌جا استریم می‌شود. از انتخابگر بالای صفحه می‌توانی مدل دلخواهت را عوض کنی.",
+        "این یک پاسخ نمایشی است. در نسخه‌ی نهایی، پاسخ واقعی مدل همین‌جا استریم می‌شود. از دکمه‌ی مدل داخل کادر نوشتن می‌توانی مدل دلخواهت را عوض کنی.",
     },
   ];
 }
 
 const MOCK_REPLY =
-  "پاسخ نمایشی ثبت شد — در نسخه‌ی نهایی، جواب واقعی مدل همین‌جا کلمه‌به‌کلمه استریم می‌شود. تا آن موقع همه‌ی بخش‌های رابط، از انتخاب مدل تا تاریخچه‌ی گفتگو، دقیقاً مثل نسخه‌ی نهایی کار می‌کنند.";
+  "پاسخ نمایشی ثبت شد. در نسخه‌ی نهایی، جواب واقعی مدل همین‌جا کلمه‌به‌کلمه استریم می‌شود. تا آن موقع همه‌ی بخش‌های رابط، از انتخاب مدل تا تاریخچه‌ی گفتگو، دقیقاً مثل نسخه‌ی نهایی کار می‌کنند.";
 
 /** Stable empty reference so the auto-scroll effect never loop-fires. */
 const EMPTY_MESSAGES: ChatMessage[] = [];
@@ -223,7 +258,7 @@ export default function ChatPage() {
     const el = composerRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 208)}px`;
   }, [draft]);
 
   /* Switching threads: always start pinned to the newest message. */
@@ -292,6 +327,7 @@ export default function ChatPage() {
       id: `u-${++idCounter.current}`,
       role: "user",
       content: text,
+      time: nowTime(),
     };
     const assistantId = `a-${++idCounter.current}`;
 
@@ -317,7 +353,7 @@ export default function ChatPage() {
           ...prev,
           [threadId]: [
             ...(prev[threadId] ?? []),
-            { id: assistantId, role: "assistant", content: MOCK_REPLY },
+            { id: assistantId, role: "assistant", content: MOCK_REPLY, time: nowTime() },
           ],
         }));
         setLiveStatus("دستیار پاسخ داد");
@@ -330,7 +366,7 @@ export default function ChatPage() {
         ...prev,
         [threadId]: [
           ...(prev[threadId] ?? []),
-          { id: assistantId, role: "assistant", content: "" },
+          { id: assistantId, role: "assistant", content: "", time: nowTime() },
         ],
       }));
       setStreamingId(assistantId);
@@ -358,6 +394,8 @@ export default function ChatPage() {
   };
 
   const currentModelLabel = model.split(":")[1] ?? "مدل";
+  const canSend = draft.trim().length > 0 && !busy;
+  const activeTitle = conversations.find((c) => c.id === activeId)?.title;
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
@@ -379,7 +417,7 @@ export default function ChatPage() {
       <aside
         aria-label="فهرست گفتگوها"
         className={cn(
-          "w-72 shrink-0 flex-col gap-3.5 border-line bg-elevated p-4",
+          "w-72 shrink-0 flex-col gap-3.5 border-line bg-elevated/80 p-4 backdrop-blur-xl",
           "max-md:fixed max-md:inset-y-0 max-md:start-0 max-md:z-40 max-md:flex max-md:border-e",
           "max-md:transition-transform max-md:duration-300 max-md:ease-(--motion-ease)",
           "md:flex md:border-e",
@@ -389,7 +427,7 @@ export default function ChatPage() {
         )}
       >
         <div className="flex items-center justify-between px-1">
-          <span className="text-[15px] font-semibold tracking-tight">Arka</span>
+          <span dir="ltr" className="text-[18px] font-extrabold tracking-[-0.04em]">Arka</span>
           <Button
             variant="ghost"
             size="icon"
@@ -401,7 +439,7 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <Button onClick={startNewChat} className="w-full">
+        <Button onClick={startNewChat} variant="outline" className="w-full justify-start">
           <Plus aria-hidden />
           گفتگوی جدید
         </Button>
@@ -442,8 +480,11 @@ export default function ChatPage() {
       </aside>
 
       {/* ================= Main column ================= */}
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-3 sm:px-4">
+      <main className="relative flex min-w-0 flex-1 flex-col">
+        {/* Same restrained glow language as the hero, dimmer. */}
+        <div aria-hidden className="ambient ambient--chat" />
+
+        <header className="relative z-[1] flex h-14 shrink-0 items-center gap-2 px-3 sm:px-5">
           <Button
             variant="ghost"
             size="icon"
@@ -453,59 +494,39 @@ export default function ChatPage() {
           >
             <Menu aria-hidden />
           </Button>
-          <ModelPicker groups={MODEL_GROUPS} value={model} onChange={setModel} />
-          <span className="ms-auto hidden rounded-full border border-line px-2.5 py-1 text-[11px] text-foreground-3 sm:inline-flex">
-            نسخه‌ی نمایشی
-          </span>
+          <p className="min-w-0 truncate text-[14px] font-medium text-foreground-2">
+            {activeTitle ?? "گفتگوی جدید"}
+          </p>
         </header>
 
-        {/* ---------- Welcome / empty state ---------- */}
         {activeId === null ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-4">
-            <div className="w-full max-w-lg text-center">
-              <div
-                aria-hidden
-                className="mx-auto grid size-14 place-items-center rounded-card border border-line bg-card"
-              >
-                <Sparkles
-                  className="size-6 text-foreground-2"
-                  strokeWidth={1.5}
-                />
-              </div>
-              <h1 className="mt-5 text-xl font-semibold">
-                چطور می‌تونم کمکت کنم؟
+          /* ---------- Welcome ---------- */
+          <div className="relative z-[1] flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-4">
+            <div className="w-full max-w-2xl">
+              <h1 className="text-center text-[1.75rem] font-semibold leading-[1.4] sm:text-[2rem]">
+                امروز روی چه چیزی کار کنیم؟
               </h1>
-              <p className="mt-2 text-[13px] leading-7 text-foreground-2">
-                سؤالت را بنویس یا یکی از پیشنهادهای زیر را انتخاب کن.
-              </p>
-
-              <div className="mt-7 grid gap-3 text-start sm:grid-cols-2">
+              <div className="mt-8 grid gap-2.5 sm:grid-cols-2">
                 {SUGGESTIONS.map((suggestion) => (
                   <button
                     key={suggestion.title}
                     type="button"
                     onClick={() => {
                       setDraft(suggestion.prompt);
-                      requestAnimationFrame(() =>
-                        composerRef.current?.focus(),
-                      );
+                      requestAnimationFrame(() => composerRef.current?.focus());
                     }}
-                    className="group rounded-card border border-line bg-card p-4 transition-[border-color,transform] duration-200 ease-(--motion-ease) hover:-translate-y-0.5 hover:border-white/20 focus-visible:border-white/40 focus-visible:outline-none"
+                    className="group flex items-start gap-3 rounded-card border border-line bg-elevated/70 p-4 text-start transition-colors duration-150 hover:border-white/20 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <span className="flex items-center gap-2.5">
-                      <span className="grid size-8 shrink-0 place-items-center rounded-control border border-line bg-elevated text-foreground-2 transition-colors duration-200 group-hover:text-foreground">
-                        <suggestion.icon
-                          aria-hidden
-                          className="size-4"
-                          strokeWidth={1.5}
-                        />
+                    <suggestion.icon
+                      aria-hidden
+                      className="mt-0.5 size-4 shrink-0 text-foreground-3 transition-colors duration-150 group-hover:text-blue"
+                      strokeWidth={1.75}
+                    />
+                    <span>
+                      <span className="block text-[14px] font-medium">{suggestion.title}</span>
+                      <span className="mt-1 block text-[13px] leading-6 text-foreground-3">
+                        {suggestion.prompt}
                       </span>
-                      <span className="text-[13px] font-medium text-foreground">
-                        {suggestion.title}
-                      </span>
-                    </span>
-                    <span className="mt-2.5 block text-xs leading-6 text-foreground-3">
-                      {suggestion.prompt}
                     </span>
                   </button>
                 ))}
@@ -513,64 +534,51 @@ export default function ChatPage() {
             </div>
           </div>
         ) : (
-          /* ---------- Message list ---------- */
+          /* ---------- Messages ---------- */
           <div
             onScroll={onScroll}
-            className="min-h-0 flex-1 overflow-y-auto"
-            aria-label={`گفتگو: ${conversations.find((c) => c.id === activeId)?.title ?? ""}`}
+            className="relative z-[1] min-h-0 flex-1 overflow-y-auto"
+            aria-label={`گفتگو: ${activeTitle ?? ""}`}
           >
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
+            <div className="mx-auto flex w-full max-w-[46rem] flex-col gap-9 px-4 pb-10 pt-4 sm:px-6">
               {messages.map((message) =>
                 message.role === "user" ? (
-                  /* User turn: quiet bubble on the far side (end). */
-                  <div key={message.id} className="flex justify-end">
-                    <div className="max-w-[85%] whitespace-pre-wrap rounded-card rounded-es-sm border border-line bg-card px-4 py-3 text-sm leading-7 text-foreground sm:max-w-[75%]">
+                  /* User: quiet bubble on the inline-END side (left in RTL). */
+                  <div key={message.id} className="flex flex-col items-end">
+                    <div className="msg-text max-w-[88%] whitespace-pre-wrap rounded-card rounded-se-md border border-line bg-card px-4 py-2.5 text-[15px] leading-[1.9] sm:max-w-[78%]">
                       {message.content}
                     </div>
+                    {message.time && (
+                      <time className="mt-1.5 pe-1 text-[11.5px] text-foreground-3">
+                        {message.time}
+                      </time>
+                    )}
                   </div>
                 ) : (
-                  /* Assistant turn: open full-width text from the reading
-                     edge (claude.ai-style), no bubble. */
-                  <div key={message.id} className="flex gap-3">
-                    <div
-                      aria-hidden
-                      className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-line bg-elevated text-foreground-2"
-                    >
-                      <Sparkles className="size-4" strokeWidth={1.5} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-foreground-3">ارکا</p>
-                      <div className="mt-0.5 whitespace-pre-wrap text-sm leading-8 text-foreground">
-                        {message.content}
-                        {streamingId === message.id && (
-                          <span
-                            aria-hidden
-                            className="ms-1 inline-block h-4 w-0.5 translate-y-0.5 animate-pulse rounded-full bg-foreground-2"
-                          />
-                        )}
-                      </div>
+                  /* Assistant: open text from the reading edge (inline-START). */
+                  <div key={message.id} className="flex gap-3.5">
+                    <AssistantAvatar />
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <MessageContent
+                        content={message.content}
+                        streaming={streamingId === message.id}
+                      />
+                      {message.time && streamingId !== message.id && (
+                        <time className="mt-2 block text-[11.5px] text-foreground-3">
+                          {message.time}
+                        </time>
+                      )}
                     </div>
                   </div>
                 ),
               )}
 
-              {/* Typing indicator (before the mock reply starts) */}
               {pendingFor === activeId && (
-                <div className="flex gap-3">
-                  <div
-                    aria-hidden
-                    className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-line bg-elevated text-foreground-2"
-                  >
-                    <Sparkles className="size-4" strokeWidth={1.5} />
-                  </div>
-                  <div
-                    className="flex w-fit items-center gap-1.5 rounded-card border border-line bg-card px-4 py-3.5"
-                    aria-hidden
-                  >
-                    <span className="size-1.5 animate-bounce rounded-full bg-foreground-3 [animation-delay:0ms]" />
-                    <span className="size-1.5 animate-bounce rounded-full bg-foreground-3 [animation-delay:150ms]" />
-                    <span className="size-1.5 animate-bounce rounded-full bg-foreground-3 [animation-delay:300ms]" />
-                  </div>
+                <div className="flex items-center gap-3.5">
+                  <AssistantAvatar thinking />
+                  <span className="thinking-text text-[14px] font-medium">
+                    در حال فکر کردن…
+                  </span>
                 </div>
               )}
 
@@ -580,69 +588,183 @@ export default function ChatPage() {
         )}
 
         {/* ---------- Composer ---------- */}
-        <div className="shrink-0 px-3 pb-3 sm:px-4 sm:pb-4">
+        <div className="relative z-[1] shrink-0 px-3 pb-3 sm:px-6 sm:pb-5">
           <form
             onSubmit={(event) => {
               event.preventDefault();
               sendMessage();
             }}
-            className="mx-auto flex w-full max-w-3xl items-end gap-1.5 rounded-card border border-line bg-card p-2 transition-colors duration-200 focus-within:border-white/25"
+            className="composer mx-auto w-full max-w-[46rem] rounded-card border border-line p-2.5"
           >
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="پیوست فایل (نمایشی)"
-              title="پیوست فایل — به‌زودی"
-              className="shrink-0 text-foreground-3 hover:text-foreground"
-              onClick={(event) => event.preventDefault()}
-            >
-              <Paperclip aria-hidden />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="تولید تصویر (نمایشی)"
-              title="تولید تصویر — به‌زودی"
-              className="hidden shrink-0 text-foreground-3 hover:text-foreground sm:inline-flex"
-              onClick={(event) => event.preventDefault()}
-            >
-              <ImageIcon aria-hidden />
-            </Button>
             <textarea
               ref={composerRef}
               rows={1}
               aria-label="متن پیام"
               placeholder="پیامت را بنویس…"
               value={draft}
+              dir="auto"
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
-                if (
-                  event.key === "Enter" &&
-                  !event.shiftKey &&
-                  !event.nativeEvent.isComposing
-                ) {
+                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
                   event.preventDefault();
                   sendMessage();
                 }
               }}
-              className="max-h-40 min-w-0 flex-1 resize-none self-center bg-transparent px-2 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-3"
+              className="block max-h-52 min-h-[2.75rem] w-full resize-none bg-transparent px-2 pb-1 pt-1.5 text-[15px] leading-7 text-foreground outline-none placeholder:text-foreground-3 [text-align:start]"
             />
-            <Button
-              type="submit"
-              size="icon"
-              aria-label="ارسال پیام"
-              title={`ارسال (Enter) — خط جدید: Shift+Enter — مدل: ${currentModelLabel}`}
-              disabled={!draft.trim() || busy}
-              className="shrink-0"
-            >
-              <ArrowUp aria-hidden />
-            </Button>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <button
+                type="button"
+                aria-label="پیوست فایل (به‌زودی)"
+                title="پیوست فایل (به‌زودی)"
+                className="grid size-8 place-items-center rounded-control text-foreground-3 transition-colors duration-150 hover:bg-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Paperclip aria-hidden className="size-4" />
+              </button>
+              <ModelPicker groups={MODEL_GROUPS} value={model} onChange={setModel} />
+              <button
+                type="submit"
+                aria-label="ارسال پیام"
+                title={`ارسال با ${currentModelLabel} (Enter)، خط جدید با Shift+Enter`}
+                data-ready={canSend}
+                aria-disabled={!canSend}
+                className={cn(
+                  "send-btn ms-auto grid size-9 shrink-0 place-items-center rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
+                  !canSend && "cursor-not-allowed border border-line bg-soft text-foreground-3",
+                )}
+              >
+                <ArrowUp aria-hidden className="size-[18px]" strokeWidth={2.25} />
+              </button>
+            </div>
           </form>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-foreground-3">
+          <p className="mx-auto mt-2 max-w-[46rem] text-center text-[11.5px] text-foreground-3">
             پاسخ‌ها در این نسخه‌ی نمایشی ساختگی هستند.
           </p>
         </div>
       </main>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Message rendering                                                   */
+/* ------------------------------------------------------------------ */
+
+function AssistantAvatar({ thinking = false }: { thinking?: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className="grid size-8 shrink-0 place-items-center rounded-full border border-blue-line bg-blue-soft text-blue"
+    >
+      {thinking ? <span className="thinking-orb" /> : <Sparkles className="size-4" strokeWidth={1.75} />}
+    </div>
+  );
+}
+
+type Segment = { kind: "text"; value: string } | { kind: "code"; lang: string; value: string };
+
+/** Split a message on ``` fences. An unterminated fence (mid-stream) is
+ *  rendered as code too, so streaming never flashes raw backticks. */
+function parseSegments(content: string): Segment[] {
+  const segments: Segment[] = [];
+  const parts = content.split("```");
+  parts.forEach((part, index) => {
+    if (index % 2 === 0) {
+      if (part.trim()) segments.push({ kind: "text", value: part.trim() });
+    } else {
+      const newline = part.indexOf("\n");
+      const lang = newline === -1 ? part.trim() : part.slice(0, newline).trim();
+      const value = newline === -1 ? "" : part.slice(newline + 1).replace(/\n$/, "");
+      segments.push({ kind: "code", lang, value });
+    }
+  });
+  return segments;
+}
+
+function MessageContent({ content, streaming }: { content: string; streaming: boolean }) {
+  const segments = parseSegments(content);
+  return (
+    <div className="space-y-4 text-[15px] leading-[2] text-foreground">
+      {segments.map((segment, index) =>
+        segment.kind === "text" ? (
+          <p key={index} className="msg-text whitespace-pre-wrap">
+            {segment.value}
+            {streaming && index === segments.length - 1 && <Caret />}
+          </p>
+        ) : (
+          <CodeBlock key={index} lang={segment.lang} code={segment.value} />
+        ),
+      )}
+      {streaming && (segments.length === 0 || segments[segments.length - 1].kind === "code") && (
+        <p>
+          <Caret />
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Caret() {
+  return (
+    <span
+      aria-hidden
+      className="caret ms-0.5 inline-block h-[1.1em] w-[2px] translate-y-[0.2em] rounded-full bg-blue"
+    />
+  );
+}
+
+function CodeBlock({ lang, code }: { lang: string; code: string }) {
+  const [copied, setCopied] = React.useState(false);
+  const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      // Fallback for non-secure contexts.
+      const area = document.createElement("textarea");
+      area.value = code;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), 1600);
+  };
+
+  return (
+    <div className="overflow-hidden rounded-card border border-line bg-elevated">
+      <div className="flex h-10 items-center justify-between border-b border-line ps-4 pe-1.5">
+        <span dir="ltr" className="font-mono text-[12px] text-foreground-3">
+          {lang || "code"}
+        </span>
+        <button
+          type="button"
+          onClick={copy}
+          aria-label={copied ? "کپی شد" : "کپی کد"}
+          className={cn(
+            "flex h-7 items-center gap-1.5 rounded-control px-2 text-[12px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            copied ? "text-blue" : "text-foreground-3 hover:bg-soft hover:text-foreground",
+          )}
+        >
+          {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
+          {copied ? "کپی شد" : "کپی"}
+        </button>
+      </div>
+      <pre dir="ltr" className="overflow-x-auto p-4 text-left font-mono text-[13px] leading-6 text-foreground">
+        <code>{code}</code>
+      </pre>
+      <span aria-live="polite" className="sr-only">
+        {copied ? "کد کپی شد" : ""}
+      </span>
     </div>
   );
 }

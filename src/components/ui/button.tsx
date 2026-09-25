@@ -6,8 +6,8 @@ type Size = "sm" | "md" | "lg" | "icon";
 
 const variants: Record<Variant, string> = {
   default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-control active:shadow-press",
-  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 border-line border-border shadow-control active:shadow-press",
-  outline: "border-line border-input bg-transparent hover:bg-accent hover:text-accent-foreground shadow-control active:shadow-press",
+  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border shadow-control active:shadow-press",
+  outline: "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground shadow-control active:shadow-press",
   ghost: "hover:bg-accent hover:text-accent-foreground",
   brand: "bg-brand text-brand-foreground hover:bg-brand/90 shadow-control active:shadow-press",
   destructive: "bg-destructive text-white hover:bg-destructive/90 shadow-control active:shadow-press",
@@ -24,6 +24,23 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: Variant;
   size?: Size;
   asChild?: boolean;
+}
+
+/** Same classes as <Button>, for links styled as buttons (valid HTML:
+ *  no <button> nested inside <a>). */
+export function buttonClasses({
+  variant = "default",
+  size = "md",
+  className,
+}: { variant?: Variant; size?: Size; className?: string } = {}) {
+  return cn(
+    "inline-flex items-center justify-center whitespace-nowrap rounded-control font-semibold transition-all duration-(--motion) ease-motion",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    "active:[transform:var(--press)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+    variants[variant],
+    sizes[size],
+    className,
+  );
 }
 
 export function Button({ className, variant = "default", size = "md", type = "button", ...props }: ButtonProps) {

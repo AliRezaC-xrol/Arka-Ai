@@ -185,7 +185,7 @@ export function SpotlightList({
         <div
           aria-hidden
           data-spotlight=""
-          className="spotlight pointer-events-none absolute left-0 top-0 z-0 rounded-control border border-line bg-soft"
+          className="spotlight pointer-events-none absolute left-0 top-0 z-0 rounded-control border border-blue-line bg-blue-soft"
           style={{
             width: box.w,
             height: box.h,

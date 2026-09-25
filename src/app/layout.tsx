@@ -40,10 +40,6 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" className={vazirmatn.variable}>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
-        {/* Without JS the scroll-reveal elements must stay visible */}
-        <noscript>
-          <style>{".reveal{opacity:1 !important;transform:none !important}"}</style>
-        </noscript>
         {children}
       </body>
     </html>

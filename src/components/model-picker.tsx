@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Check, ChevronDown } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface ModelGroup {
@@ -22,7 +21,7 @@ interface ModelPickerProps {
  * Model picker (SPEC §5), mock data in Phase 0.
  * Grouped by provider — the provider name is exactly what was "entered"
  * when the provider was added (in Phase 2 it comes from the Provider row).
- * The trigger is the real vibefarsi Button (variant="outline").
+ * Lives INSIDE the composer as a small pill; the popover opens upward.
  *
  * Keyboard: Enter/Space/ArrowDown opens, arrows move, Enter selects,
  * Escape closes and returns focus to the trigger, Tab closes.
@@ -34,7 +33,7 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
 
   /** The trigger is the first <button> under the root. */
   const focusTrigger = React.useCallback(() => {
-    rootRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    rootRef.current?.querySelector<HTMLButtonElement>("[data-trigger]")?.focus();
   }, []);
 
   const options = React.useMemo(
@@ -115,10 +114,10 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
 
   return (
     <div ref={rootRef} className={cn("relative", className)}>
-      {/* Real vibefarsi Button as the trigger */}
-      <Button
-        variant="outline"
-        size="sm"
+      {/* Composer pill: provider glyph + provider + model. */}
+      <button
+        type="button"
+        data-trigger=""
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={current ? `مدل: ${current.provider} ${current.model}` : "انتخاب مدل"}
@@ -130,16 +129,31 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
             focusSelected();
           }
         }}
-        className="max-w-[220px] sm:max-w-[320px]"
+        onKeyDown={(event) => {
+          if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+            event.preventDefault();
+            setOpen(true);
+            focusSelected();
+          }
+        }}
+        className={cn(
+          "flex h-8 max-w-[11rem] items-center gap-1.5 rounded-full border px-2 text-[12.5px] transition-colors duration-150 sm:max-w-[16rem]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          open
+            ? "border-blue-line bg-blue-soft text-foreground"
+            : "border-line text-foreground-2 hover:border-white/20 hover:text-foreground",
+        )}
       >
-        <span className="min-w-0 truncate">
-          {current ? `${current.provider} · ${current.model}` : "انتخاب مدل"}
+        {current && <ProviderGlyph provider={current.provider} />}
+        <span dir="ltr" className="flex min-w-0 items-baseline gap-1.5 truncate">
+          <span className="hidden text-foreground-3 sm:inline">{current?.provider}</span>
+          <span className="truncate font-medium">{current?.model ?? "انتخاب مدل"}</span>
         </span>
         <ChevronDown
           aria-hidden
-          className={cn("shrink-0 transition-transform duration-200", open && "rotate-180")}
+          className={cn("size-3.5 shrink-0 transition-transform duration-200", open && "rotate-180")}
         />
-      </Button>
+      </button>
 
       {open && (
         <ul
@@ -147,18 +161,19 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
           role="listbox"
           aria-label="انتخاب مدل"
           onKeyDown={onListKeyDown}
-          className="absolute top-full start-0 z-50 mt-2 max-h-80 w-72 max-w-[calc(100vw-2rem)] overflow-auto rounded-card border border-line bg-popover p-1.5"
+          className="absolute bottom-full start-0 z-50 mb-2 max-h-80 w-72 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-card border border-line bg-popover p-1.5 shadow-[0_24px_48px_-24px_rgba(0,0,0,0.9)]"
         >
           {groups.map((group, groupIndex) => (
             <React.Fragment key={group.provider}>
               <li
                 role="presentation"
                 className={cn(
-                  "px-3 pb-1.5 pt-2 text-[11px] font-medium tracking-wide text-foreground-3",
+                  "flex items-center gap-2 px-3 pb-1.5 pt-2 text-[12px] font-medium text-foreground-3",
                   groupIndex > 0 && "mt-1 border-t border-line pt-3",
                 )}
               >
-                {group.provider}
+                <ProviderGlyph provider={group.provider} />
+                <span dir="ltr">{group.provider}</span>
               </li>
               {group.models.map((model) => {
                 const id = `${group.provider}:${model}`;
@@ -176,12 +191,12 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
                       className={cn(
                         "flex w-full items-center justify-between gap-3 rounded-control px-3 py-2 text-[13px] transition-colors duration-150",
                         "hover:bg-soft focus-visible:bg-soft focus-visible:outline-none",
-                        selected ? "bg-soft text-foreground" : "text-foreground-2",
+                        selected ? "bg-blue-soft text-foreground" : "text-foreground-2",
                       )}
                     >
-                      <span className="truncate">{model}</span>
+                      <span dir="ltr" className="truncate">{model}</span>
                       {selected && (
-                        <Check aria-hidden className="size-3.5 shrink-0 text-foreground" />
+                        <Check aria-hidden className="size-3.5 shrink-0 text-blue" />
                       )}
                     </button>
                   </li>
@@ -192,5 +207,18 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
         </ul>
       )}
     </div>
+  );
+}
+
+/** Tiny monochrome provider mark (initial in a hairline square). */
+function ProviderGlyph({ provider }: { provider: string }) {
+  return (
+    <span
+      aria-hidden
+      dir="ltr"
+      className="grid size-[18px] shrink-0 place-items-center rounded-[5px] border border-line bg-elevated text-[10px] font-bold leading-none text-foreground"
+    >
+      {provider.charAt(0)}
+    </span>
   );
 }
