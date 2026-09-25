@@ -1,3 +1,9 @@
+/**
+ * ARKA AI Platform — Confidential & Proprietary
+ * Copyright (c) 2026 AliRezaC-xrol (https://github.com/AliRezaC-xrol/arka). All rights reserved.
+ * PROPRIETARY & CLOSED-SOURCE: Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 export type ClassValue = string | number | bigint | null | undefined | false | ClassValue[];
 
 /** Minimal class joiner (swap for clsx + tailwind-merge when the library grows). */

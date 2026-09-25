@@ -1,3 +1,9 @@
+/**
+ * ARKA AI Platform — Confidential & Proprietary
+ * Copyright (c) 2026 AliRezaC-xrol (https://github.com/AliRezaC-xrol/arka). All rights reserved.
+ * PROPRIETARY & CLOSED-SOURCE: Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { type NextResponse } from "next/server";

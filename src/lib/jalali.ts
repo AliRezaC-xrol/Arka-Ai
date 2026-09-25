@@ -1,4 +1,10 @@
 /**
+ * ARKA AI Platform — Confidential & Proprietary
+ * Copyright (c) 2026 AliRezaC-xrol (https://github.com/AliRezaC-xrol/arka). All rights reserved.
+ * PROPRIETARY & CLOSED-SOURCE: Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
+/**
  * Jalali (شمسی) calendar conversion — Borkowski algorithm as used by jalaali-js.
  * Valid for Jalali years 1 … 3177. Dependency-free.
  */

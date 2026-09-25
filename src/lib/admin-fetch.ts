@@ -1,3 +1,9 @@
+/**
+ * ARKA AI Platform — Confidential & Proprietary
+ * Copyright (c) 2026 AliRezaC-xrol (https://github.com/AliRezaC-xrol/arka). All rights reserved.
+ * PROPRIETARY & CLOSED-SOURCE: Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 export function getStoredAdminToken(): string | null {
   if (typeof window === "undefined") return null;
   return sessionStorage.getItem("arka_admin_token") || localStorage.getItem("arka_admin_token");

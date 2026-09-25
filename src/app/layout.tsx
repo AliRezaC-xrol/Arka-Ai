@@ -1,3 +1,9 @@
+/**
+ * ARKA AI Platform — Confidential & Proprietary
+ * Copyright (c) 2026 AliRezaC-xrol (https://github.com/AliRezaC-xrol/arka). All rights reserved.
+ * PROPRIETARY & CLOSED-SOURCE: Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Sora } from "next/font/google";

@@ -1,8 +1,14 @@
 {
   "name": "arka",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "ARKA AI Platform — Proprietary Closed-Source Unified AI Gateway & Conversational Interface",
+  "author": "AliRezaC-xrol",
   "private": true,
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AliRezaC-xrol/arka.git"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
