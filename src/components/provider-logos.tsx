@@ -62,6 +62,14 @@ export function GrokLogo({ className }: { className?: string }) {
   );
 }
 
+export function MetaLlamaLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 20.3a1 1 0 0 0 1.35 1.35l2.69-.62C9.93 21.26 11.88 22 14 22c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-2 13a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
+    </svg>
+  );
+}
+
 export const PROVIDERS_LIST: ProviderLogoItem[] = [
   { id: "openai", name: "OpenAI", subname: "GPT-4o", icon: OpenAILogo },
   { id: "claude", name: "Claude", subname: "Sonnet 3.7", icon: ClaudeLogo },
@@ -69,33 +77,49 @@ export const PROVIDERS_LIST: ProviderLogoItem[] = [
   { id: "deepseek", name: "DeepSeek", subname: "R1 & V3", icon: DeepSeekLogo },
   { id: "flux", name: "FLUX.1", subname: "Image Studio", badge: "تصویر", icon: FluxLogo },
   { id: "grok", name: "Grok", subname: "xAI 2", icon: GrokLogo },
+  { id: "llama", name: "Llama", subname: "Meta 3.3", icon: MetaLlamaLogo },
 ];
 
 export function ProviderLogosRow({ className }: { className?: string }) {
   return (
-    <div className={cn("w-full overflow-hidden select-none", className)}>
-      <div dir="ltr" className="marquee flex items-center gap-6 sm:gap-8 [mask-image:linear-gradient(90deg,transparent,#000_15%,#000_85%,transparent)]">
-        {[0, 1].map((copy) => (
-          <div key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-6 sm:gap-8 pe-6 sm:pe-8">
+    <div className={cn("relative w-full overflow-hidden select-none py-3 border-y border-white/5 bg-[#08080a]", className)}>
+      {/* Edge gradient masks for silky seamless fade */}
+      <div className="pointer-events-none absolute inset-y-0 start-0 z-10 w-24 bg-gradient-to-r from-[#08080a] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 end-0 z-10 w-24 bg-gradient-to-l from-[#08080a] to-transparent" />
+
+      {/* Uninterrupted Continuous Marquee Loop (2 sets of identical elements translated -50%) */}
+      <div
+        dir="ltr"
+        className="flex w-max will-change-transform"
+        style={{
+          animation: "marquee 28s linear infinite",
+        }}
+      >
+        {[0, 1].map((copyIndex) => (
+          <div
+            key={copyIndex}
+            aria-hidden={copyIndex === 1}
+            className="flex shrink-0 items-center gap-5 sm:gap-7 pe-5 sm:pe-7"
+          >
             {PROVIDERS_LIST.map((p) => {
               const Icon = p.icon;
               return (
                 <div
-                  key={p.id}
-                  className="group flex items-center gap-2.5 rounded-full border border-white/10 bg-[#121215]/80 px-3 py-1.5 transition-all duration-200 hover:border-white/30 hover:bg-white/[0.08]"
+                  key={`${copyIndex}-${p.id}`}
+                  className="group flex items-center gap-2.5 rounded-full border border-white/10 bg-[#111114] px-4 py-2 transition-all duration-300 hover:border-white/30 hover:bg-white/[0.08]"
                 >
                   <div className="grid size-6 place-items-center rounded-full bg-white/10 text-white transition-colors group-hover:bg-white group-hover:text-black">
-                    <Icon className="size-3" />
+                    <Icon className="size-3.5" />
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-display text-[13px] font-bold text-white tracking-tight">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-[13.5px] font-bold text-white tracking-tight">
                       {p.name}
                     </span>
-                    <span className="text-[10.5px] text-neutral-400 font-mono">
+                    <span className="text-[11px] text-neutral-400 font-mono">
                       {p.subname}
                     </span>
                     {p.badge && (
-                      <span className="rounded-full bg-white/15 px-1.5 py-0.2 text-[9px] font-medium text-neutral-200">
+                      <span className="rounded-full bg-white/15 px-2 py-0.2 text-[9.5px] font-medium text-neutral-200">
                         {p.badge}
                       </span>
                     )}

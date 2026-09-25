@@ -29,9 +29,9 @@ async function runPhase11Tests() {
   assert(homeHtml.includes("شروع رایگان"), "Hero button 'شروع رایگان' is present");
   pass("Hero button 'شروع رایگان' is present");
 
-  assert(homeHtml.includes("رمزنگاری AES-256-GCM"), "Minimalist feature chip 1 present under CTA");
-  assert(homeHtml.includes("جابه‌جایی خودکار بدون قطعی چت"), "Minimalist feature chip 2 present under CTA");
-  pass("Clean minimalist chips under 'شروع رایگان' are rendered properly");
+  assert(homeHtml.includes("AES-256-GCM"), "Minimalist feature item 1 present under CTA");
+  assert(homeHtml.includes("جابه‌جایی خودکار بین کلیدها بدون قطعی چت"), "Minimalist feature item 2 present under CTA");
+  pass("Original feature list under 'شروع رایگان' is rendered properly");
 
   const pageSource = fs.readFileSync(path.join(process.cwd(), "src/app/page.tsx"), "utf-8");
   assert(pageSource.includes('id="how"') && pageSource.includes("<MeshCanvas"), "Sleeping MeshCanvas is embedded in #how section");

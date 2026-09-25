@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Check, Cpu, Lock, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { Check, Cpu, Lock, Sparkles, Zap } from "lucide-react";
 
 import { FaqList } from "@/components/faq-list";
 import { MeshCanvas } from "@/components/mesh-canvas";
@@ -88,14 +88,14 @@ export default async function Home() {
       <SiteNavbar />
 
       <main className="flex-1">
-        {/* ================= Hero ================= */}
+        {/* ================= Hero (Restored Exactly As It Was, Without Demo Chat) ================= */}
         <section aria-labelledby="hero-title" className="relative overflow-hidden border-b border-line">
           {/* Animated Sleeping Mesh Monochrome Background */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,#000_65%,transparent_100%)] opacity-75"
+            className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,#000_65%,transparent_100%)] opacity-80"
           >
-            <MeshCanvas spacing={56} />
+            <MeshCanvas spacing={58} />
           </div>
 
           {/* Radial Ambient Glow */}
@@ -104,21 +104,21 @@ export default async function Home() {
             className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_60%_50%_at_50%_15%,rgba(255,255,255,0.06),transparent_80%)]"
           />
 
-          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-14 px-5 pb-16 pt-14 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:pb-24 lg:pt-20">
+          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-14 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:pb-28 lg:pt-24">
             <div>
               <Link
                 href="/login"
-                className="enter inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.04] py-1 pe-4 ps-1.5 text-[12.5px] text-neutral-300 transition-colors hover:border-white/30"
+                className="enter inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.04] py-1 pe-4 ps-1 text-[13px] text-neutral-200 transition-colors hover:border-white/30"
               >
-                <span className="rounded-full bg-white px-2.5 py-0.5 text-[10.5px] font-bold text-black shadow-sm">
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-black shadow-sm">
                   رایگان
                 </span>
-                ۱۰۰ پیام هدیه بعد از اولین ورود
+                ۱۰۰ پیام رایگان پس از اولین ورود
               </Link>
 
               <h1
                 id="hero-title"
-                className="enter mt-6 text-[2.5rem] font-extrabold leading-[1.25] tracking-tight sm:text-[3.4rem] lg:text-[3.8rem] text-white"
+                className="enter mt-7 text-[2.6rem] font-extrabold leading-[1.25] tracking-[-0.01em] sm:text-[3.5rem] lg:text-[4rem] text-white"
                 style={{ ["--enter-delay" as string]: "80ms" }}
               >
                 یک حساب
@@ -129,41 +129,39 @@ export default async function Home() {
               </h1>
 
               <p
-                className="enter mt-5 max-w-xl text-[16px] leading-[1.85] text-neutral-300 sm:text-[17.5px]"
+                className="enter mt-6 max-w-xl text-[16.5px] leading-[1.9] text-foreground-2 sm:text-[18px]"
                 style={{ ["--enter-delay" as string]: "180ms" }}
               >
                 GPT، Claude، Gemini، Grok و DeepSeek در یک محیط یکپارچه، سریع و کاملاً فارسی؛
                 با اتصال کلید اختصاصی یا پروایدرهای متمرکز ارکا.
               </p>
 
-              {/* Primary Call to Action — Only 'شروع رایگان' */}
-              <div className="enter mt-8 flex items-center gap-4" style={{ ["--enter-delay" as string]: "240ms" }}>
+              <div className="enter mt-9 flex flex-wrap gap-3.5" style={{ ["--enter-delay" as string]: "260ms" }}>
                 <Link
                   href="/login"
-                  className="group inline-flex h-12 items-center gap-2 rounded-full bg-white px-8 text-[15px] font-bold text-black shadow-[0_10px_30px_rgba(255,255,255,0.15)] transition-all duration-200 hover:bg-neutral-200 hover:shadow-[0_14px_40px_rgba(255,255,255,0.25)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="btn-ink inline-flex h-12 items-center rounded-control px-7 text-[15px] font-semibold"
                 >
-                  <span>شروع رایگان</span>
-                  <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
+                  شروع رایگان
                 </Link>
               </div>
 
-              {/* Minimalist Monochrome Feature Chips (Redesigned & Clean) */}
-              <div className="enter mt-8 flex flex-wrap items-center gap-2.5 text-xs" style={{ ["--enter-delay" as string]: "320ms" }}>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-neutral-300">
-                  <ShieldCheck className="size-3.5 text-neutral-400" />
-                  <span>رمزنگاری AES-256-GCM</span>
-                </span>
-
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-neutral-300">
-                  <Zap className="size-3.5 text-neutral-400" />
-                  <span>جابه‌جایی خودکار بدون قطعی چت</span>
-                </span>
-
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-neutral-300">
-                  <Check className="size-3.5 text-neutral-400" />
-                  <span>سازگار با OpenAI و Anthropic</span>
-                </span>
-              </div>
+              <ul
+                className="enter mt-9 space-y-3 text-[14.5px] text-foreground-2"
+                style={{ ["--enter-delay" as string]: "340ms" }}
+              >
+                {[
+                  "سازگار با OpenAI، Anthropic، Google و DeepSeek",
+                  "جابه‌جایی خودکار بین کلیدها بدون قطعی چت",
+                  "رمزنگاری امن کلیدها با استاندارد AES-256-GCM",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3">
+                    <span className="grid size-5 place-items-center rounded-full bg-white/10 text-white">
+                      <Check aria-hidden className="size-3.5 stroke-[2.5]" />
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div className="enter" style={{ ["--enter-delay" as string]: "200ms" }}>
@@ -172,19 +170,8 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ================= Compact & Sleek Provider Logos Strip ================= */}
-        <section id="models" aria-labelledby="models-title" className="scroll-mt-16 border-b border-line py-5 bg-[#08080a]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-white animate-pulse" />
-              <h2 id="models-title" className="text-[12px] font-semibold text-neutral-400 tracking-wide uppercase">
-                پروایدرها و مدل‌های فعال در ارکا
-              </h2>
-            </div>
-            <Link href="/login" className="text-[11.5px] font-medium text-neutral-400 hover:text-white transition-colors">
-              اتصال و استفاده ←
-            </Link>
-          </div>
+        {/* ================= Uninterrupted Infinite AI Chain (No Header Bar) ================= */}
+        <section aria-label="مدل‌ها و هوش مصنوعی‌های فعال در ارکا" className="w-full">
           <ProviderLogosRow />
         </section>
 
@@ -227,7 +214,6 @@ export default async function Home() {
 
         {/* ================= How it works (With Sleeping Mesh Background) ================= */}
         <section id="how" aria-labelledby="steps-title" className="relative scroll-mt-16 border-b border-line bg-elevated overflow-hidden">
-          {/* Animated Sleeping Mesh background specifically in "چطور کار می‌کند" */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_40%,transparent_90%)] opacity-60"
