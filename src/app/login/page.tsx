@@ -2,18 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { ArrowRight, Check, Loader2, RotateCcw } from "lucide-react";
 
-import { OtpInput } from "@/components/otp-input";
 import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-
-type Step = "choice" | "email" | "code";
-
-const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
-const STEPS: Step[] = ["choice", "email", "code"];
 
 const BRAND_POINTS = [
   {
@@ -21,60 +14,165 @@ const BRAND_POINTS = [
     text: "GPT، Claude، Gemini، Grok و DeepSeek — بدون جابه‌جایی بین سایت‌ها.",
   },
   {
-    title: "کلید خودت یا پروایدر آماده",
-    text: "یا فقط کلید API خودت را وصل کن؛ ارکا بقیه‌ی کار را انجام می‌دهد.",
+    title: "ورود آنی و امن فقط با گوگل",
+    text: "بدون نیاز به به‌خاطرسپردن رمز عبور یا انتظار برای کدهای پیامکی و ایمیلی.",
   },
   {
-    title: "خصوصی و رمزنگاری‌شده",
-    text: "کلیدها با AES-256-GCM رمز می‌شوند و گفتگوها فقط برای خودت قابل دیدن‌اند.",
+    title: "حفظ حریم خصوصی و نشست پایدار",
+    text: "سشن امن ۳۰ روزه با رمزنگاری پیشرفته؛ بدون خروج‌های ناگهانی.",
   },
 ];
 
 function GoogleGlyph() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-[18px]">
+    <svg viewBox="0 0 24 24" aria-hidden className="size-5 shrink-0">
       <path
-        fill="currentColor"
-        d="M21.6 12.23c0-.68-.06-1.36-.19-2.02H12v3.83h5.4a4.6 4.6 0 0 1-2 3.02v2.5h3.23c1.9-1.74 2.97-4.3 2.97-7.33Z"
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
       />
       <path
-        fill="currentColor"
-        opacity="0.75"
-        d="M12 21.99c2.7 0 4.96-.9 6.62-2.42l-3.23-2.5c-.9.6-2.05.95-3.39.95-2.6 0-4.8-1.76-5.6-4.12H3.07v2.58A10 10 0 0 0 12 22Z"
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
       />
       <path
-        fill="currentColor"
-        opacity="0.5"
-        d="M6.4 13.9a6 6 0 0 1 0-3.8V7.52H3.06a10 10 0 0 0 0 8.96l3.34-2.58Z"
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
       />
       <path
-        fill="currentColor"
-        opacity="0.85"
-        d="M12 5.97c1.47 0 2.79.5 3.82 1.5l2.87-2.87A9.97 9.97 0 0 0 3.06 7.51L6.4 10.1c.8-2.36 3-4.13 5.6-4.13Z"
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
       />
     </svg>
   );
 }
 
-export default function LoginPage() {
-  const [step, setStep] = React.useState<Step>("choice");
-  const [email, setEmail] = React.useState("");
-  const [note, setNote] = React.useState<string | null>(null);
-  const [code, setCode] = React.useState("");
-  const [codeSent, setCodeSent] = React.useState(false);
+function LoginCard() {
+  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  const emailValid = EMAIL_PATTERN.test(email);
+  const error = searchParams.get("error");
+  const returnTo = searchParams.get("returnTo") || "/chat";
 
-  const goToCode = () => {
-    setNote(null);
-    setCode("");
-    setCodeSent(true);
-    setStep("code");
+  let errorMessage: string | null = null;
+  let canRetry = false;
+
+  if (error) {
+    canRetry = true;
+    switch (error) {
+      case "cancelled":
+        errorMessage = "ورود با حساب گوگل لغو شد. برای ادامه می‌توانید دوباره تلاش کنید.";
+        break;
+      case "timeout":
+        errorMessage = "ارتباط با سرویس گوگل با وقفه (Timeout) مواجه شد. لطفاً اتصال اینترنت خود را بررسی و دوباره تلاش کنید.";
+        break;
+      case "banned":
+        errorMessage = "این حساب کاربری مسدود شده است. برای بررسی بیشتر با پشتیبانی تماس بگیرید.";
+        canRetry = false;
+        break;
+      case "timeout_until":
+        const until = searchParams.get("until");
+        const formattedUntil = until ? new Date(until).toLocaleString("fa-IR") : "مدتی دیگر";
+        errorMessage = `دسترسی شما به سامانه تا ${formattedUntil} موقتاً محدود شده است.`;
+        canRetry = false;
+        break;
+      case "oauth_config":
+        errorMessage = "تنظیمات Google OAuth (Client ID / Secret) در فایل .env تعریف نشده است.";
+        break;
+      case "invalid_state":
+        errorMessage = "خطای اعتبارسنجی امنیتی در ورود (CSRF). لطفاً دوباره امتحان کنید.";
+        break;
+      default:
+        errorMessage = "خطایی در فرآیند احراز هویت رخ داد. لطفاً دوباره تلاش کنید.";
+        break;
+    }
+  }
+
+  const handleGoogleLogin = () => {
+    setIsLoading(true);
+    const googleLoginUrl = `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`;
+    window.location.href = googleLoginUrl;
   };
 
   return (
+    <div className="w-full max-w-[26rem]">
+      {/* Mobile brand row */}
+      <div className="mb-6 flex items-center justify-center gap-2.5 lg:hidden">
+        <ArkaMark className="size-6" />
+        <span dir="ltr" className="font-display text-[18px] font-bold tracking-[-0.02em]">
+          ARKA
+        </span>
+      </div>
+
+      <div className="rounded-card border border-line bg-card p-6 sm:p-8">
+        <div>
+          <h1 className="text-[1.4rem] font-extrabold leading-snug">ورود یا ساخت حساب</h1>
+          <p className="mt-2 text-[13.5px] leading-7 text-foreground-2">
+            با یک کلیک و فقط از طریق حساب گوگل، وارد محیط جامع هوش مصنوعی شوید.
+          </p>
+        </div>
+
+        {/* Error notification */}
+        {errorMessage && (
+          <div
+            role="alert"
+            className="mt-6 rounded-control border border-red-500/30 bg-red-500/10 p-3.5 text-[13px] leading-6 text-red-300"
+          >
+            <p>{errorMessage}</p>
+            {canRetry && (
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-white underline underline-offset-4 hover:opacity-80"
+              >
+                <RotateCcw className="size-3.5" />
+                تلاش دوباره
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Google OAuth Action Button - The ONLY method */}
+        <div className="mt-7 grid gap-3">
+          <Button
+            size="lg"
+            disabled={isLoading}
+            onClick={handleGoogleLogin}
+            className="group relative flex h-12 w-full items-center justify-center gap-3 border border-white/20 bg-white text-[14.5px] font-semibold text-black shadow-sm transition-all duration-200 hover:bg-neutral-200 active:scale-[0.99] disabled:opacity-70"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="size-5 animate-spin text-black" />
+                <span>در حال انتقال به گوگل...</span>
+              </>
+            ) : (
+              <>
+                <GoogleGlyph />
+                <span>ورود با حساب گوگل</span>
+              </>
+            )}
+          </Button>
+        </div>
+
+        <div className="mt-6 border-t border-line/60 pt-5 text-center">
+          <p className="text-[12px] leading-6 text-foreground-3">
+            ورود اول حساب جدید می‌سازد و ورودهای بعدی همان حساب قبلی را باز می‌کنند.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-2 text-center">
+        <p className="text-[11.5px] leading-5 text-foreground-3">
+          با ادامه، شرایط استفاده و حریم خصوصی Arka را می‌پذیرید.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className="flex min-h-dvh bg-background text-foreground">
-      {/* ================= Brand panel (lg+) ================= */}
+      {/* Brand panel (desktop) */}
       <aside
         aria-label="درباره‌ی ارکا"
         className="relative hidden w-[44%] max-w-2xl flex-col justify-between overflow-hidden border-s border-line bg-[#0c0c0c] p-10 lg:flex xl:p-14"
@@ -87,7 +185,9 @@ export default function LoginPage() {
 
         <div className="relative flex items-center gap-2.5">
           <ArkaMark className="size-7" />
-          <span dir="ltr" className="font-display text-[19px] font-bold tracking-[-0.02em]">ARKA</span>
+          <span dir="ltr" className="font-display text-[19px] font-bold tracking-[-0.02em]">
+            ARKA
+          </span>
         </div>
 
         <div className="relative">
@@ -118,12 +218,15 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <p className="relative text-[12.5px] text-white/35">© ۲۰۲۶ ارکا — محیط آزمایشی</p>
+        <p className="relative text-[12.5px] text-white/35">© ۲۰۲۶ ارکا — پلتفرم هوش مصنوعی</p>
       </aside>
 
-      {/* ================= Form side ================= */}
+      {/* Main form area */}
       <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-8">
-        <div aria-hidden className="dot-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(52rem_36rem_at_50%_38%,black,transparent_82%)]" />
+        <div
+          aria-hidden
+          className="dot-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(52rem_36rem_at_50%_38%,black,transparent_82%)]"
+        />
         <div aria-hidden className="glow pointer-events-none absolute inset-0" />
 
         <Link
@@ -134,165 +237,15 @@ export default function LoginPage() {
           بازگشت
         </Link>
 
-        <div className="relative w-full max-w-[26rem]">
-          {/* Mobile brand row (the aside is hidden below lg) */}
-          <div className="mb-6 flex items-center justify-center gap-2.5 lg:hidden">
-            <ArkaMark className="size-6" />
-            <span dir="ltr" className="font-display text-[18px] font-bold tracking-[-0.02em]">ARKA</span>
-          </div>
-
-          {/* Step indicator */}
-          <div className="mb-4 flex items-center justify-center gap-1.5" aria-hidden>
-            {STEPS.map((s) => (
-              <span
-                key={s}
-                className={cn(
-                  "h-1 rounded-full transition-all duration-300",
-                  s === step ? "w-6 bg-white" : "w-1.5 bg-white/20",
-                )}
-              />
-            ))}
-          </div>
-
-          <div key={step} className="step-in rounded-card border border-line bg-card p-6 sm:p-8">
-            {step === "choice" && (
-              <div>
-                <h1 className="text-[1.4rem] font-extrabold leading-snug">ورود یا ساخت حساب</h1>
-                <p className="mt-2 text-[13.5px] leading-7 text-foreground-2">
-                  با یک حساب، همه‌ی مدل‌ها را در یک محیط فارسی داشته باش.
-                </p>
-                <div className="mt-7 grid gap-3">
-                  <Button size="lg" onClick={() => setNote("ورود با گوگل در فاز ۱ متصل می‌شود — این نسخه نمایشی است.")}>
-                    <GoogleGlyph />
-                    ادامه با گوگل
-                  </Button>
-                  <div className="flex items-center gap-3 text-[12px] text-foreground-3" aria-hidden>
-                    <span className="h-px flex-1 bg-line" />
-                    یا
-                    <span className="h-px flex-1 bg-line" />
-                  </div>
-                  <Button size="lg" variant="outline" onClick={() => setStep("email")}>
-                    ادامه با ایمیل
-                  </Button>
-                </div>
-                <p className="mt-6 text-center text-[12px] leading-6 text-foreground-3">
-                  بعد از ثبت‌نام، ۱۰۰ پیام رایگان داری.
-                </p>
-              </div>
-            )}
-
-            {step === "email" && (
-              <form
-                className="grid gap-5"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (emailValid) goToCode();
-                }}
-              >
-                <div>
-                  <h1 className="text-[1.4rem] font-extrabold leading-snug">ایمیلت را وارد کن</h1>
-                  <p className="mt-2 text-[13.5px] leading-7 text-foreground-2">
-                    یک کد ۶ رقمی برایت می‌فرستیم؛ بدون رمز عبور.
-                  </p>
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="email" className="text-[13px] font-medium text-foreground-2">
-                    ایمیل
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    dir="ltr"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    autoComplete="email"
-                    className="h-11 text-left"
-                    required
-                  />
-                </div>
-                <Button type="submit" size="lg" disabled={!emailValid}>
-                  ارسال کد
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep("choice");
-                    setNote(null);
-                  }}
-                  className="text-[13px] text-foreground-3 transition-colors hover:text-foreground-2"
-                >
-                  بازگشت به روش‌های ورود
-                </button>
-              </form>
-            )}
-
-            {step === "code" && (
-              <div className="grid gap-5">
-                <div>
-                  <h1 className="text-[1.4rem] font-extrabold leading-snug">کد تأیید</h1>
-                  <p className="mt-2 text-[13.5px] leading-7 text-foreground-2">
-                    کد ۶ رقمی ارسال‌شده به{" "}
-                    <span dir="ltr" className="font-medium text-foreground">
-                      {email}
-                    </span>{" "}
-                    را وارد کن.
-                  </p>
-                </div>
-                <OtpInput onComplete={(value) => setCode(value)} />
-                <Button
-                  size="lg"
-                  disabled={code.length !== 6}
-                  onClick={() => setNote("کد دریافت شد — تأیید واقعی در فاز ۱ انجام می‌شود.")}
-                >
-                  تأیید و ورود
-                </Button>
-                <div className="flex items-center justify-between text-[13px]">
-                  <button
-                    type="button"
-                    onClick={() => setStep("email")}
-                    className="text-foreground-3 transition-colors hover:text-foreground-2"
-                  >
-                    تغییر ایمیل
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNote("در نسخه‌ی نمایشی، ارسال مجدد کد شبیه‌سازی می‌شود.")}
-                    className="text-foreground-3 transition-colors hover:text-foreground-2"
-                  >
-                    ارسال مجدد کد
-                  </button>
-                </div>
-                {codeSent && (
-                  <p className="text-center text-[11.5px] leading-6 text-foreground-3">
-                    نسخه‌ی نمایشی: هر ۶ رقمی را وارد کن؛ ایمیلی ارسال نمی‌شود.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {note && (
-              <p
-                role="status"
-                className="mt-6 rounded-control border border-line bg-elevated px-3.5 py-2.5 text-center text-xs leading-6 text-foreground-2"
-              >
-                {note}
-              </p>
-            )}
-          </div>
-
-          <div className="mt-5 space-y-2 text-center">
-            <p className="text-[11.5px] leading-5 text-foreground-3">
-              با ادامه، شرایط استفاده از Arka را می‌پذیری.
-            </p>
-            <Link
-              href="/chat"
-              className="inline-block rounded-sm text-[12.5px] text-foreground-3 underline-offset-4 transition-colors hover:text-foreground hover:underline"
-            >
-              فقط می‌خواهم محیط چت را ببینم
-            </Link>
-          </div>
-        </div>
+        <React.Suspense
+          fallback={
+            <div className="flex h-64 w-full max-w-[26rem] items-center justify-center rounded-card border border-line bg-card p-6">
+              <Loader2 className="size-6 animate-spin text-foreground-3" />
+            </div>
+          }
+        >
+          <LoginCard />
+        </React.Suspense>
       </main>
     </div>
   );

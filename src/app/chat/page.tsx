@@ -203,6 +203,22 @@ const EMPTY_MESSAGES: ChatMessage[] = [];
 /* ------------------------------------------------------------------ */
 
 export default function ChatPage() {
+  const [user, setUser] = React.useState<{
+    name?: string | null;
+    email?: string;
+    avatarUrl?: string | null;
+  } | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.authenticated && data?.user) {
+          setUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [conversations, setConversations] =
     React.useState<Conversation[]>(INITIAL_CONVERSATIONS);
   const [activeId, setActiveId] = React.useState<string | null>("c1");
@@ -518,7 +534,11 @@ export default function ChatPage() {
         </div>
 
         <div className="border-t border-line pt-2">
-          <UserMenu name="کاربر مهمان" subtitle="ورود نمایشی" />
+          <UserMenu
+            name={user?.name || "کاربر ارکا"}
+            subtitle={user?.email || "حساب کاربری"}
+            avatarUrl={user?.avatarUrl}
+          />
         </div>
       </aside>
 

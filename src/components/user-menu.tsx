@@ -1,19 +1,23 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 
 /**
  * Sidebar user menu (bottom block): avatar circle + name, opens a real
- * dropdown (role=menu) with settings / logout — not a static block.
- *
- * Keyboard: Enter/Space/ArrowDown opens, arrows move between items,
- * Escape closes and returns focus to the trigger, Tab closes,
- * click-outside closes. Mock actions only in Phase 0.
+ * dropdown (role=menu) with settings / logout.
  */
-export function UserMenu({ name, subtitle }: { name: string; subtitle: string }) {
+export function UserMenu({
+  name,
+  subtitle,
+  avatarUrl,
+}: {
+  name: string;
+  subtitle: string;
+  avatarUrl?: string | null;
+}) {
   const [open, setOpen] = React.useState(false);
+  const [imgError, setImgError] = React.useState(false);
   const rootRef = React.useRef<HTMLDivElement>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
@@ -83,6 +87,13 @@ export function UserMenu({ name, subtitle }: { name: string; subtitle: string })
     }
   };
 
+  const initial = (name || subtitle || "U").trim().charAt(0).toUpperCase();
+
+  const handleLogout = async () => {
+    close();
+    window.location.href = "/api/auth/logout";
+  };
+
   return (
     <div ref={rootRef} className="relative">
       {open && (
@@ -91,7 +102,7 @@ export function UserMenu({ name, subtitle }: { name: string; subtitle: string })
           role="menu"
           aria-label="منوی کاربر"
           onKeyDown={onMenuKeyDown}
-          className="absolute bottom-full start-0 z-50 mb-2 w-full rounded-card border border-line bg-popover p-1.5"
+          className="absolute bottom-full start-0 z-50 mb-2 w-full rounded-card border border-line bg-popover p-1.5 shadow-xl"
         >
           <button
             type="button"
@@ -104,15 +115,15 @@ export function UserMenu({ name, subtitle }: { name: string; subtitle: string })
             <span className="ms-auto text-[10px] text-foreground-3">به‌زودی</span>
           </button>
           <div role="separator" className="my-1 h-px bg-line" />
-          <Link
-            href="/"
+          <button
+            type="button"
             role="menuitem"
-            onClick={() => close()}
-            className="flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-[13px] text-foreground-2 transition-colors duration-150 hover:bg-soft focus-visible:bg-soft focus-visible:text-foreground focus-visible:outline-none"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-[13px] text-red-400 transition-colors duration-150 hover:bg-red-500/10 focus-visible:bg-red-500/10 focus-visible:text-red-300 focus-visible:outline-none"
           >
             <LogOut aria-hidden className="size-4 shrink-0" />
-            <span>خروج</span>
-          </Link>
+            <span>خروج از حساب</span>
+          </button>
         </div>
       )}
 
@@ -132,12 +143,22 @@ export function UserMenu({ name, subtitle }: { name: string; subtitle: string })
       >
         <span
           aria-hidden
-          className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-elevated text-xs text-foreground-2"
+          className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border border-line bg-elevated text-xs font-semibold text-foreground-2"
         >
-          م
+          {avatarUrl && !imgError ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={avatarUrl}
+              alt={name}
+              className="size-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            initial
+          )}
         </span>
         <span className="min-w-0 flex-1 leading-5">
-          <span className="block truncate text-[13px] text-foreground">{name}</span>
+          <span className="block truncate text-[13px] font-medium text-foreground">{name}</span>
           <span className="block truncate text-[11px] text-foreground-3">
             {subtitle}
           </span>

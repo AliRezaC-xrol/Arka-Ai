@@ -1,13 +1,5 @@
-// Arka — Prisma schema (SPEC §2)
-//
-// PHASE 0: scaffolded but intentionally NOT connected to a real database.
-// No `prisma generate` / `db push` has been run and no DATABASE_URL is set.
-// Phase 1 will point DATABASE_URL at a PostgreSQL instance.
-//
-// Deviations from the SPEC §2 summary (documented in docs/PHASE_0_REPORT.md):
-//  - Explicit @relation attributes were added so the schema passes
-//    `prisma validate` (the spec file is a summary without them).
-//  - Minimal `Account` and `Session` models were added for Auth.js (SPEC §3).
+// Arka — Prisma schema (Phase 1: Google OAuth Authentication)
+// Database: PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
@@ -19,84 +11,68 @@ datasource db {
 }
 
 model User {
-  id            String            @id @default(cuid())
-  email         String            @unique
+  id            String    @id @default(uuid())
+  email         String    @unique
+  googleId      String    @unique
   name          String?
-  image         String?
-  authProvider  String // "google" | "email"
-  createdAt     DateTime          @default(now())
-  lastSeenAt    DateTime?
-  isBanned      Boolean           @default(false)
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  lastLoginAt   DateTime  @default(now())
+  isBanned      Boolean   @default(false)
   bannedAt      DateTime?
   bannedReason  String?
   timeoutUntil  DateTime?
   timeoutReason String?
+
   conversations Conversation[]
   providerKeys  UserProviderKey[]
   usageEvents   UsageEvent[]
   notifications Notification[]
   sessions      Session[]
-  accounts      Account[]
-}
+  providers     Provider[]
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refreshToken      String?
-  accessToken       String?
-  expiresAt         Int?
-  tokenType         String?
-  scope             String?
-  idToken           String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+  @@map("users")
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   sessionToken String   @unique
   userId       String
   expiresAt    DateTime
+  createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
-model EmailOtp {
-  id         String    @id @default(cuid())
-  email      String
-  codeHash   String
-  expiresAt  DateTime
-  attempts   Int       @default(0)
-  consumedAt DateTime?
-  createdAt  DateTime  @default(now())
+  @@map("sessions")
 }
 
 model AdminSession {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   tokenHash String   @unique
   createdAt DateTime @default(now())
   expiresAt DateTime
+
+  @@map("admin_sessions")
 }
 
 model Provider {
-  id          String          @id @default(cuid())
-  scope       String // "global" (ادمین اضافه کرده، همه می‌بینن) | "user" (فقط خود کاربر)
-  ownerUserId String? // فقط برای scope=user
-  name        String // اسمی که ادمین/کاربر می‌ذاره و روی سایت نشون داده می‌شه
-  kind        String // openai | anthropic | google | openai_compatible | ...
-  baseUrl     String?
-  enabled     Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  keys        ProviderKey[]
-  models      ProviderModel[]
-  owner       User?           @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  id               String            @id @default(uuid())
+  scope            String // "global" (ادمین اضافه کرده، همه می‌بینن) | "user" (فقط خود کاربر)
+  ownerUserId      String? // فقط برای scope=user
+  name             String // اسمی که ادمین/کاربر می‌ذاره و روی سایت نشون داده می‌شه
+  kind             String // openai | anthropic | google | openai_compatible | ...
+  baseUrl          String?
+  enabled          Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  keys             ProviderKey[]
+  models           ProviderModel[]
+  owner            User?             @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  userProviderKeys UserProviderKey[]
+
+  @@map("providers")
 }
 
 model ProviderKey {
-  id            String    @id @default(cuid())
+  id            String    @id @default(uuid())
   providerId    String
   label         String
   ciphertext    Bytes
@@ -107,10 +83,12 @@ model ProviderKey {
   priority      Int       @default(0) // ترتیب استفاده برای failover
   createdAt     DateTime  @default(now())
   provider      Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("provider_keys")
 }
 
 model ProviderModel {
-  id            String   @id @default(cuid())
+  id            String   @id @default(uuid())
   providerId    String
   modelId       String
   displayName   String
@@ -118,29 +96,35 @@ model ProviderModel {
   supportsImage Boolean  @default(false)
   enabled       Boolean  @default(true)
   provider      Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("provider_models")
 }
 
 model UserProviderKey {
   // پروایدرهای شخصی کاربر (scope=user در Provider بالا مدیریت می‌شه، این فقط رفرنس سریع است)
-  id         String   @id @default(cuid())
+  id         String   @id @default(uuid())
   userId     String
   providerId String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("user_provider_keys")
 }
 
 model Conversation {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   userId    String
   title     String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now())
   messages  Message[]
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("conversations")
 }
 
 model Message {
-  id             String       @id @default(cuid())
+  id             String       @id @default(uuid())
   conversationId String
   role           String // user | assistant | system
   contentJson    String // متن، تصویر، بلوک کد
@@ -150,10 +134,12 @@ model Message {
   tokensOut      Int?
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }
 
 model UsageEvent {
-  id         String   @id @default(cuid())
+  id         String   @id @default(uuid())
   userId     String
   providerId String
   modelId    String
@@ -161,10 +147,12 @@ model UsageEvent {
   tokensOut  Int
   createdAt  DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("usage_events")
 }
 
 model Notification {
-  id          String    @id @default(cuid())
+  id          String    @id @default(uuid())
   userId      String? // null یعنی برای همه (broadcast)
   broadcastId String? // گروه‌بندی پیام‌های همگانی برای حذف دسته‌جمعی
   title       String
@@ -173,4 +161,6 @@ model Notification {
   dismissedAt DateTime?
   createdAt   DateTime  @default(now())
   user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
