@@ -153,41 +153,37 @@
 }
 
 /* ---------- Hero background (marketing page) ----------
-   Two achromatic light fields drifting on transform-only animations
-   (GPU-cheap, compositor-only) plus a faint static dot field. */
-.hero-aurora {
-  background:
-    radial-gradient(42rem 30rem at 78% 12%, rgba(255, 255, 255, 0.07), transparent 64%),
-    radial-gradient(36rem 26rem at 12% 82%, rgba(255, 255, 255, 0.045), transparent 66%);
-  animation: aurora-a 22s ease-in-out infinite alternate;
-}
-
-@keyframes aurora-a {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(-48px, 32px, 0) scale(1.08);
-  }
-}
-
-.hero-aurora-2 {
+   ONE soft achromatic spotlight drifting on a slow closed-loop path behind
+   the headline — transform-only (compositor-only, GPU-cheap), 20s loop that
+   returns to its exact start so the loop never pops. A static, edge-faded
+   dot field underneath supplies texture; both die under reduced motion. */
+.hero-spot {
+  position: absolute;
+  inset: -25%;
   background: radial-gradient(
-    30rem 22rem at 55% 42%,
-    rgba(255, 255, 255, 0.035),
-    transparent 70%
+    42rem 30rem at 50% 46%,
+    rgba(255, 255, 255, 0.075),
+    transparent 62%
   );
-  animation: aurora-b 30s ease-in-out infinite alternate;
+  animation: hero-spot-path 20s ease-in-out infinite;
+  will-change: transform;
 }
 
-@keyframes aurora-b {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.7;
+@keyframes hero-spot-path {
+  0% {
+    transform: translate3d(-7%, -5%, 0) scale(1);
   }
-  to {
-    transform: translate3d(40px, -28px, 0) scale(1.12);
-    opacity: 1;
+  25% {
+    transform: translate3d(9%, 4%, 0) scale(1.07);
+  }
+  50% {
+    transform: translate3d(3%, 13%, 0) scale(0.96);
+  }
+  75% {
+    transform: translate3d(-9%, 3%, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(-7%, -5%, 0) scale(1);
   }
 }
 
@@ -220,6 +216,64 @@
   }
 }
 
+/* ---------- Progressive blur (top dissolve — linear.app / vercel style) ----------
+   A fixed overlay across the top ~18% of the viewport. Four stacked layers
+   each carry their own backdrop-filter blur (increasing toward the top edge:
+   2 → 6 → 14 → 24px) plus a black→transparent vertical mask so every layer
+   blends smoothly into the next. A faint black gradient on top makes content
+   dissolve into the page background instead of being hard-cut. Purely static
+   CSS: no scroll listeners, no JS, nothing animated.
+   NOTE: kept below the sticky navbar's z-index so the navbar itself stays
+   crisp while scrolled content behind it melts away. */
+.pblur {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  height: 18vh;
+  height: 18svh;
+  max-height: 13rem;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.pblur > div {
+  position: absolute;
+  inset: 0;
+}
+
+.pblur .pblur-1 {
+  backdrop-filter: blur(2px);
+  mask-image: linear-gradient(to bottom, black, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+.pblur .pblur-2 {
+  backdrop-filter: blur(6px);
+  mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+}
+
+.pblur .pblur-3 {
+  backdrop-filter: blur(14px);
+  mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+}
+
+.pblur .pblur-4 {
+  backdrop-filter: blur(24px);
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+/* Fade component of the mist: content melts into the black background. */
+.pblur .pblur-fade {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.5),
+    rgba(0, 0, 0, 0) 75%
+  );
+}
+
 /* ---------- Reduced motion: keep everything readable, kill movement ---------- */
 @media (prefers-reduced-motion: reduce) {
   .reveal {
@@ -239,8 +293,7 @@
 
   .dot-grid,
   .glow,
-  .hero-aurora,
-  .hero-aurora-2,
+  .hero-spot,
   .hero-float,
   .hero-float-late {
     animation: none !important;

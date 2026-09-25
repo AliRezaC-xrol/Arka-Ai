@@ -10,8 +10,14 @@ export interface SpotlightEntry {
   meta?: string;
 }
 
-interface SpotlightListProps {
+export interface SpotlightGroup {
+  label: string;
   items: SpotlightEntry[];
+}
+
+interface SpotlightListProps {
+  /** Conversation groups rendered in order, each with its own header row. */
+  groups: SpotlightGroup[];
   /** Null = no active item (e.g. the "new chat" welcome state). */
   activeId: string | null;
   onSelect?: (id: string) => void;
@@ -30,6 +36,12 @@ interface SpotlightBox {
  * Spotlight selection box (SPEC §5): a soft, low-contrast background+border
  * box that sits behind the active item and glides to the clicked item.
  *
+ * Items are rendered as flat rows inside *grouped* sections (امروز، دیروز،
+ * ۷ روز گذشته، …). Group headers are plain presentational rows inside the
+ * same relatively-positioned container, so every item button still resolves
+ * its offsetTop/offsetLeft against the container and the spotlight math is
+ * unchanged — the box glides across group boundaries exactly as smoothly.
+ *
  * Implementation notes:
  * - The destination item's offsetTop/offsetLeft/width/height are measured at
  *   selection time, then the box moves via `transform: translate(...)` with
@@ -38,15 +50,17 @@ interface SpotlightBox {
  *   offsetParent, and translate() is physical too — so the glide is correct
  *   in RTL and LTR alike.
  * - The box animates ONLY on selection changes. Layout-driven re-measurements
- *   (resize, font load, list changes) re-apply the position with transitions
- *   disabled so the box never drifts across the list on layout changes.
+ *   (resize, font load, search filtering, list changes) re-apply the position
+ *   with transitions disabled so the box never drifts across the list.
  * - The ResizeObserver is subscribed ONCE (refs carry the latest state);
  *   re-subscribing on every selection would fire a fresh initial callback
  *   and cancel the glide mid-flight (that was the jump bug).
+ * - When a filter hides the active item, the box is hidden; when the filter
+ *   clears, a re-measure restores it without animation.
  * - Honors prefers-reduced-motion via the global CSS media query (.spotlight).
  */
 export function SpotlightList({
-  items,
+  groups,
   activeId,
   onSelect,
   className,
@@ -61,13 +75,21 @@ export function SpotlightList({
 
   activeIdRef.current = activeId;
 
+  /** Flattened items in render order — used for keyboard navigation. */
+  const flatItems = React.useMemo(
+    () => groups.flatMap((group) => group.items),
+    [groups],
+  );
+  const flatItemsRef = React.useRef(flatItems);
+  flatItemsRef.current = flatItems;
+
   /** Re-position without animating (layout changed, not the selection). */
   const remeasure = React.useCallback(() => {
     const el = activeIdRef.current
       ? itemRefs.current[activeIdRef.current]
       : undefined;
     if (!el) {
-      setBox(null);
+      setBox((prev) => (prev === null ? prev : null));
       return;
     }
     const next = {
@@ -127,20 +149,29 @@ export function SpotlightList({
     };
   }, [remeasure]);
 
+  // Group contents change (e.g. the sidebar search filter): re-apply the
+  // position without animation so the box is never left on a stale spot.
+  React.useEffect(() => {
+    remeasure();
+  }, [flatItems, remeasure]);
+
   const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
+    const count = flatItemsRef.current.length;
+    if (count === 0) return;
     let next: number | null = null;
-    if (event.key === "ArrowDown") next = (index + 1) % items.length;
-    else if (event.key === "ArrowUp")
-      next = (index - 1 + items.length) % items.length;
+    if (event.key === "ArrowDown") next = (index + 1) % count;
+    else if (event.key === "ArrowUp") next = (index - 1 + count) % count;
     else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = items.length - 1;
+    else if (event.key === "End") next = count - 1;
     if (next === null) return;
 
     event.preventDefault();
-    const item = items[next];
+    const item = flatItemsRef.current[next];
     onSelect?.(item.id);
     itemRefs.current[item.id]?.focus();
   };
+
+  let flatIndex = -1;
 
   return (
     <div
@@ -165,36 +196,52 @@ export function SpotlightList({
           }}
         />
       )}
-      {items.map((item, index) => {
-        const active = item.id === activeId;
-        return (
-          <button
-            key={item.id}
-            ref={(el) => {
-              itemRefs.current[item.id] = el;
-            }}
-            type="button"
-            role="option"
-            aria-selected={active}
-            // Roving tab index: the active item is reachable; with no active
-            // item the first one is, so the listbox stays keyboard-accessible.
-            tabIndex={active || (!activeId && index === 0) ? 0 : -1}
-            onClick={() => onSelect?.(item.id)}
-            onKeyDown={(event) => handleKeyDown(event, index)}
+      {groups.map((group, groupIndex) => (
+        <React.Fragment key={group.label}>
+          <p
+            role="presentation"
             className={cn(
-              "relative z-[1] flex w-full flex-col items-start gap-0.5 rounded-control px-3 py-2.5 text-start transition-colors duration-200 hover:bg-soft focus-visible:outline-none",
-              active ? "text-foreground" : "text-foreground-2",
+              "px-3 pb-1.5 text-[11px] font-medium text-foreground-3",
+              groupIndex === 0 ? "pt-1" : "pt-5",
             )}
           >
-            <span className="w-full truncate text-[13px] font-medium">
-              {item.title}
-            </span>
-            {item.meta && (
-              <span className="text-[11px] text-foreground-3">{item.meta}</span>
-            )}
-          </button>
-        );
-      })}
+            {group.label}
+          </p>
+          {group.items.map((item) => {
+            flatIndex += 1;
+            const index = flatIndex;
+            const active = item.id === activeId;
+            return (
+              <button
+                key={item.id}
+                ref={(el) => {
+                  itemRefs.current[item.id] = el;
+                }}
+                type="button"
+                role="option"
+                aria-selected={active}
+                // Roving tab index: the active item is reachable; with no
+                // active item the first one is, so the listbox stays
+                // keyboard-accessible.
+                tabIndex={active || (!activeId && index === 0) ? 0 : -1}
+                onClick={() => onSelect?.(item.id)}
+                onKeyDown={(event) => handleKeyDown(event, index)}
+                className={cn(
+                  "relative z-[1] flex w-full flex-col items-start gap-0.5 rounded-control px-3 py-2.5 text-start transition-colors duration-200 hover:bg-soft focus-visible:outline-none",
+                  active ? "text-foreground" : "text-foreground-2",
+                )}
+              >
+                <span className="w-full truncate text-[13px] font-medium">
+                  {item.title}
+                </span>
+                {item.meta && (
+                  <span className="text-[11px] text-foreground-3">{item.meta}</span>
+                )}
+              </button>
+            );
+          })}
+        </React.Fragment>
+      ))}
     </div>
   );
 }

@@ -18,25 +18,25 @@ const FEATURES = [
   {
     title: "چت هوشمند با پاسخ استریمی",
     description:
-      "جواب‌ها کلمه‌به‌کلمه جلوی چشمت شکل می‌گیرند؛ بدون انتظار، بدون رفرش. تاریخچه‌ی گفتگوها همیشه ذخیره می‌شود و از هر جایی ادامه می‌دهی.",
+      "جواب‌ها کلمه‌به‌کلمه جلوی چشمت شکل می‌گیرند؛ بدون انتظار و بدون رفرش. تاریخچه‌ی گفتگوها ذخیره می‌شود و هر جا خواستی ادامه می‌دهی.",
     icon: MessageSquare,
   },
   {
     title: "تولید تصویر در همان گفتگو",
     description:
-      "پرامپت بنویس و نتایج را در یک گرید تمیز ببین. تصویرها کنار متن گفتگو می‌مانند تا مقایسه و بازاستفاده آسان باشد.",
+      "پرامپت بنویس و نتیجه را همان‌جا ببین. تصویرها کنار متن گفتگو می‌مانند تا مقایسه و استفاده‌ی دوباره ساده باشد.",
     icon: ImageIcon,
   },
   {
     title: "هر پروایدری که بخواهی",
     description:
-      "OpenAI، Anthropic، Google یا هر سرویس سازگار با OpenAI — کلید خودت را وصل کن. پروایدرهای سراسری مدیر کنار کلیدهای شخصی تو.",
+      "OpenAI، Anthropic، Google یا هر سرویس سازگار با OpenAI. کلید خودت را وصل کن؛ پروایدرهای سراسری هم کنار کلیدهای شخصی‌ات در دسترس‌اند.",
     icon: KeyRound,
   },
   {
-    title: "کلیدها امن، داده‌ها مال خودت",
+    title: "حریم خصوصی و ایزوله بودن",
     description:
-      "کلیدها با AES-256-GCM رمزنگاری می‌شوند و گفتگوها فقط برای تو نمایش داده می‌شوند. اگر یک کلید از کار بیفتد، بعدی بی‌سروصدا وارد می‌شود.",
+      "کلیدها با AES-256-GCM رمزنگاری می‌شوند و گفتگوهایت کاملاً ایزوله می‌مانند؛ فقط خودت آن‌ها را می‌بینی. اگر کلیدی از کار بیفتد، بعدی بی‌سروصدا وارد می‌شود.",
     icon: ShieldCheck,
   },
 ];
@@ -48,14 +48,26 @@ export default function Home() {
     <div className="flex min-h-dvh flex-col">
       <SiteNavbar />
 
+      {/* Top dissolve: as content scrolls up, it progressively blurs and
+          fades into the background instead of being hard-cut by the viewport
+          edge (linear.app / vercel style). Purely static CSS layers — no
+          scroll listeners. Sits under the navbar so the navbar stays crisp. */}
+      <div aria-hidden className="pblur">
+        <div className="pblur-1" />
+        <div className="pblur-2" />
+        <div className="pblur-3" />
+        <div className="pblur-4" />
+        <div className="pblur-fade" />
+      </div>
+
       <main className="flex-1">
         {/* ================= Hero ================= */}
         <section className="relative overflow-hidden" aria-labelledby="hero-title">
-          {/* Animated achromatic background: two drifting light fields + masked
-              dot grid. Transform-only animations, killed under reduced motion. */}
+          {/* Animated achromatic background: ONE soft spotlight drifting on a
+              slow 20s loop behind the headline + a static edge-faded dot
+              field. Transform-only animations, killed under reduced motion. */}
           <div aria-hidden className="pointer-events-none absolute inset-0">
-            <div className="hero-aurora absolute inset-0" />
-            <div className="hero-aurora-2 absolute inset-0" />
+            <div className="hero-spot absolute inset-0" />
             <div className="hero-dots absolute inset-0" />
             {/* Hairline horizon that grounds the composition */}
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-white/15 to-transparent" />
@@ -64,50 +76,43 @@ export default function Home() {
           <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-5 pb-24 pt-16 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10 lg:pb-32 lg:pt-24">
             {/* ---- Copy column (asymmetric: wider, text-start) ---- */}
             <div className="max-w-2xl">
+              {/* The ONE place allowed 40–56px (SPEC exception) */}
               <Reveal>
-                <span className="inline-flex items-center gap-2 rounded-full border border-line bg-card/60 px-3 py-1 text-xs text-foreground-2">
-                  <Sparkles aria-hidden className="size-3.5 text-foreground-3" />
-                  فاز ۰ — نسخه‌ی نمایشی
-                </span>
-              </Reveal>
-
-              {/* The ONE place allowed 40–56px (SPEC exception, Phase 0 fix) */}
-              <Reveal delay={90}>
                 <h1
                   id="hero-title"
-                  className="mt-6 text-[2.5rem] font-semibold leading-[1.25] tracking-tight sm:text-5xl sm:leading-[1.2] lg:text-[3.5rem] lg:leading-[1.15]"
+                  className="text-[2.5rem] font-semibold leading-[1.25] tracking-tight sm:text-5xl sm:leading-[1.2] lg:text-[3.5rem] lg:leading-[1.15]"
                 >
                   همه‌ی مدل‌های هوش مصنوعی،
                   <br />
-                  <span className="text-foreground-2">در یک جای ساده.</span>
+                  <span className="text-foreground-2">در یک گفتگو.</span>
                 </h1>
               </Reveal>
 
-              <Reveal delay={180}>
+              <Reveal delay={90}>
                 <p className="mt-6 max-w-lg text-base leading-8 text-foreground-2">
                   ارکا محیط چت و تولید تصویر توست؛ هر پروایدری که بخواهی وصل کن،
-                  کلیدت امن می‌ماند و اگر یک سرویس از کار بیفتد، کار بی‌وقفه
+                  کلیدت امن می‌ماند و اگر سرویسی از کار بیفتد، کار بی‌وقفه
                   ادامه پیدا می‌کند.
                 </p>
               </Reveal>
 
-              <Reveal delay={260}>
+              <Reveal delay={180}>
                 <div className="mt-9 flex flex-wrap items-center gap-3">
                   <Link href="/login">
                     <Button size="lg">شروع کنید</Button>
                   </Link>
                   <Link href="/chat">
                     <Button size="lg" variant="outline">
-                      مشاهده‌ی محیط چت
+                      دیدن محیط چت
                       <ArrowLeft aria-hidden />
                     </Button>
                   </Link>
                 </div>
               </Reveal>
 
-              <Reveal delay={320}>
+              <Reveal delay={260}>
                 <p className="mt-6 text-xs text-foreground-3">
-                  بدون کارت بانکی — در نسخه‌ی نمایشی، داده‌ها ساختگی هستند.
+                  بدون کارت بانکی؛ با کلید خودت شروع کن.
                 </p>
               </Reveal>
             </div>
@@ -220,8 +225,8 @@ export default function Home() {
                   محیطی که دوست داری در آن کار کنی
                 </h2>
                 <p className="mt-4 text-sm leading-8 text-foreground-2">
-                  گفتگوها در ستون کنار، مدل‌ها بالای صفحه و کادر نوشتن همیشه در
-                  دسترس. تمیز، تیره و فارسی — بدون شلوغی.
+                  گفتگوها در ستون کنار، انتخاب مدل بالای صفحه و کادر نوشتن همیشه
+                  در دسترس؛ تمیز و بدون شلوغی.
                 </p>
                 <ul className="mt-6 space-y-3 text-[13px] text-foreground-2">
                   {[
@@ -257,10 +262,10 @@ export default function Home() {
               />
               <div className="relative">
                 <h2 className="text-2xl font-semibold sm:text-3xl">
-                  آماده‌ای شروع کنی؟
+                  آماده‌ی شروعی؟
                 </h2>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-foreground-2">
-                  چند کلیک تا اولین گفتگوی تو با ارکا فاصله است.
+                  ساخت حساب کمتر از یک دقیقه طول می‌کشد.
                 </p>
                 <Link href="/login" className="mt-8 inline-block">
                   <Button size="lg">ساخت حساب</Button>
@@ -271,64 +276,24 @@ export default function Home() {
         </section>
       </main>
 
-      {/* ================= Footer — proper multi-row layout ================= */}
+      {/* ================= Footer — one quiet row: copyright + legal links ================= */}
       <footer className="border-t border-line">
-        <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-            <div>
-              <span className="text-[15px] font-semibold tracking-tight">Arka</span>
-              <p className="mt-3 max-w-xs text-[13px] leading-7 text-foreground-3">
-                محیط چت و تولید تصویر با هوش مصنوعی؛ پروایدر خودت را وصل کن،
-                بقیه‌اش با ما.
-              </p>
-            </div>
-
-            {[
-              {
-                heading: "محصول",
-                links: ["قابلیت‌ها", "پیش‌نمایش", "نسخه‌ی نمایشی"],
-                hrefs: ["/#features", "/#preview", "/chat"],
-              },
-              {
-                heading: "حساب",
-                links: ["ورود", "ساخت حساب"],
-                hrefs: ["/login", "/login"],
-              },
-              {
-                heading: "منابع",
-                links: ["مستندات (به‌زودی)", "راهنمای پروایدرها (به‌زودی)"],
-                hrefs: ["", ""],
-              },
-            ].map((column) => (
-              <nav key={column.heading} aria-label={column.heading}>
-                <p className="text-xs font-medium text-foreground-2">{column.heading}</p>
-                <ul className="mt-3.5 space-y-2.5">
-                  {column.links.map((link, index) => {
-                    const href = column.hrefs[index];
-                    return (
-                      <li key={link}>
-                        {href ? (
-                          <Link
-                            href={href}
-                            className="text-[13px] text-foreground-3 transition-colors duration-200 hover:text-foreground"
-                          >
-                            {link}
-                          </Link>
-                        ) : (
-                          <span className="text-[13px] text-foreground-3/70">{link}</span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </nav>
-            ))}
-          </div>
-
-          <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-line pt-6 text-xs text-foreground-3 sm:flex-row sm:items-center">
-            <span>© ۱۴۰۴ Arka — همه‌ی حقوق محفوظ است.</span>
-            <span>ساخته‌شده با Next.js و Tailwind</span>
-          </div>
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-3 px-5 py-8 text-[13px] text-foreground-3 sm:flex-row sm:items-center sm:px-8">
+          <p>© ۲۰۲۵ Arka</p>
+          <nav aria-label="پیوندهای پایین صفحه" className="flex items-center gap-6">
+            <a
+              href="#"
+              className="transition-colors duration-200 hover:text-foreground"
+            >
+              حریم خصوصی
+            </a>
+            <a
+              href="#"
+              className="transition-colors duration-200 hover:text-foreground"
+            >
+              شرایط استفاده
+            </a>
+          </nav>
         </div>
       </footer>
     </div>
