@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 
-import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -45,7 +44,7 @@ export function SiteNavbar() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
         <Link
           href="/"
-          className="text-[17px] font-semibold tracking-tight text-foreground"
+          dir="ltr" className="text-[20px] font-extrabold tracking-[-0.04em] text-foreground"
           aria-label="Arka — صفحه‌ی اصلی"
         >
           Arka
@@ -58,7 +57,7 @@ export function SiteNavbar() {
           >
             ورود
           </Link>
-          <Link href="/login" className={buttonClasses({ size: "sm", variant: "outline" })}>
+          <Link href="/login" className="btn-blue inline-flex h-9 items-center rounded-control px-4 text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
 شروع کنید
 </Link>
         </nav>

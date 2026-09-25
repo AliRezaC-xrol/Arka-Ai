@@ -1,66 +1,81 @@
-import { ArrowUp, ChevronDown, Paperclip, Sparkles } from "lucide-react";
+import { ArrowUp, ChevronDown, Paperclip, Plus, Search, Sparkles } from "lucide-react";
 
 /**
- * Static illustration of the Arka chat shell for the marketing page.
- * Mirrors the real /chat layout exactly (same RTL rules): assistant text
- * flows from the reading edge (inline-start), the user bubble sits on the
- * inline-end side, the model pill lives inside the composer.
+ * Static product shot of the Arka chat shell (marketing page).
+ * Same RTL rules as /chat: assistant from inline-start, user bubble at
+ * inline-end, model pill inside the composer.
  */
 export function ChatPreview() {
   return (
     <div
       aria-hidden
-      className="relative overflow-hidden rounded-card border border-line bg-background text-start"
+      className="relative overflow-hidden rounded-[20px] border border-line bg-background text-start shadow-[0_40px_120px_-30px_rgba(31,111,255,0.55)]"
     >
-      <div className="ambient ambient--chat" />
-      <div className="relative flex h-[340px] sm:h-[380px]">
-        <div className="hidden w-44 shrink-0 flex-col gap-1 border-e border-line bg-elevated/60 p-3 sm:flex">
-          <span dir="ltr" className="mb-2 self-start px-1 text-[12px] font-extrabold tracking-tight">
+      {/* Window chrome */}
+      <div className="flex h-10 items-center gap-2 border-b border-line bg-elevated px-4">
+        <span className="size-2.5 rounded-full bg-white/10" />
+        <span className="size-2.5 rounded-full bg-white/10" />
+        <span className="size-2.5 rounded-full bg-white/10" />
+        <span dir="ltr" className="mx-auto rounded-full border border-line px-3 py-0.5 text-[11px] text-foreground-3">
+          arka.app/chat
+        </span>
+      </div>
+
+      <div className="flex h-[420px] sm:h-[480px]">
+        {/* Sidebar */}
+        <div className="sidebar-bg hidden w-56 shrink-0 flex-col gap-2 border-e border-line p-3 md:flex">
+          <span dir="ltr" className="self-end px-1 text-[15px] font-extrabold tracking-[-0.04em]">
             Arka
           </span>
-          <div className="rounded-control border border-blue-line bg-blue-soft px-2.5 py-2">
-            <p className="truncate text-[11px] font-medium text-foreground">
-              ایده‌های محتوای اینستاگرام
-            </p>
+          <span className="btn-blue mt-1 flex h-9 items-center gap-2 rounded-control px-3 text-[12px] font-semibold">
+            <Plus className="size-3.5" /> گفتگوی جدید
+          </span>
+          <span className="flex h-8 items-center gap-2 rounded-control border border-line px-2.5 text-[11px] text-foreground-3">
+            <Search className="size-3" /> جستجو…
+          </span>
+          <p className="mt-2 px-2 text-[10px] text-foreground-3">امروز</p>
+          <div className="rounded-control border border-blue-line bg-blue-soft px-2.5 py-2 text-[11.5px] font-medium">
+            ایده‌های محتوای اینستاگرام
           </div>
-          {["خلاصه‌ی مقاله‌ی ترنسفورمرها", "بازنویسی ایمیل به مشتری", "برنامه‌ی سفر به استانبول"].map(
-            (title) => (
-              <div key={title} className="px-2.5 py-2">
-                <p className="truncate text-[11px] text-foreground-2">{title}</p>
-              </div>
-            ),
-          )}
+          <p className="px-2.5 py-1.5 text-[11.5px] text-foreground-2">خلاصه‌ی مقاله‌ی ترنسفورمرها</p>
+          <p className="mt-1 px-2 text-[10px] text-foreground-3">دیروز</p>
+          <p className="px-2.5 py-1.5 text-[11.5px] text-foreground-2">بازنویسی ایمیل به مشتری</p>
+          <p className="px-2.5 py-1.5 text-[11.5px] text-foreground-2">برنامه‌ی سفر به استانبول</p>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 flex-col justify-end gap-4 p-4">
-            <div className="flex justify-end">
-              <div className="max-w-[80%] rounded-card rounded-se-md border border-line bg-card px-3 py-2 text-[11px] leading-5">
-                سه ایده‌ی پست برای پیج طراحی محصول بنویس.
+        {/* Conversation */}
+        <div className="relative flex min-w-0 flex-1 flex-col">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(31,111,255,0.22),transparent)]" />
+          <div className="relative flex min-h-0 flex-1 flex-col justify-end gap-5 p-5">
+            <div className="flex flex-col items-end">
+              <div className="bubble-user max-w-[80%] rounded-[18px] rounded-se-md px-4 py-2.5 text-[12.5px] leading-6">
+                برای پیج طراحی محصول سه ایده‌ی پست بنویس.
               </div>
+              <span className="mt-1 text-[10px] text-foreground-3">۱۰:۲۴</span>
             </div>
-            <div className="flex gap-2">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full border border-blue-line bg-blue-soft text-blue">
-                <Sparkles className="size-3" />
+            <div className="flex gap-2.5">
+              <span className="orb grid size-7 shrink-0 place-items-center rounded-full text-white">
+                <Sparkles className="size-3.5" />
               </span>
-              <div className="min-w-0 text-[11px] leading-6 text-foreground-2">
-                <p className="text-foreground">قبل و بعد: ری‌دیزاین واقعی را کنار نسخه‌ی قدیمی نشان بده.</p>
-                <p>خطای رایج: سه اشتباه در طراحی فرم را با مثال باز کن.</p>
+              <div className="min-w-0 space-y-2 text-[12.5px] leading-6 text-foreground-2">
+                <p><span className="font-semibold text-foreground">قبل و بعد:</span> ری‌دیزاین واقعی را کنار نسخه‌ی قدیمی نشان بده.</p>
+                <p><span className="font-semibold text-foreground">خطای رایج:</span> سه اشتباه در طراحی فرم را با مثال باز کن.</p>
+                <p><span className="font-semibold text-foreground">پشت صحنه:</span> یک صفحه را از اسکیس تا نسخه‌ی نهایی<span className="ms-0.5 inline-block h-3.5 w-0.5 translate-y-0.5 bg-blue" /></p>
               </div>
             </div>
           </div>
 
-          <div className="p-3 pt-0">
-            <div className="rounded-card border border-blue-line bg-card p-2.5 shadow-[0_0_30px_-12px_var(--accent-glow)]">
-              <p className="px-1 text-[11px] text-foreground-3">پیامت را بنویس…</p>
-              <div className="mt-2 flex items-center gap-1.5">
-                <Paperclip className="size-3.5 text-foreground-3" />
-                <span className="flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[10px] text-foreground-2">
+          <div className="relative p-4 pt-0">
+            <div className="composer-ring rounded-card p-3">
+              <p className="px-1 text-[12px] text-foreground-3">پیامت را بنویس…</p>
+              <div className="mt-3 flex items-center gap-2">
+                <Paperclip className="size-4 text-foreground-3" />
+                <span className="flex items-center gap-1.5 rounded-full border border-line bg-elevated px-2.5 py-1 text-[11px] text-foreground-2">
                   <span dir="ltr">GPT-4o</span>
                   <ChevronDown className="size-3" />
                 </span>
-                <span className="ms-auto grid size-6 place-items-center rounded-control bg-blue text-white">
-                  <ArrowUp className="size-3.5" />
+                <span className="btn-blue ms-auto grid size-8 place-items-center rounded-control">
+                  <ArrowUp className="size-4" />
                 </span>
               </div>
             </div>

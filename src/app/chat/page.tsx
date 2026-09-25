@@ -417,7 +417,7 @@ export default function ChatPage() {
       <aside
         aria-label="فهرست گفتگوها"
         className={cn(
-          "w-72 shrink-0 flex-col gap-3.5 border-line bg-elevated/80 p-4 backdrop-blur-xl",
+          "sidebar-bg w-72 shrink-0 flex-col gap-3.5 border-line p-4",
           "max-md:fixed max-md:inset-y-0 max-md:start-0 max-md:z-40 max-md:flex max-md:border-e",
           "max-md:transition-transform max-md:duration-300 max-md:ease-(--motion-ease)",
           "md:flex md:border-e",
@@ -427,7 +427,7 @@ export default function ChatPage() {
         )}
       >
         <div className="flex items-center justify-between px-1">
-          <span dir="ltr" className="text-[18px] font-extrabold tracking-[-0.04em]">Arka</span>
+          <span dir="ltr" className="text-gradient-blue text-[22px] font-extrabold tracking-[-0.04em]">Arka</span>
           <Button
             variant="ghost"
             size="icon"
@@ -439,7 +439,7 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <Button onClick={startNewChat} variant="outline" className="w-full justify-start">
+        <Button onClick={startNewChat} className="btn-blue h-10 w-full justify-start">
           <Plus aria-hidden />
           گفتگوی جدید
         </Button>
@@ -482,7 +482,7 @@ export default function ChatPage() {
       {/* ================= Main column ================= */}
       <main className="relative flex min-w-0 flex-1 flex-col">
         {/* Same restrained glow language as the hero, dimmer. */}
-        <div aria-hidden className="ambient ambient--chat" />
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(55%_100%_at_50%_0%,rgba(31,111,255,0.28),transparent_70%)]" />
 
         <header className="relative z-[1] flex h-14 shrink-0 items-center gap-2 px-3 sm:px-5">
           <Button
@@ -503,7 +503,10 @@ export default function ChatPage() {
           /* ---------- Welcome ---------- */
           <div className="relative z-[1] flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-4">
             <div className="w-full max-w-2xl">
-              <h1 className="text-center text-[1.75rem] font-semibold leading-[1.4] sm:text-[2rem]">
+              <div aria-hidden className="orb mx-auto grid size-16 place-items-center rounded-full text-white">
+                <Sparkles className="size-7" strokeWidth={1.75} />
+              </div>
+              <h1 className="mt-6 text-center text-[1.75rem] font-bold leading-[1.4] sm:text-[2.25rem]">
                 امروز روی چه چیزی کار کنیم؟
               </h1>
               <div className="mt-8 grid gap-2.5 sm:grid-cols-2">
@@ -515,11 +518,11 @@ export default function ChatPage() {
                       setDraft(suggestion.prompt);
                       requestAnimationFrame(() => composerRef.current?.focus());
                     }}
-                    className="group flex items-start gap-3 rounded-card border border-line bg-elevated/70 p-4 text-start transition-colors duration-150 hover:border-white/20 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="group card-glass flex items-start gap-3 rounded-card p-4 text-start transition-colors duration-150 hover:border-blue-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <suggestion.icon
                       aria-hidden
-                      className="mt-0.5 size-4 shrink-0 text-foreground-3 transition-colors duration-150 group-hover:text-blue"
+                      className="mt-0.5 size-4 shrink-0 text-blue"
                       strokeWidth={1.75}
                     />
                     <span>
@@ -545,7 +548,7 @@ export default function ChatPage() {
                 message.role === "user" ? (
                   /* User: quiet bubble on the inline-END side (left in RTL). */
                   <div key={message.id} className="flex flex-col items-end">
-                    <div className="msg-text max-w-[88%] whitespace-pre-wrap rounded-card rounded-se-md border border-line bg-card px-4 py-2.5 text-[15px] leading-[1.9] sm:max-w-[78%]">
+                    <div className="msg-text bubble-user max-w-[88%] whitespace-pre-wrap rounded-[20px] rounded-se-md px-4 py-2.5 text-[15px] leading-[1.9] sm:max-w-[78%]">
                       {message.content}
                     </div>
                     {message.time && (
@@ -594,7 +597,7 @@ export default function ChatPage() {
               event.preventDefault();
               sendMessage();
             }}
-            className="composer mx-auto w-full max-w-[46rem] rounded-card border border-line p-2.5"
+            className="composer-ring mx-auto w-full max-w-[46rem] rounded-[20px] p-3"
           >
             <textarea
               ref={composerRef}
@@ -629,8 +632,8 @@ export default function ChatPage() {
                 data-ready={canSend}
                 aria-disabled={!canSend}
                 className={cn(
-                  "send-btn ms-auto grid size-9 shrink-0 place-items-center rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
-                  !canSend && "cursor-not-allowed border border-line bg-soft text-foreground-3",
+                  "ms-auto grid size-10 shrink-0 place-items-center rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
+                  canSend ? "btn-blue" : "cursor-not-allowed border border-line bg-soft text-foreground-3",
                 )}
               >
                 <ArrowUp aria-hidden className="size-[18px]" strokeWidth={2.25} />
@@ -654,7 +657,7 @@ function AssistantAvatar({ thinking = false }: { thinking?: boolean }) {
   return (
     <div
       aria-hidden
-      className="grid size-8 shrink-0 place-items-center rounded-full border border-blue-line bg-blue-soft text-blue"
+      className="orb grid size-8 shrink-0 place-items-center rounded-full text-white"
     >
       {thinking ? <span className="thinking-orb" /> : <Sparkles className="size-4" strokeWidth={1.75} />}
     </div>

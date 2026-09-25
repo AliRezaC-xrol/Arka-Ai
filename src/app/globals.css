@@ -6,23 +6,23 @@
  * Elevation comes from hairline borders only — no shadows anywhere.
  */
 :root {
-  --bg: #000000;
-  --bg-elevated: #0d0d0d;
-  --bg-card: #121212;
+  --bg: #02040a;
+  --bg-elevated: #060a15;
+  --bg-card: #0a1122;
   --text: #ffffff;
-  --text-2: #a0a0a0;
-  --text-3: #6b6b6b;
-  --border: rgba(255, 255, 255, 0.1);
-  --hover: rgba(255, 255, 255, 0.06);
+  --text-2: #a3b0cc;
+  --text-3: #5f6b88;
+  --border: rgba(120, 160, 255, 0.14);
+  --hover: rgba(90, 140, 255, 0.08);
   --radius-control: 10px;
   --radius-card: 16px;
   /* The ONE accent (SPEC §10 addendum). Used only for primary actions,
      active/selected states, focus rings and sparing glow. Never a fill. */
-  --accent-blue: #2f7bff;
-  --accent-blue-hover: #4a8cff;
-  --accent-soft: rgba(47, 123, 255, 0.12);
-  --accent-line: rgba(47, 123, 255, 0.38);
-  --accent-glow: rgba(47, 123, 255, 0.45);
+  --accent-blue: #1f6fff;
+  --accent-blue-hover: #3d85ff;
+  --accent-soft: rgba(31, 111, 255, 0.16);
+  --accent-line: rgba(61, 133, 255, 0.5);
+  --accent-glow: rgba(31, 111, 255, 0.6);
   /* Latin first (SF-like on Apple devices, OS font elsewhere),
      Persian falls through to self-hosted Vazirmatn. */
   --font-sans: -apple-system, BlinkMacSystemFont, var(--font-vazirmatn),
@@ -119,8 +119,8 @@
   --destructive: var(--text-2);
   --success: var(--text-2);
   --warning: var(--text-2);
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.1);
+  --border: rgba(120, 160, 255, 0.14);
+  --input: rgba(120, 160, 255, 0.18);
   --ring: var(--accent-blue);
   --brand: #ffffff;
   --brand-foreground: #000000;
@@ -485,7 +485,7 @@
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: var(--accent-blue);
+  background: #fff;
   box-shadow: 0 0 12px var(--accent-glow);
   animation: orb-pulse 1.6s ease-in-out infinite;
 }
@@ -622,5 +622,160 @@
   *::after {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ==================================================================
+   Round 4 — strong black + blue
+   ================================================================== */
+.text-gradient-blue {
+  background: linear-gradient(180deg, #ffffff 0%, #cfe0ff 45%, #5b9bff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Hero aurora: big saturated blue light from above + a glowing planet
+   horizon under the headline. Only the aurora drifts (transform). */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -30rem;
+  width: min(80rem, 180vw);
+  height: 60rem;
+  translate: -50% 0;
+  background:
+    radial-gradient(closest-side at 50% 55%, rgba(31, 111, 255, 0.55), transparent 70%),
+    radial-gradient(closest-side at 30% 60%, rgba(0, 170, 255, 0.28), transparent 70%),
+    radial-gradient(closest-side at 70% 60%, rgba(60, 80, 255, 0.3), transparent 70%);
+  filter: blur(30px);
+  animation: aurora-drift 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes aurora-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-3%, 3%, 0) scale(1.06); }
+}
+
+.grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(90, 140, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(90, 140, 255, 0.09) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 30%, black, transparent 75%);
+  pointer-events: none;
+}
+
+.horizon {
+  position: absolute;
+  left: 50%;
+  bottom: -118vw;
+  width: 150vw;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #02040a 97%, transparent 100%);
+  box-shadow:
+    0 -2px 0 0 rgba(140, 185, 255, 0.9),
+    0 -12px 40px 0 rgba(31, 111, 255, 0.75),
+    0 -60px 160px 20px rgba(31, 111, 255, 0.45);
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .horizon {
+    bottom: -112vw;
+    width: 130vw;
+  }
+}
+
+/* Gradient hairline border for important surfaces. */
+.border-gradient {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+    linear-gradient(160deg, rgba(91, 155, 255, 0.7), rgba(91, 155, 255, 0.08) 40%, rgba(91, 155, 255, 0.35)) border-box;
+}
+
+.card-glass {
+  background: linear-gradient(180deg, rgba(20, 35, 70, 0.55), rgba(8, 13, 28, 0.75));
+  border: 1px solid var(--border);
+}
+
+.blue-panel {
+  background:
+    radial-gradient(60% 120% at 50% 0%, rgba(120, 175, 255, 0.55), transparent 60%),
+    linear-gradient(180deg, #1f6fff 0%, #0b3fd0 60%, #06257f 100%);
+}
+
+.btn-blue {
+  background: linear-gradient(180deg, #3d85ff, #1f6fff);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 0 0 1px rgba(31, 111, 255, 0.6),
+    0 8px 28px -8px rgba(31, 111, 255, 0.8);
+  transition: filter 150ms ease, transform 120ms ease;
+}
+
+.btn-blue:hover { filter: brightness(1.12); }
+.btn-blue:active { transform: scale(0.97); }
+
+.bubble-user {
+  background: linear-gradient(160deg, #3d85ff, #1f6fff 55%, #1456e0);
+  color: #fff;
+  box-shadow: 0 10px 30px -14px rgba(31, 111, 255, 0.9);
+}
+
+.sidebar-bg {
+  background:
+    radial-gradient(120% 40% at 50% 0%, rgba(31, 111, 255, 0.16), transparent 70%),
+    #040815;
+}
+
+.composer-ring {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#0a1122, #0a1122) padding-box,
+    linear-gradient(160deg, rgba(91, 155, 255, 0.55), rgba(91, 155, 255, 0.12) 45%, rgba(91, 155, 255, 0.4)) border-box;
+  box-shadow: 0 20px 60px -25px rgba(31, 111, 255, 0.55);
+  transition: box-shadow 200ms ease;
+}
+
+.composer-ring:focus-within {
+  background:
+    linear-gradient(#0a1122, #0a1122) padding-box,
+    linear-gradient(160deg, #5b9bff, rgba(91, 155, 255, 0.3) 45%, #3d85ff) border-box;
+  box-shadow: 0 0 0 4px rgba(31, 111, 255, 0.14), 0 20px 70px -20px rgba(31, 111, 255, 0.8);
+}
+
+.orb {
+  background: radial-gradient(circle at 35% 30%, #9cc2ff, #1f6fff 45%, #0a2a8a 80%);
+  box-shadow: 0 0 60px rgba(31, 111, 255, 0.7), inset 0 -6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.marquee-track {
+  animation: marquee 30s linear infinite;
+}
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before,
+  .marquee-track {
+    animation: none !important;
   }
 }
