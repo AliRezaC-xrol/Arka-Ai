@@ -227,12 +227,19 @@ export default function ChatPage() {
   const [liveStatus, setLiveStatus] = React.useState("");
 
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
   const replyTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const streamTimer = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const idCounter = React.useRef(0);
-  /** Only auto-scroll while the user is (still) near the bottom. */
+  /** Only auto-follow the stream while the user is (still) near the bottom. */
   const nearBottomRef = React.useRef(true);
+  /** Next render must land on the newest message no matter what (send /
+   *  thread switch) — the user just acted on the bottom of the thread. */
+  const forceScrollRef = React.useRef(false);
+  /** Drives the edge-fade bands: hidden at the rest positions so the
+   *  first/last messages are never covered when there is nothing above. */
+  const [atTop, setAtTop] = React.useState(true);
+  const [nearBottom, setNearBottom] = React.useState(true);
 
   const messages = React.useMemo(
     () => (activeId ? (threads[activeId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES),
@@ -262,18 +269,33 @@ export default function ChatPage() {
     el.style.height = `${Math.min(el.scrollHeight, 208)}px`;
   }, [draft]);
 
+  /* Direct scroller control: assigning scrollTop is deterministic and
+     never fights other ancestors (unlike scrollIntoView on a 0-height
+     anchor, which the spec aborts whenever the anchor is "fully visible"). */
+  const scrollToBottom = React.useCallback(() => {
+    const el = scrollerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
+
   /* Switching threads: always start pinned to the newest message. */
   React.useEffect(() => {
     nearBottomRef.current = true;
+    forceScrollRef.current = true;
   }, [activeId]);
 
-  /* Keep the newest message in view (only while the user is near the bottom,
-     so reading history is never hijacked by the mock stream). */
+  /* Keep the newest message in view. A send / thread switch forces the
+     jump; the mock stream only follows while the user is near the bottom,
+     so reading history is never hijacked. */
   React.useEffect(() => {
-    if (nearBottomRef.current) {
-      messagesEndRef.current?.scrollIntoView({ block: "end" });
+    if (forceScrollRef.current) {
+      forceScrollRef.current = false;
+      nearBottomRef.current = true;
+      setNearBottom(true);
+      scrollToBottom();
+    } else if (nearBottomRef.current) {
+      scrollToBottom();
     }
-  }, [messages, pendingFor]);
+  }, [messages, pendingFor, scrollToBottom]);
 
   /* Escape closes the mobile sidebar. */
   React.useEffect(() => {
@@ -316,7 +338,10 @@ export default function ChatPage() {
 
   const onScroll = (event: React.UIEvent<HTMLDivElement>) => {
     const el = event.currentTarget;
-    nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96;
+    const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+    nearBottomRef.current = gap < 160;
+    setNearBottom(gap < 160);
+    setAtTop(el.scrollTop < 24);
   };
 
   const sendMessage = (raw?: string) => {
@@ -341,6 +366,9 @@ export default function ChatPage() {
       time: nowTime(),
     };
     const assistantId = `a-${++idCounter.current}`;
+    /* The sender must always SEE their message land — even if they had
+       scrolled up to read history right before sending. */
+    forceScrollRef.current = true;
 
     setThreads((prev) => ({
       ...prev,
@@ -555,6 +583,7 @@ export default function ChatPage() {
           /* ---------- Messages ---------- */
           <div className="relative z-[1] min-h-0 flex-1">
             <div
+              ref={scrollerRef}
               onScroll={onScroll}
               className="absolute inset-0 overflow-y-auto"
               aria-label={`گفتگو: ${activeTitle ?? ""}`}
@@ -601,18 +630,32 @@ export default function ChatPage() {
                 </div>
               )}
 
-              <div ref={messagesEndRef} aria-hidden />
               </div>
             </div>
 
-            {/* Progressive edge blur: messages dissolve as they travel up
-                and re-resolve while scrolling back — same language as the
-                landing hero, monochrome. */}
-            <div aria-hidden className="chat-fade chat-fade--top pointer-events-none absolute inset-x-0 top-0 z-[2]">
-              <span /><span /><span /><span /><span />
+            {/* Progressive edge fade: messages dissolve as they travel up
+                and re-resolve while scrolling back (per-message scroll blur
+                below + these gradient veils). Each band hides itself at its
+                rest position, so the top of a conversation is never smeared
+                when you scroll fully up and the newest message is never
+                covered while you are at the bottom. */}
+            <div
+              aria-hidden
+              className={cn(
+                "chat-fade chat-fade--top pointer-events-none absolute inset-x-0 top-0 z-[2] transition-opacity duration-300",
+                atTop ? "opacity-0" : "opacity-100",
+              )}
+            >
+              <span /><span />
             </div>
-            <div aria-hidden className="chat-fade chat-fade--bottom pointer-events-none absolute inset-x-0 bottom-0 z-[2]">
-              <span /><span /><span />
+            <div
+              aria-hidden
+              className={cn(
+                "chat-fade chat-fade--bottom pointer-events-none absolute inset-x-0 bottom-0 z-[2] transition-opacity duration-300",
+                nearBottom ? "opacity-0" : "opacity-100",
+              )}
+            >
+              <span />
             </div>
           </div>
         )}

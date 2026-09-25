@@ -1079,11 +1079,15 @@ html { color-scheme: dark; }
    Round 9 — chat scroll blur, picker motion
    ================================================================== */
 
-/* ---------- Chat: progressive edge blur (Skiper-style, in-flow) ----------
-   Bands overlay the message scroller (they do NOT scroll with it).
-   Each band stacks backdrop-blur layers that get stronger toward the
-   edge and are masked with a gradient, so messages melt into blur as
-   they travel up and re-resolve on the way back. Monochrome. */
+/* ---------- Chat: progressive edge fade (Skiper-style, in-flow) ----------
+   Gradient veils overlay the message scroller (they do NOT scroll with
+   it) and hide themselves at their rest position: the top band is off
+   while the scroller is at the very top, the bottom band is off while
+   the newest message is in view — so no message is ever smeared when
+   the conversation is at rest. The real "melt" comes from the per-
+   message scroll-linked blur below. NO backdrop-filter here: stacked
+   backdrop layers over a composited scroller show stale snapshots and
+   flicker while scrolling fast (Chromium), which read as a blur bug. */
 .chat-fade {
   position: absolute;
   inset-inline: 0;
@@ -1092,12 +1096,12 @@ html { color-scheme: dark; }
 
 .chat-fade--top {
   top: 0;
-  height: 6.5rem;
+  height: 6rem;
 }
 
 .chat-fade--bottom {
   bottom: 0;
-  height: 2.75rem;
+  height: 2.5rem;
 }
 
 .chat-fade > span {
@@ -1106,57 +1110,36 @@ html { color-scheme: dark; }
 }
 
 .chat-fade--top > span:nth-child(1) {
-  -webkit-backdrop-filter: blur(1px);
-  backdrop-filter: blur(1px);
-  mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 10, 10, 0.94) 0%,
+    rgba(10, 10, 10, 0.62) 32%,
+    rgba(10, 10, 10, 0.24) 62%,
+    transparent 88%
+  );
 }
 
 .chat-fade--top > span:nth-child(2) {
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-  mask-image: linear-gradient(to bottom, black 0%, black 20%, transparent 78%);
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.5) 0%, transparent 30%);
 }
 
-.chat-fade--top > span:nth-child(3) {
-  -webkit-backdrop-filter: blur(7px);
-  backdrop-filter: blur(7px);
-  mask-image: linear-gradient(to bottom, black 0%, black 12%, transparent 56%);
+.chat-fade--bottom > span {
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.66) 0%,
+    rgba(10, 10, 10, 0.26) 55%,
+    transparent 100%
+  );
 }
 
-.chat-fade--top > span:nth-child(4) {
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  mask-image: linear-gradient(to bottom, black 0%, transparent 34%);
-}
-
-.chat-fade--top > span:nth-child(5) {
-  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.85), transparent);
-}
-
-.chat-fade--bottom > span:nth-child(1) {
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
-  mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
-}
-
-.chat-fade--bottom > span:nth-child(2) {
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
-  mask-image: linear-gradient(to top, black 0%, transparent 60%);
-}
-
-.chat-fade--bottom > span:nth-child(3) {
-  background: linear-gradient(to top, rgba(10, 10, 10, 0.55), transparent);
-}
-
-/* Per-message scroll-linked blur (Chromium; others fall back to the
-   bands above): each message softens as it exits at the top of the
-   scrollport — the higher it travels, the blurrier it gets. */
+/* Per-message scroll-linked blur (Chromium/Safari 26; others fall back
+   to the gradient veils above): each message softens as it exits at the
+   top of the scrollport — the higher it travels, the blurrier it gets. */
 @supports (animation-timeline: view()) {
   .msg-blur {
     animation: msg-scroll-blur linear both;
     animation-timeline: view(block);
-    animation-range: exit 0% exit 80%;
+    animation-range: exit 0% exit 85%;
   }
 
   @keyframes msg-scroll-blur {
@@ -1165,8 +1148,8 @@ html { color-scheme: dark; }
       filter: blur(0);
     }
     to {
-      opacity: 0.3;
-      filter: blur(10px);
+      opacity: 0.35;
+      filter: blur(9px);
     }
   }
 }
@@ -1200,11 +1183,8 @@ html { color-scheme: dark; }
     filter: none;
   }
 
-  /* Static fallback: keep only the fade layers, no live blur. */
-  .chat-fade > span:not(:last-child) {
-    display: none;
-  }
-
+  /* Static fallback: the gradient veils stay (they are static, not
+     motion); only the scroll-linked message blur is disabled. */
   .msg-blur {
     animation: none !important;
   }

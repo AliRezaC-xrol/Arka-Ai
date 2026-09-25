@@ -10,11 +10,13 @@ interface Step {
 }
 
 /**
- * "How it works" — horizontal steps driven by scroll. The section is
- * taller than the viewport; its content sticks while the user scrolls,
- * and the progress line fills right-to-left (RTL) step by step. Each
- * step lights up once the line reaches it. Reduced motion: all steps
- * shown complete, no sticky scroll-jacking.
+ * "How it works" — horizontal steps driven by scroll on EVERY breakpoint
+ * (phone, tablet, laptop, desktop). The section is taller than the
+ * viewport; its content sticks while the user scrolls, and the progress
+ * line fills right-to-left (RTL) step by step. Each step lights up once
+ * the line reaches it. Type scales down below sm so three columns stay
+ * readable at 360px. Reduced motion: all steps shown complete, no sticky
+ * scroll-jacking.
  */
 export function StepsScroll({ steps }: { steps: Step[] }) {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -56,28 +58,25 @@ export function StepsScroll({ steps }: { steps: Step[] }) {
   const activeCount = Math.min(n, Math.floor(lineFill * (n - 1) + 1e-6) + 1);
 
   return (
-    <div ref={ref} className={cn("relative", !reduced && "md:h-[220vh]")}>
-      {/* Sticky scroll-jacking only from md up — phones get a plain,
-          fully-lit vertical timeline instead. */}
-      <div className={cn(!reduced && "md:sticky md:top-0 md:flex md:h-dvh md:items-center")}>
-        <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 max-md:py-16">
+    <div ref={ref} className={cn("relative", !reduced && "h-[190vh] md:h-[220vh]")}>
+      <div className={cn(!reduced && "sticky top-0 flex h-dvh items-center")}>
+        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-8 sm:py-20">
           <p className="text-[13.5px] font-semibold text-foreground-3">چطور کار می‌کند</p>
-          <h2 id="steps-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">
+          <h2 id="steps-title" className="mt-3 text-[1.9rem] font-extrabold leading-[1.3] sm:text-[3rem]">
             در یک دقیقه شروع کن.
           </h2>
 
+          {/* Horizontal at every size: circles sit on one rail, the white
+              line fills between the first/last circle centres as the user
+              scrolls (RTL: right → left). */}
           <ol
-            className="relative mt-14 grid grid-cols-1 gap-10 md:mt-16 md:[grid-template-columns:repeat(var(--steps-n),minmax(0,1fr))] md:gap-0"
+            className="relative mt-10 grid sm:mt-14 md:mt-16 [grid-template-columns:repeat(var(--steps-n),minmax(0,1fr))]"
             style={{ ["--steps-n" as string]: String(n) }}
           >
-            {/* rail (mobile): vertical, beside the circles */}
-            <div aria-hidden className="absolute inset-y-4 w-px bg-white/10 max-md:block md:hidden" style={{ insetInlineStart: "1.25rem" }}>
-              <div className="w-full bg-white" style={{ height: `${lineFill * 100}%` }} />
-            </div>
-            {/* rail (md+): horizontal, between the first/last centres */}
+            {/* rail: horizontal, between the first/last circle centres */}
             <div
               aria-hidden
-              className="absolute top-5 hidden h-px bg-white/10 md:block"
+              className="absolute top-5 h-px bg-white/10"
               style={{ insetInlineStart: `calc(100% / ${n * 2})`, insetInlineEnd: `calc(100% / ${n * 2})` }}
             >
               <div
@@ -89,10 +88,7 @@ export function StepsScroll({ steps }: { steps: Step[] }) {
             {steps.map((step, i) => {
               const done = i < activeCount;
               return (
-                <li
-                  key={step.title}
-                  className="relative flex max-md:items-start max-md:gap-5 md:flex-col md:items-center md:px-2 lg:px-4"
-                >
+                <li key={step.title} className="relative flex flex-col items-center px-1 sm:px-2 lg:px-4">
                   <span
                     className={cn(
                       "relative grid size-10 shrink-0 place-items-center rounded-full border text-[15px] font-bold transition-[background-color,color,border-color,transform] duration-300",
@@ -101,13 +97,18 @@ export function StepsScroll({ steps }: { steps: Step[] }) {
                   >
                     {(i + 1).toLocaleString("fa-IR")}
                   </span>
-                  <div className="md:mt-6">
-                    <h3 className={cn("text-[15px] font-bold transition-colors duration-300 sm:text-[19px]", done ? "text-foreground" : "text-foreground-3")}>
+                  <div className="mt-5 text-center md:mt-6">
+                    <h3
+                      className={cn(
+                        "text-[13.5px] font-bold transition-colors duration-300 sm:text-[19px]",
+                        done ? "text-foreground" : "text-foreground-3",
+                      )}
+                    >
                       {step.title}
                     </h3>
                     <p
                       className={cn(
-                        "mt-2 max-w-xs text-[12.5px] leading-6 transition-[opacity,transform] duration-500 sm:text-[15px] sm:leading-7",
+                        "mt-2 text-[11.5px] leading-5 transition-[opacity,transform] duration-500 sm:text-[15px] sm:leading-7",
                         done ? "translate-y-0 text-foreground-2 opacity-100" : "translate-y-2 text-foreground-3 opacity-40",
                       )}
                     >

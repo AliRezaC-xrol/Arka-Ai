@@ -37,6 +37,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0a0a0a",
+  width: "device-width",
+  initialScale: 1,
+  /* Shrink the layout (dvh) when the on-screen keyboard opens, so the
+     composer — and the message just sent — stay visible above it. */
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({
