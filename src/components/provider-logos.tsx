@@ -138,28 +138,39 @@ export const PROVIDERS_LIST: ProviderLogoItem[] = [
 ];
 
 /**
- * 100% Seamless Infinite Marquee Chain:
- * Two identical blocks (A and B).
- * Block A ends with pe-6 (exact same distance as gap-6).
- * Block B ends with pe-6.
- * When Block A translates from 0% to -100%, Block B slides into the exact same coordinates.
- * Result: The beginning of the list connects to the end of the list with ZERO gaps!
+ * 4x Repetitions per Set (36 items per set, >6000px wide).
+ * Even on a 4K display (3840px), Set B alone easily overfills the entire viewport.
+ * Result: The chain is 100% physically uninterrupted and continuous on all screens.
+ * When the list reaches the end, the start of the list is immediately attached to it with zero gaps.
  */
+const PROVIDER_STREAM = [
+  ...PROVIDERS_LIST,
+  ...PROVIDERS_LIST,
+  ...PROVIDERS_LIST,
+  ...PROVIDERS_LIST,
+];
+
 export function ProviderLogosRow({ className }: { className?: string }) {
   return (
-    <div className={cn("relative w-full overflow-hidden select-none py-3.5 border-y border-white/5 bg-[#08080a]", className)}>
+    <div
+      dir="ltr"
+      className={cn(
+        "relative w-full overflow-hidden select-none py-3.5 border-y border-white/5 bg-[#08080a]",
+        className
+      )}
+    >
       {/* Soft gradient edge masks */}
-      <div className="pointer-events-none absolute inset-y-0 start-0 z-10 w-24 bg-gradient-to-r from-[#08080a] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 end-0 z-10 w-24 bg-gradient-to-l from-[#08080a] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 sm:w-32 bg-gradient-to-r from-[#08080a] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 sm:w-32 bg-gradient-to-l from-[#08080a] to-transparent" />
 
-      {/* Endless Marquee River */}
-      <div dir="ltr" className="arka-endless-track">
-        {/* Set A */}
-        <div className="flex shrink-0 items-center gap-6 pe-6">
-          {PROVIDERS_LIST.map((p) => (
+      {/* Endless, Unbroken Marquee Track */}
+      <div className="arka-endless-track flex w-max flex-nowrap">
+        {/* Set A (36 items, ending with exact 24px padding matching gap-6) */}
+        <div className="flex shrink-0 items-center gap-6 pr-6 flex-nowrap">
+          {PROVIDER_STREAM.map((p, idx) => (
             <div
-              key={`a-${p.id}`}
-              className="flex items-center gap-2.5 rounded-full border border-white/10 bg-[#101013] px-3.5 py-1.5 transition-colors hover:border-white/30 hover:bg-white/[0.06]"
+              key={`a-${p.id}-${idx}`}
+              className="flex shrink-0 items-center gap-2.5 rounded-full border border-white/10 bg-[#101013] px-3.5 py-1.5 transition-colors hover:border-white/30 hover:bg-white/[0.06] whitespace-nowrap"
             >
               <div className="grid size-6 place-items-center rounded-full bg-white/[0.06] border border-white/10 shrink-0">
                 {p.renderLogo()}
@@ -181,12 +192,12 @@ export function ProviderLogosRow({ className }: { className?: string }) {
           ))}
         </div>
 
-        {/* Set B (Identical clone for seamless continuity) */}
-        <div aria-hidden="true" className="flex shrink-0 items-center gap-6 pe-6">
-          {PROVIDERS_LIST.map((p) => (
+        {/* Set B (Identical 36 items, smoothly sliding into Set A position with zero gap) */}
+        <div aria-hidden="true" className="flex shrink-0 items-center gap-6 pr-6 flex-nowrap">
+          {PROVIDER_STREAM.map((p, idx) => (
             <div
-              key={`b-${p.id}`}
-              className="flex items-center gap-2.5 rounded-full border border-white/10 bg-[#101013] px-3.5 py-1.5 transition-colors hover:border-white/30 hover:bg-white/[0.06]"
+              key={`b-${p.id}-${idx}`}
+              className="flex shrink-0 items-center gap-2.5 rounded-full border border-white/10 bg-[#101013] px-3.5 py-1.5 transition-colors hover:border-white/30 hover:bg-white/[0.06] whitespace-nowrap"
             >
               <div className="grid size-6 place-items-center rounded-full bg-white/[0.06] border border-white/10 shrink-0">
                 {p.renderLogo()}

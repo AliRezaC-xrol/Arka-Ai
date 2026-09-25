@@ -1201,9 +1201,9 @@ html { color-scheme: dark; }
 }
 
 .arka-endless-track {
-  display: flex;
-  width: max-content;
-  animation: arka-endless-ticker 36s linear infinite;
+  display: flex !important;
+  width: max-content !important;
+  animation: arka-endless-ticker 48s linear infinite !important;
   will-change: transform;
 }
 
