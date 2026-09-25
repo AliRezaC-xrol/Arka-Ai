@@ -427,7 +427,7 @@ export default function ChatPage() {
         )}
       >
         <div className="flex items-center justify-between px-1">
-          <span dir="ltr" className="text-gradient-blue text-[22px] font-extrabold tracking-[-0.04em]">Arka</span>
+          <span dir="ltr" className="text-[22px] font-extrabold tracking-[-0.04em]">Arka</span>
           <Button
             variant="ghost"
             size="icon"
@@ -439,7 +439,7 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <Button onClick={startNewChat} className="btn-blue h-10 w-full justify-start">
+        <Button onClick={startNewChat} variant="outline" className="h-10 w-full justify-start bg-white/[0.02]">
           <Plus aria-hidden />
           گفتگوی جدید
         </Button>
@@ -482,9 +482,9 @@ export default function ChatPage() {
       {/* ================= Main column ================= */}
       <main className="relative flex min-w-0 flex-1 flex-col">
         {/* Same restrained glow language as the hero, dimmer. */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(55%_100%_at_50%_0%,rgba(31,111,255,0.28),transparent_70%)]" />
+        
 
-        <header className="relative z-[1] flex h-14 shrink-0 items-center gap-2 px-3 sm:px-5">
+        <header className="relative z-[1] flex h-14 shrink-0 items-center gap-2 border-b border-line px-3 sm:px-5">
           <Button
             variant="ghost"
             size="icon"
@@ -503,7 +503,7 @@ export default function ChatPage() {
           /* ---------- Welcome ---------- */
           <div className="relative z-[1] flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-4">
             <div className="w-full max-w-2xl">
-              <div aria-hidden className="orb mx-auto grid size-16 place-items-center rounded-full text-white">
+              <div aria-hidden className="icon-tile mx-auto grid size-14 place-items-center rounded-card">
                 <Sparkles className="size-7" strokeWidth={1.75} />
               </div>
               <h1 className="mt-6 text-center text-[1.75rem] font-bold leading-[1.4] sm:text-[2.25rem]">
@@ -518,7 +518,7 @@ export default function ChatPage() {
                       setDraft(suggestion.prompt);
                       requestAnimationFrame(() => composerRef.current?.focus());
                     }}
-                    className="group card-glass flex items-start gap-3 rounded-card p-4 text-start transition-colors duration-150 hover:border-blue-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="group flex items-start gap-3 rounded-card border border-line bg-elevated p-4 text-start transition-colors duration-150 hover:border-blue-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <suggestion.icon
                       aria-hidden
@@ -546,28 +546,28 @@ export default function ChatPage() {
             <div className="mx-auto flex w-full max-w-[46rem] flex-col gap-9 px-4 pb-10 pt-4 sm:px-6">
               {messages.map((message) =>
                 message.role === "user" ? (
-                  /* User: quiet bubble on the inline-END side (left in RTL). */
-                  <div key={message.id} className="flex flex-col items-end">
-                    <div className="msg-text bubble-user max-w-[88%] whitespace-pre-wrap rounded-[20px] rounded-se-md px-4 py-2.5 text-[15px] leading-[1.9] sm:max-w-[78%]">
+                  /* Me: blue bubble on the START side (right in RTL), like every Persian messenger. */
+                  <div key={message.id} className="flex flex-col items-start">
+                    <div className="msg-text bubble-user max-w-[88%] whitespace-pre-wrap rounded-[18px] rounded-ss-md px-4 py-2.5 text-[15px] leading-[1.9] sm:max-w-[78%]">
                       {message.content}
                     </div>
                     {message.time && (
-                      <time className="mt-1.5 pe-1 text-[11.5px] text-foreground-3">
+                      <time className="mt-1.5 ps-1 text-[11.5px] text-foreground-3">
                         {message.time}
                       </time>
                     )}
                   </div>
                 ) : (
-                  /* Assistant: open text from the reading edge (inline-START). */
-                  <div key={message.id} className="flex gap-3.5">
+                  /* Assistant: card on the END side (left in RTL), avatar at the far edge. */
+                  <div key={message.id} className="flex flex-row-reverse items-start gap-3">
                     <AssistantAvatar />
-                    <div className="min-w-0 flex-1 pt-0.5">
+                    <div className="min-w-0 max-w-[88%] rounded-[18px] rounded-se-md border border-line bg-elevated px-4 py-3 sm:max-w-[82%]">
                       <MessageContent
                         content={message.content}
                         streaming={streamingId === message.id}
                       />
                       {message.time && streamingId !== message.id && (
-                        <time className="mt-2 block text-[11.5px] text-foreground-3">
+                        <time className="mt-1 block text-[11.5px] text-foreground-3">
                           {message.time}
                         </time>
                       )}
@@ -577,7 +577,7 @@ export default function ChatPage() {
               )}
 
               {pendingFor === activeId && (
-                <div className="flex items-center gap-3.5">
+                <div className="flex flex-row-reverse items-center gap-3">
                   <AssistantAvatar thinking />
                   <span className="thinking-text text-[14px] font-medium">
                     در حال فکر کردن…
@@ -744,7 +744,7 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-card border border-line bg-elevated">
+    <div className="overflow-hidden rounded-[12px] border border-line bg-background">
       <div className="flex h-10 items-center justify-between border-b border-line ps-4 pe-1.5">
         <span dir="ltr" className="font-mono text-[12px] text-foreground-3">
           {lang || "code"}
