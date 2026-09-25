@@ -141,7 +141,7 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           open
             ? "border-blue-line bg-blue-soft text-foreground"
-            : "border-line text-foreground-2 hover:border-black/20 hover:text-foreground",
+            : "border-line text-foreground-2 hover:border-white/20 hover:text-foreground",
         )}
       >
         {current && <ProviderGlyph provider={current.provider} />}

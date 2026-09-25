@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Check, Gauge, Image as ImageIcon, KeyRound, Lock } from "lucide-react";
 
 import { FaqList } from "@/components/faq-list";
+import { MeshCanvas } from "@/components/mesh-canvas";
+import { Reveal } from "@/components/reveal";
 import { HeroWindow } from "@/components/chat-preview";
 import { ArkaMark, SiteNavbar } from "@/components/site-navbar";
 
@@ -46,17 +48,19 @@ const FAQ = [
 
 export default function Home() {
   return (
-    <div className="flex min-h-dvh flex-col bg-white text-foreground">
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <SiteNavbar />
 
       <main className="flex-1">
         {/* ================= Hero ================= */}
         <section aria-labelledby="hero-title" className="relative overflow-hidden border-b border-line">
-          <div aria-hidden className="mesh-light" />
+          <div aria-hidden className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,#000_60%,transparent_100%)]">
+            <MeshCanvas />
+          </div>
           <div className="relative mx-auto grid w-full max-w-7xl items-center gap-14 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:pb-28 lg:pt-24">
             <div>
-              <Link href="/login" className="enter inline-flex items-center gap-2.5 rounded-full border border-line bg-white py-1 pe-3.5 ps-1 text-[13.5px] hover:border-black/20">
-                <span className="rounded-full bg-[#0a0a0a] px-2.5 py-0.5 text-[11px] font-bold text-white">رایگان</span>
+              <Link href="/login" className="enter inline-flex items-center gap-2.5 rounded-full border border-line bg-white/[0.03] py-1 pe-3.5 ps-1 text-[13.5px] hover:border-white/25">
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-black">رایگان</span>
                 ۱۰۰ پیام رایگان بعد از ثبت‌نام
               </Link>
 
@@ -100,25 +104,29 @@ export default function Home() {
             <h2 id="models-title" className="text-[13.5px] font-medium text-foreground-3">مدل‌هایی که در ارکا در دسترس‌اند</h2>
             <Link href="/chat" className="text-[14px] font-semibold hover:underline">همه‌ی مدل‌ها</Link>
           </div>
-          <div className="mt-8 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
-            <div dir="ltr" className="marquee-track flex w-max gap-16 pe-16">
-              {[...MODELS, ...MODELS].map((m, i) => (
-                <div key={i} className="flex items-center gap-3 whitespace-nowrap opacity-80">
-                  <span className="grid size-9 place-items-center rounded-full border border-line font-display text-[14px] font-bold">{m.name.charAt(0)}</span>
-                  <span>
-                    <span className="block font-display text-[19px] font-bold leading-6 tracking-[-0.02em]">{m.name}</span>
-                    <span className="block text-[12px] text-foreground-3">{m.org}</span>
-                  </span>
-                </div>
+          <div dir="ltr" className="mt-8 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_10%,#000_90%,transparent)]">
+            <div className="marquee">
+              {[0, 1].map((copy) => (
+                <ul key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-16 pe-16">
+                  {MODELS.map((m) => (
+                    <li key={m.name} className="flex items-center gap-3 whitespace-nowrap text-foreground-2 transition-colors hover:text-foreground">
+                      <span className="grid size-10 place-items-center rounded-full border border-line font-display text-[15px] font-bold">{m.name.charAt(0)}</span>
+                      <span>
+                        <span className="block font-display text-[20px] font-bold leading-6 tracking-[-0.02em]">{m.name}</span>
+                        <span className="block text-[12px] text-foreground-3">{m.org}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               ))}
             </div>
           </div>
         </section>
 
         {/* ================= Why ================= */}
-        <section id="features" aria-labelledby="features-title" className="scroll-mt-16 bg-[#f7f7f7]">
+        <section id="features" aria-labelledby="features-title" className="scroll-mt-16 bg-elevated">
           <div className="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8 lg:py-28">
-            <div className="grid gap-6 lg:grid-cols-2 lg:items-end">
+            <Reveal className="grid gap-6 lg:grid-cols-2 lg:items-end">
               <div>
                 <p className="text-[13.5px] font-semibold text-foreground-3">چرا ارکا</p>
                 <h2 id="features-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">یک حساب. همه‌ی مدل‌ها. به فارسی.</h2>
@@ -126,36 +134,38 @@ export default function Home() {
               <p className="max-w-xl text-[17px] leading-[1.95] text-foreground-2">
                 دیگر لازم نیست برای هر مدل یک اشتراک جدا بخری و بین چند سایت جابه‌جا شوی. همه‌چیز در یک محیط راست‌چین و تمیز.
               </p>
-            </div>
+            </Reveal>
             <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {FEATURES.map((f) => (
-                <article key={f.title} className="rounded-card border border-line bg-white p-7">
-                  <span className="grid size-11 place-items-center rounded-control bg-[#0a0a0a] text-white">
+              {FEATURES.map((f, i) => (
+                <Reveal as="article" key={f.title} delay={i * 90} className="rounded-card border border-line bg-background p-7 transition-colors hover:border-white/20">
+                  <span className="grid size-11 place-items-center rounded-control bg-white text-black">
                     <f.icon aria-hidden className="size-5" strokeWidth={1.8} />
                   </span>
                   <h3 className="mt-7 text-[18px] font-bold">{f.title}</h3>
                   <p className="mt-3 text-[14.5px] leading-7 text-foreground-2">{f.text}</p>
-                </article>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
 
         {/* ================= How it works ================= */}
-        <section aria-labelledby="steps-title" className="border-b border-line bg-[#f7f7f7]">
+        <section aria-labelledby="steps-title" className="border-b border-line bg-elevated">
           <div className="mx-auto w-full max-w-7xl px-5 pb-24 sm:px-8 lg:pb-28">
-            <p className="text-[13.5px] font-semibold text-foreground-3">چطور کار می‌کند</p>
-            <h2 id="steps-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">در یک دقیقه شروع کن.</h2>
+            <Reveal>
+              <p className="text-[13.5px] font-semibold text-foreground-3">چطور کار می‌کند</p>
+              <h2 id="steps-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">در یک دقیقه شروع کن.</h2>
+            </Reveal>
             <ol className="mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
               {STEPS.map((s, i) => (
-                <li key={s.title}>
+                <Reveal as="li" key={s.title} delay={i * 120}>
                   <div className="flex items-center gap-4">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full border border-black/80 bg-white text-[15px] font-bold">{(i + 1).toLocaleString("fa-IR")}</span>
-                    {i < STEPS.length - 1 && <span aria-hidden className="hidden h-px flex-1 bg-black/10 md:block" />}
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full border border-white/70 bg-background text-[15px] font-bold">{(i + 1).toLocaleString("fa-IR")}</span>
+                    {i < STEPS.length - 1 && <span aria-hidden className="hidden h-px flex-1 bg-white/10 md:block" />}
                   </div>
                   <h3 className="mt-6 text-[19px] font-bold">{s.title}</h3>
                   <p className="mt-2 max-w-xs text-[15px] leading-7 text-foreground-2">{s.text}</p>
-                </li>
+                </Reveal>
               ))}
             </ol>
           </div>
@@ -164,7 +174,7 @@ export default function Home() {
         {/* ================= Usage ================= */}
         <section id="usage" aria-labelledby="usage-title" className="scroll-mt-16">
           <div className="mx-auto grid w-full max-w-7xl items-center gap-14 px-5 py-24 sm:px-8 lg:grid-cols-2 lg:py-28">
-            <div>
+            <Reveal>
               <p className="text-[13.5px] font-semibold text-foreground-3">مصرف</p>
               <h2 id="usage-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">عددی که واقعاً<br />می‌شود خواندش.</h2>
               <p className="mt-6 max-w-lg text-[17px] leading-[1.95] text-foreground-2">
@@ -175,19 +185,19 @@ export default function Home() {
                   <li key={t} className="flex items-center gap-3"><Check aria-hidden className="size-4" strokeWidth={2.25} />{t}</li>
                 ))}
               </ul>
-            </div>
+            </Reveal>
 
-            <div className="card-soft rounded-card p-7 sm:p-8" aria-label="نمونه‌ی داشبورد مصرف">
+            <Reveal delay={120} className="card-soft rounded-card p-7 sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <p className="text-[13px] font-semibold text-foreground-3">این ماه</p>
-                <span className="rounded-full bg-[#f2f2f2] px-3 py-1 text-[12px] font-medium">۱۲ روز تا شروع دوباره</span>
+                <span className="rounded-full bg-white/10 px-3 py-1 text-[12px] font-medium">۱۲ روز تا شروع دوباره</span>
               </div>
               <p className="mt-3 flex flex-wrap items-baseline gap-x-3">
                 <span className="font-display text-[3.25rem] font-bold leading-none tracking-[-0.03em] sm:text-[4rem]">۷۴٫۶ هزار</span>
                 <span className="text-[16px] text-foreground-2">از ۱۲۰ هزار پیام</span>
               </p>
-              <div className="mt-7 h-2.5 overflow-hidden rounded-full bg-[#efefef]">
-                <div className="h-full w-[62%] rounded-full bg-[#0a0a0a]" />
+              <div className="mt-7 h-2.5 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full w-[62%] rounded-full bg-white" />
               </div>
               <div className="mt-2 flex justify-between text-[12px] text-foreground-3"><span>۰</span><span className="text-foreground">٪۶۲</span><span>۱۲۰ هزار</span></div>
 
@@ -196,12 +206,12 @@ export default function Home() {
                 {USAGE.map((u) => (
                   <li key={u.name} className="grid grid-cols-[5.5rem_1fr_4.5rem] items-center gap-4 text-[14px]">
                     <span dir="ltr" className="text-right font-medium">{u.name}</span>
-                    <span className="h-1.5 overflow-hidden rounded-full bg-[#efefef]"><span className="block h-full rounded-full bg-[#262626]" style={{ width: `${u.pct * 2}%` }} /></span>
+                    <span className="h-1.5 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-white/75" style={{ width: `${u.pct * 2}%` }} /></span>
                     <span className="text-left font-medium">{u.value}</span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </Reveal>
           </div>
         </section>
 
@@ -212,13 +222,17 @@ export default function Home() {
               <p className="text-[13.5px] font-semibold text-foreground-3">سوالات متداول</p>
               <h2 id="faq-title" className="mt-3 text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">سوال‌ها،<br />با جواب.</h2>
             </div>
-            <FaqList items={FAQ} />
+            <Reveal delay={100}>
+              <FaqList items={FAQ} />
+            </Reveal>
           </div>
         </section>
 
         {/* ================= Dark CTA band ================= */}
-        <section className="relative overflow-hidden bg-[#0a0a0a] text-white">
-          <div aria-hidden className="mesh-dark" />
+        <section className="relative overflow-hidden border-t border-line bg-elevated text-white">
+          <div aria-hidden className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_85%)]">
+            <MeshCanvas />
+          </div>
           <div className="relative mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-8 px-5 py-20 sm:px-8 lg:flex-row lg:items-center lg:py-28">
             <div>
               <h2 className="text-[2.25rem] font-extrabold leading-[1.3] sm:text-[3rem]">همین حالا شروع کن.<br />هر وقت خواستی عوضش کن.</h2>
@@ -231,7 +245,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-white">
+      <footer className="border-t border-line bg-background">
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2">

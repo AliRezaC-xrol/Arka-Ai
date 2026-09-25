@@ -410,7 +410,7 @@ export default function ChatPage() {
         <div
           aria-hidden
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/30 md:hidden"
+          className="fixed inset-0 z-30 bg-black/60 md:hidden"
         />
       )}
 
@@ -440,7 +440,7 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <Button onClick={startNewChat} variant="outline" className="h-10 w-full justify-start bg-white">
+        <Button onClick={startNewChat} variant="outline" className="h-10 w-full justify-start bg-transparent">
           <Plus aria-hidden />
           گفتگوی جدید
         </Button>
@@ -519,7 +519,7 @@ export default function ChatPage() {
                       setDraft(suggestion.prompt);
                       requestAnimationFrame(() => composerRef.current?.focus());
                     }}
-                    className="group flex items-start gap-3 rounded-card border border-line bg-white p-4 text-start transition-colors duration-150 hover:border-blue-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="group flex items-start gap-3 rounded-card border border-line bg-elevated p-4 text-start transition-colors duration-150 hover:border-blue-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <suggestion.icon
                       aria-hidden
@@ -562,7 +562,7 @@ export default function ChatPage() {
                   /* Assistant: card on the END side (left in RTL), avatar at the far edge. */
                   <div key={message.id} className="flex flex-row-reverse items-start gap-3">
                     <AssistantAvatar />
-                    <div className="min-w-0 max-w-[88%] rounded-[18px] rounded-se-md border border-line bg-[#f7f7f7] px-4 py-3 sm:max-w-[82%]">
+                    <div className="min-w-0 max-w-[88%] rounded-[18px] rounded-se-md border border-line bg-card px-4 py-3 sm:max-w-[82%]">
                       <MessageContent
                         content={message.content}
                         streaming={streamingId === message.id}

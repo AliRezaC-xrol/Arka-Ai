@@ -3,7 +3,7 @@ import Link from "next/link";
 /** apmix-style navbar: logo at start, links centred, actions at end. */
 export function SiteNavbar() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-line bg-white/85 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-line bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
         <Link href="/" aria-label="Arka — صفحه‌ی اصلی" className="flex items-center gap-2 rounded-sm">
           <ArkaMark className="size-7" />

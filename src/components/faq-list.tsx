@@ -29,7 +29,7 @@ export function FaqList({ items }: { items: { q: string; a: string }[] }) {
                   aria-hidden
                   className={cn(
                     "grid size-8 shrink-0 place-items-center rounded-full border transition-colors duration-150",
-                    isOpen ? "border-black bg-[#0a0a0a] text-white" : "border-line text-foreground-2",
+                    isOpen ? "border-white bg-white text-black" : "border-line text-foreground-2",
                   )}
                 >
                   <Plus className={cn("size-4 transition-transform duration-200", isOpen && "rotate-45")} />

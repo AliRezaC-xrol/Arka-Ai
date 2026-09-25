@@ -8,7 +8,7 @@ import { ArrowUp, ChevronDown, Copy, Paperclip } from "lucide-react";
 export function HeroWindow() {
   return (
     <div aria-hidden className="relative pb-20">
-      <div className="overflow-hidden rounded-card border border-black bg-[#0a0a0a] text-start text-white shadow-[0_30px_70px_-30px_rgba(0,0,0,0.5)]">
+      <div className="overflow-hidden rounded-card border border-white/10 bg-[#0d0d0d] text-start text-white shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]">
         <div className="relative flex h-10 items-center border-b border-white/10 px-4">
           <span dir="ltr" className="flex gap-1.5">
             <span className="size-2.5 rounded-full bg-white/20" />
@@ -65,9 +65,9 @@ export function HeroWindow() {
       <div className="card-soft absolute bottom-0 end-4 w-72 rounded-card p-4 text-start sm:-end-6">
         <div className="flex items-center justify-between">
           <span className="text-[12px] font-semibold tracking-wide text-foreground-3">کلید API</span>
-          <span className="rounded-full bg-[#f2f2f2] px-2.5 py-0.5 text-[11px] font-medium">طرح حرفه‌ای</span>
+          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium">طرح حرفه‌ای</span>
         </div>
-        <div dir="ltr" className="mt-3 flex items-center justify-between rounded-[10px] bg-[#f5f5f5] px-3 py-2.5 font-mono text-[12px]">
+        <div dir="ltr" className="mt-3 flex items-center justify-between rounded-[10px] bg-white/[0.05] px-3 py-2.5 font-mono text-[12px]">
           <span>ark_live_9f3c••••d41e</span>
           <Copy className="size-3.5 text-foreground-3" />
         </div>

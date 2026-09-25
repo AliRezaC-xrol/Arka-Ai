@@ -118,7 +118,7 @@ export function OtpInput({ length = 6, onComplete, className }: OtpInputProps) {
           inputMode="numeric"
           autoComplete={index === 0 ? "one-time-code" : "off"}
           aria-label={`رقم ${index + 1}`}
-          className="h-12 w-full rounded-control border border-line bg-elevated text-center text-lg font-medium text-foreground transition-colors duration-200 outline-none hover:border-black/20 focus-visible:border-black/50"
+          className="h-12 w-full rounded-control border border-line bg-elevated text-center text-lg font-medium text-foreground transition-colors duration-200 outline-none hover:border-white/20 focus-visible:border-white/45"
         />
       ))}
     </div>
