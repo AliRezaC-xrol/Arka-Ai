@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 
 /**
@@ -104,16 +105,15 @@ export function UserMenu({
           onKeyDown={onMenuKeyDown}
           className="absolute bottom-full start-0 z-50 mb-2 w-full rounded-card border border-line bg-popover p-1.5 shadow-xl"
         >
-          <button
-            type="button"
+          <Link
+            href="/settings/providers"
             role="menuitem"
             onClick={() => close()}
             className="flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-[13px] text-foreground-2 transition-colors duration-150 hover:bg-soft focus-visible:bg-soft focus-visible:text-foreground focus-visible:outline-none"
           >
             <Settings aria-hidden className="size-4 shrink-0" />
-            <span>تنظیمات</span>
-            <span className="ms-auto text-[10px] text-foreground-3">به‌زودی</span>
-          </button>
+            <span>تنظیمات و پروایدرها</span>
+          </Link>
           <div role="separator" className="my-1 h-px bg-line" />
           <button
             type="button"

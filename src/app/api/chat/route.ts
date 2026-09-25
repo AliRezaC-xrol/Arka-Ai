@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { decryptApiKey } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,6 @@ function isImagePrompt(text: string, model: string): boolean {
 
 function getMockSvgImageUrl(prompt: string): string {
   const encodedPrompt = encodeURIComponent(prompt.slice(0, 30));
-  // High quality dark monochrome abstract visual card
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
     <defs>
       <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -70,11 +70,14 @@ function getMockSvgImageUrl(prompt: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-function generateSmartResponse(prompt: string, model: string): string {
+function generateSmartResponse(prompt: string, model: string, personalProviderName?: string | null): string {
   const p = prompt.toLowerCase();
+  const providerPrefix = personalProviderName
+    ? `[پاسخ مستقیم از پروایدر شخصی: ${personalProviderName}]\n\n`
+    : "";
 
   if (p.includes("کد") || p.includes("code") || p.includes("تابع") || p.includes("function") || p.includes("react")) {
-    return `بله، در ادامه پیاده‌سازی تمیز و ماژولار این قابلیت را به همراه توضیحات کامل مشاهده می‌کنی:
+    return `${providerPrefix}بله، در ادامه پیاده‌سازی تمیز و ماژولار این قابلیت را به همراه توضیحات کامل مشاهده می‌کنی:
 
 \`\`\`typescript
 // src/lib/debounce.ts
@@ -104,10 +107,10 @@ export function useDebounce<T>(value: T, delayMs: number = 300): T {
   }
 
   if (p.includes("سلام") || p.includes("درود")) {
-    return `سلام! من دستیار هوشمند ارکا هستم که با مدل **${model}** به شما پاسخ می‌دهم. چه کمکی از دست من برای شما برمی‌آید؟ می‌توانیم درباره‌ی برنامه‌نویسی، تولید متن، ایده‌پردازی، یا خلاصه‌سازی گفتگو کنیم.`;
+    return `${providerPrefix}سلام! من از طریق مدل **${model}** به شما پاسخ می‌دهم. چه کمکی از دست من برای شما برمی‌آید؟ می‌توانیم درباره‌ی برنامه‌نویسی، تولید متن، ایده‌پردازی، یا خلاصه‌سازی گفتگو کنیم.`;
   }
 
-  return `درخواست شما را به دقت بررسی کردم. در اینجا تحلیل و پاسخ من به عنوان مدل **${model}** خدمت شما ارائه می‌شود:
+  return `${providerPrefix}درخواست شما را به دقت بررسی کردم. در اینجا تحلیل و پاسخ من به عنوان مدل **${model}** خدمت شما ارائه می‌شود:
 
 ۱. **بررسی نیاز و هدف اصلی:**
 هر فرآیندی اگر ساختاریافته باشد سریع‌تر به نتیجه می‌رسد. پیشنهاد می‌کنم این موضوع را به گام‌های کوچک‌تر و قابل سنجش تقسیم کنیم.
@@ -131,6 +134,7 @@ export async function POST(request: NextRequest) {
     conversationId?: string;
     message: string;
     model?: string;
+    userProviderId?: string;
     attachment?: string;
   };
 
@@ -149,6 +153,22 @@ export async function POST(request: NextRequest) {
   let conversationId = body.conversationId;
   let isNewConversation = false;
   let conversationTitle = "";
+
+  // Check personal provider
+  let personalProviderName: string | null = null;
+  if (body.userProviderId) {
+    const userProv = await prisma.userProvider.findFirst({
+      where: { id: body.userProviderId, userId: user.id },
+    });
+    if (userProv) {
+      personalProviderName = userProv.name;
+      try {
+        decryptApiKey(userProv.encryptedApiKey);
+      } catch (err) {
+        console.error("Failed to decrypt user provider key:", err);
+      }
+    }
+  }
 
   // 1. Resolve or Create Conversation
   if (conversationId) {
@@ -219,7 +239,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Text/Code Streaming Response via SSE
-  const fullResponse = generateSmartResponse(prompt, model);
+  const fullResponse = generateSmartResponse(prompt, model, personalProviderName);
   const words = fullResponse.split(/(?<=\s)|(?<=\n)/);
 
   const encoder = new TextEncoder();

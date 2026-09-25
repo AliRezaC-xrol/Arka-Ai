@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Key } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 export interface ModelGroup {
   provider: string;
   models: string[];
+  isUserProvider?: boolean;
 }
 
 interface ModelPickerProps {
@@ -17,15 +18,6 @@ interface ModelPickerProps {
   className?: string;
 }
 
-/**
- * Model picker (SPEC §5), mock data in Phase 0.
- * Grouped by provider — the provider name is exactly what was "entered"
- * when the provider was added (in Phase 2 it comes from the Provider row).
- * Lives INSIDE the composer as a small pill; the popover opens upward.
- *
- * Keyboard: Enter/Space/ArrowDown opens, arrows move, Enter selects,
- * Escape closes and returns focus to the trigger, Tab closes.
- */
 export function ModelPicker({ groups, value, onChange, className }: ModelPickerProps) {
   const [open, setOpen] = React.useState(false);
   const rootRef = React.useRef<HTMLDivElement>(null);
@@ -43,6 +35,7 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
           id: `${group.provider}:${model}`,
           provider: group.provider,
           model,
+          isUserProvider: group.isUserProvider,
         })),
       ),
     [groups],
@@ -113,14 +106,13 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
   };
 
   return (
-    <div ref={rootRef} className={cn("relative", className)}>
-      {/* Composer pill: provider glyph + provider + model. */}
+    <div ref={rootRef} className={cn("relative inline-block text-start", className)}>
       <button
         type="button"
         data-trigger=""
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={current ? `مدل: ${current.provider} ${current.model}` : "انتخاب مدل"}
+        aria-label={`مدل انتخاب‌شده: ${current?.model ?? "انتخاب مدل"}`}
         onClick={() => {
           if (open) {
             close();
@@ -129,25 +121,24 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
             focusSelected();
           }
         }}
-        onKeyDown={(event) => {
-          if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-            event.preventDefault();
-            setOpen(true);
-            focusSelected();
-          }
-        }}
         className={cn(
-          "flex h-8 max-w-[11rem] items-center gap-1.5 rounded-full border px-2 text-[12.5px] transition-colors duration-150 sm:max-w-[16rem]",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          open
-            ? "border-blue-line bg-blue-soft text-foreground"
-            : "border-line text-foreground-2 hover:border-white/20 hover:text-foreground",
+          "inline-flex h-9 items-center gap-2 rounded-control border border-line bg-card px-2.5 text-[13px] text-foreground transition-colors duration-200",
+          "hover:border-white/30 hover:bg-soft focus-visible:border-white focus-visible:outline-none",
+          open && "border-white/40 bg-soft",
         )}
       >
-        {current && <ProviderGlyph provider={current.provider} />}
-        <span dir="ltr" className="flex min-w-0 items-baseline gap-1.5 truncate">
-          <span className="hidden text-foreground-3 sm:inline">{current?.provider}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {current?.isUserProvider ? (
+            <Key className="size-3.5 text-amber-400" />
+          ) : (
+            <ProviderGlyph provider={current?.provider ?? "OpenAI"} />
+          )}
           <span className="truncate font-medium">{current?.model ?? "انتخاب مدل"}</span>
+          {current?.isUserProvider && (
+            <span className="hidden rounded bg-amber-500/10 px-1.5 py-0.2 text-[10px] text-amber-300 sm:inline">
+              شخصی
+            </span>
+          )}
         </span>
         <ChevronDown
           aria-hidden
@@ -155,29 +146,37 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
         />
       </button>
 
-      {/* Popover stays mounted so the close animation can play; `inert`
-          keeps the closed list out of the tab order and pointer events. */}
-      <ul
-        ref={listRef}
-        role="listbox"
-        aria-label="انتخاب مدل"
-        aria-hidden={!open}
-        inert={!open}
-        data-open={open}
-        onKeyDown={onListKeyDown}
-        className="picker-pop absolute bottom-full start-0 z-50 mb-2 max-h-80 w-72 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-card border border-line bg-popover p-1.5 shadow-[0_16px_40px_-16px_rgba(0,0,0,0.45)]"
-      >
+      {/* Popover */}
+      {open && (
+        <ul
+          ref={listRef}
+          role="listbox"
+          aria-label="انتخاب مدل"
+          onKeyDown={onListKeyDown}
+          className="picker-pop absolute bottom-full start-0 z-50 mb-2 max-h-80 w-72 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-card border border-line bg-[#141414] p-1.5 shadow-2xl"
+        >
           {groups.map((group, groupIndex) => (
             <React.Fragment key={group.provider}>
               <li
                 role="presentation"
                 className={cn(
-                  "flex items-center gap-2 px-3 pb-1.5 pt-2 text-[12px] font-medium text-foreground-3",
-                  groupIndex > 0 && "mt-1 border-t border-line pt-3",
+                  "flex items-center justify-between gap-2 px-3 pb-1.5 pt-2 text-[12px] font-semibold text-foreground-3",
+                  groupIndex > 0 && "mt-1 border-t border-line/60 pt-3",
                 )}
               >
-                <ProviderGlyph provider={group.provider} />
-                <span dir="ltr">{group.provider}</span>
+                <div className="flex items-center gap-2">
+                  {group.isUserProvider ? (
+                    <Key className="size-3 text-amber-400" />
+                  ) : (
+                    <ProviderGlyph provider={group.provider} />
+                  )}
+                  <span dir="ltr">{group.provider}</span>
+                </div>
+                {group.isUserProvider && (
+                  <span className="rounded bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-[9.5px] font-medium text-amber-300">
+                    پروایدر شخصی
+                  </span>
+                )}
               </li>
               {group.models.map((model) => {
                 const id = `${group.provider}:${model}`;
@@ -195,12 +194,12 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
                       className={cn(
                         "flex w-full items-center justify-between gap-3 rounded-control px-3 py-2 text-[13px] transition-colors duration-150",
                         "hover:bg-soft focus-visible:bg-soft focus-visible:outline-none",
-                        selected ? "bg-blue-soft text-foreground" : "text-foreground-2",
+                        selected ? "bg-white/10 text-white font-semibold" : "text-foreground-2",
                       )}
                     >
                       <span dir="ltr" className="truncate">{model}</span>
                       {selected && (
-                        <Check aria-hidden className="size-3.5 shrink-0 text-blue" />
+                        <Check aria-hidden className="size-3.5 shrink-0 text-white" />
                       )}
                     </button>
                   </li>
@@ -208,20 +207,21 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
               })}
             </React.Fragment>
           ))}
-      </ul>
+        </ul>
+      )}
     </div>
   );
 }
 
 /** Tiny monochrome provider mark (initial in a hairline square). */
 function ProviderGlyph({ provider }: { provider: string }) {
+  const initial = provider.trim().charAt(0).toUpperCase();
   return (
     <span
       aria-hidden
-      dir="ltr"
-      className="grid size-[18px] shrink-0 place-items-center rounded-[5px] border border-line bg-elevated text-[10px] font-bold leading-none text-foreground"
+      className="grid size-4 shrink-0 place-items-center rounded-sm border border-line bg-elevated font-mono text-[9px] font-semibold text-foreground-2"
     >
-      {provider.charAt(0)}
+      {initial}
     </span>
   );
 }

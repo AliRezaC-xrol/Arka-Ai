@@ -53,7 +53,7 @@ interface ChatMessage {
   isStreaming?: boolean;
 }
 
-const MODEL_GROUPS: ModelGroup[] = [
+const BASE_MODEL_GROUPS: ModelGroup[] = [
   { provider: "Anthropic", models: ["Claude Sonnet 4", "Claude 3.5 Haiku"] },
   { provider: "OpenAI", models: ["GPT-4o", "GPT-4o mini"] },
   { provider: "Google", models: ["Gemini 2.5 Flash", "Gemini 2.5 Pro"] },
@@ -165,6 +165,42 @@ function ChatContent() {
 
   // Selected Model
   const [model, setModel] = React.useState("Anthropic:Claude Sonnet 4");
+
+  // User personal providers
+  const [userProviders, setUserProviders] = React.useState<
+    Array<{
+      id: string;
+      name: string;
+      providerType: string;
+      status: string;
+      models?: string | null;
+    }>
+  >([]);
+
+  React.useEffect(() => {
+    fetch("/api/user-providers")
+      .then((res) => res.json())
+      .then((data) => {
+        setUserProviders(data.providers || []);
+      })
+      .catch(() => {});
+  }, []);
+
+  const modelGroups: ModelGroup[] = React.useMemo(() => {
+    const list: ModelGroup[] = [...BASE_MODEL_GROUPS];
+    const connected = userProviders.filter((p) => p.status === "connected");
+    for (const p of connected) {
+      const pModels = p.models
+        ? p.models.split(",").map((m) => m.trim()).filter(Boolean)
+        : ["Default Model"];
+      list.push({
+        provider: p.name,
+        models: pModels,
+        isUserProvider: true,
+      });
+    }
+    return list;
+  }, [userProviders]);
 
   // Composer state
   const [input, setInput] = React.useState("");
@@ -398,7 +434,12 @@ function ChatContent() {
     if (!textToSend && !attachment) return;
     if (isStreaming) return;
 
-    const currentModelName = model.split(":")[1] || model;
+    const [selectedProviderName, selectedModelName] = model.split(":");
+    const currentModelName = selectedModelName || model;
+    const matchingProvider = userProviders.find(
+      (p) => p.name === selectedProviderName && p.status === "connected",
+    );
+
     const tempUserMsgId = `user-${Date.now()}`;
     const userMsg: ChatMessage = {
       id: tempUserMsgId,
@@ -424,6 +465,7 @@ function ChatContent() {
           conversationId: activeId || undefined,
           message: textToSend,
           model: currentModelName,
+          userProviderId: matchingProvider?.id,
           attachment: attachment?.url,
         }),
         signal: controller.signal,
@@ -668,7 +710,7 @@ function ChatContent() {
 
             {/* Model Picker */}
             <ModelPicker
-              groups={MODEL_GROUPS}
+              groups={modelGroups}
               value={model}
               onChange={setModel}
               className="text-xs"

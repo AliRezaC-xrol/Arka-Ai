@@ -5,8 +5,15 @@ const SESSION_COOKIE_NAME = "arka_session";
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const REFRESH_THRESHOLD_SECONDS = 7 * 24 * 60 * 60; // refresh if token is older than 7 days
 
-// Protected path prefixes (AI environment & chat)
-const PROTECTED_PREFIXES = ["/chat", "/api/chat", "/dashboard"];
+// Protected path prefixes (AI environment, chat, settings, and private user APIs)
+const PROTECTED_PREFIXES = [
+  "/chat",
+  "/settings",
+  "/dashboard",
+  "/api/chat",
+  "/api/conversations",
+  "/api/user-providers",
+];
 
 function getSessionSecret(): Uint8Array {
   const secret = process.env.SESSION_SECRET || "arka-default-fallback-session-secret-key-32chars";
