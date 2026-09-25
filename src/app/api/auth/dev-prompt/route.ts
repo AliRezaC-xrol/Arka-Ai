@@ -6,6 +6,10 @@ import { sanitizeReturnTo } from "@/lib/google-oauth";
  * Matches standard Google consent UI aesthetics to test all flows (success, cancel, errors).
  */
 export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEV_AUTH !== "true") {
+    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+  }
+
   const { searchParams } = new URL(request.url);
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
 

@@ -7,15 +7,12 @@ import { getGoogleConfig, sanitizeReturnTo } from "@/lib/google-oauth";
  * and cookie creation pipeline.
  */
 export async function GET(request: NextRequest) {
-  const { isConfigured, appUrl } = getGoogleConfig();
-
-  // If live Google credentials are fully configured in production, disable simulated login
-  if (isConfigured && process.env.NODE_ENV === "production" && process.env.ALLOW_DEV_AUTH !== "true") {
-    return NextResponse.json(
-      { error: "Forbidden in production when Google OAuth is configured" },
-      { status: 403 },
-    );
+  // Production security: completely disabled unless explicit test flag ALLOW_DEV_AUTH is true
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEV_AUTH !== "true") {
+    return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
+
+  const { appUrl } = getGoogleConfig();
 
   const { searchParams } = new URL(request.url);
 

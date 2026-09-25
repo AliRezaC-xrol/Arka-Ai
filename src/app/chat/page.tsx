@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   ArrowUp,
-  Check,
   Code,
-  Copy,
+  Download,
   Image as ImageIcon,
   Lightbulb,
   Menu,
@@ -13,7 +14,7 @@ import {
   PenLine,
   Plus,
   Search,
-  Sparkles,
+  Square,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -31,41 +32,33 @@ import { UserMenu } from "@/components/user-menu";
 import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FormattedMessage } from "@/components/code-block";
 import { cn } from "@/lib/utils";
 
-/* ------------------------------------------------------------------ */
-/* Mock data — Phase 0 only (SPEC §11). No real backend anywhere.      */
-/* ------------------------------------------------------------------ */
-
-type Bucket = "today" | "yesterday" | "week" | "month";
-
-interface Conversation extends SpotlightEntry {
-  bucket: Bucket;
+interface ConversationItem {
+  id: string;
+  title: string;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { messages: number };
 }
 
-const BUCKET_ORDER: Bucket[] = ["today", "yesterday", "week", "month"];
-
-const BUCKET_LABELS: Record<Bucket, string> = {
-  today: "امروز",
-  yesterday: "دیروز",
-  week: "۷ روز گذشته",
-  month: "۳۰ روز گذشته",
-};
-
-const INITIAL_CONVERSATIONS: Conversation[] = [
-  { id: "c1", title: "ایده‌های محتوای اینستاگرام", bucket: "today" },
-  { id: "c2", title: "خلاصه‌ی مقاله‌ی ترنسفورمرها", bucket: "yesterday" },
-  { id: "c3", title: "بازنویسی ایمیل به مشتری", bucket: "yesterday" },
-  { id: "c4", title: "برنامه‌ی سفر سه‌روزه به استانبول", bucket: "week" },
-  { id: "c5", title: "بهینه‌سازی کوئری‌های Prisma", bucket: "week" },
-  { id: "c6", title: "تمرین مصاحبه‌ی فرانت‌اند", bucket: "week" },
-  { id: "c7", title: "ترجمه‌ی قرارداد اجاره", bucket: "month" },
-];
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  contentType?: "text" | "image" | "code";
+  createdAt?: string;
+  isStreaming?: boolean;
+}
 
 const MODEL_GROUPS: ModelGroup[] = [
+  { provider: "Anthropic", models: ["Claude Sonnet 4", "Claude 3.5 Haiku"] },
   { provider: "OpenAI", models: ["GPT-4o", "GPT-4o mini"] },
-  { provider: "Anthropic", models: ["Claude Sonnet 4"] },
-  { provider: "Google", models: ["Gemini 2.5 Flash"] },
+  { provider: "Google", models: ["Gemini 2.5 Flash", "Gemini 2.5 Pro"] },
+  { provider: "DeepSeek", models: ["DeepSeek-R1", "DeepSeek-V3"] },
+  { provider: "Image Studio", models: ["FLUX.1 Schnell"] },
 ];
 
 interface Suggestion {
@@ -83,132 +76,111 @@ const SUGGESTIONS: Suggestion[] = [
   {
     icon: ImageIcon,
     title: "تولید تصویر",
-    prompt: "تصویری از یک غروب کوهستانی مه‌آلود با پالت خاکستری بساز.",
+    prompt: "تصویری از یک غروب کوهستانی مه‌آلود با پالت خاکستری و مینیمال بساز.",
   },
   {
     icon: Code,
-    title: "توضیح کد",
+    title: "توضیح کد و برنامه",
     prompt: "یک هوک ساده‌ی React برای debounce بنویس و خط‌به‌خط توضیح بده.",
   },
   {
     icon: Lightbulb,
-    title: "خلاصه‌سازی",
-    prompt: "مقاله‌ی طولانی من را در پنج خط خلاصه کن.",
+    title: "خلاصه‌سازی متن",
+    prompt: "مهم‌ترین اصول طراحی سیستم‌های مقیاس‌پذیر هوش مصنوعی را در پنج خط خلاصه کن.",
   },
 ];
 
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  /** Display time (Persian digits). */
-  time?: string;
+function ClaudeThinkingIndicator() {
+  return (
+    <div className="flex items-center gap-3 py-3 text-foreground-3">
+      <div className="relative flex items-center justify-center">
+        <span className="relative flex size-3">
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-white/40 opacity-75" />
+          <span className="relative inline-flex size-3 rounded-full bg-white/60" />
+        </span>
+      </div>
+      <span className="animate-pulse text-[13px] font-medium tracking-wide text-foreground-2">
+        در حال تفکر و پردازش پاسخ...
+      </span>
+    </div>
+  );
 }
 
-function nowTime() {
-  return new Date().toLocaleTimeString("fa-IR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function ImageMessageCard({ content }: { content: string }) {
+  let imageUrl = "";
+  let caption = "";
+
+  try {
+    const parsed = JSON.parse(content);
+    imageUrl = parsed.imageUrl || "";
+    caption = parsed.caption || "";
+  } catch {
+    imageUrl = content;
+  }
+
+  return (
+    <div className="my-2 max-w-xl overflow-hidden rounded-card border border-line bg-card">
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-black/40">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt={caption || "تصویر تولیدشده"}
+          className="size-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+        />
+      </div>
+      {caption && (
+        <div className="flex items-center justify-between border-t border-line/60 p-3 text-xs text-foreground-2">
+          <span className="truncate">{caption}</span>
+          <a
+            href={imageUrl}
+            download="arka-ai-image.svg"
+            className="inline-flex items-center gap-1 rounded px-2 py-1 text-foreground-3 hover:bg-soft hover:text-foreground"
+            title="دانلود تصویر"
+          >
+            <Download className="size-3.5" />
+            <span>دانلود</span>
+          </a>
+        </div>
+      )}
+    </div>
+  );
 }
 
-/** Canned histories so selecting a conversation shows something real. */
-const MOCK_THREADS: Record<string, ChatMessage[]> = {
-  c1: [
-    {
-      id: "c1-m1",
-      role: "user",
-      time: "۱۰:۲۴",
-      content:
-        "برای پیج طراحی محصول، سه ایده‌ی پست بنویس که تعامل بالایی بگیرد.",
-    },
-    {
-      id: "c1-m2",
-      role: "assistant",
-      time: "۱۰:۲۵",
-      content:
-        "۱. «قبل و بعد» — ری‌دیزاین واقعی را کنار نسخه‌ی قدیمی نشان بده.\n۲. «خطای رایج» — سه اشتباه رایج در طراحی فرم را با مثال باز کن.\n۳. «پشت صحنه» — یک صفحه را از اسکیس تا نسخه‌ی نهایی بساز.",
-    },
-  ],
-  c2: [
-    {
-      id: "c2-m1",
-      role: "user",
-      time: "۱۰:۲۴",
-      content: "مقاله‌ی ترنسفورمرها را در پنج خط خلاصه کن.",
-    },
-    {
-      id: "c2-m2",
-      role: "assistant",
-      time: "۱۰:۲۵",
-      content:
-        "ترنسفورمرها به‌جای بازگشت، به «توجه» تکیه می‌کنند؛ هر توکن به همه‌ی توکن‌ها نگاه می‌کند. این موازی‌سازی آموزش را سریع‌تر می‌کند و کیفیت پاسخ‌های طولانی را بالاتر می‌برد. همین معماری، پایه‌ی تقریباً همه‌ی مدل‌های زبانی امروزی است.",
-    },
-  ],
-  c3: [
-    {
-      id: "c3-m1",
-      role: "user",
-      time: "۱۰:۲۴",
-      content: "این ایمیل را مودبانه‌تر ولی کوتاه‌تر بازنویسی کن.",
-    },
-    {
-      id: "c3-m2",
-      role: "assistant",
-      time: "۱۰:۲۵",
-      content:
-        "«سلام، ممنون از پیگیریتان. فایل را بررسی کردم و دو نکته‌ی کوچک باقی مانده؛ اگر امروز اصلاح شود، فردا نهایی‌اش می‌کنیم. ممنون!»",
-    },
-  ],
-};
+function ChatContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeId = searchParams.get("id");
 
-MOCK_THREADS.c5 = [
-  {
-    id: "c5-m1",
-    role: "user",
-    time: "۱۶:۰۲",
-    content:
-      "این کوئری Prisma کند است. هر بار برای هر کاربر، گفتگوهایش را جدا می‌گیرم.\nچطور درستش کنم که فقط یک درخواست به دیتابیس برود؟\nجدول Conversation حدود ۲۰۰ هزار ردیف دارد.",
-  },
-  {
-    id: "c5-m2",
-    role: "assistant",
-    time: "۱۶:۰۳",
-    content:
-      "مشکل همان N+1 است: برای هر کاربر یک کوئری جدا اجرا می‌شود. با include همه را در یک رفت‌وبرگشت بگیر و فقط ستون‌های لازم را select کن:\n\n```ts\nconst users = await prisma.user.findMany({\n  select: {\n    id: true,\n    conversations: {\n      select: { id: true, title: true },\n      orderBy: { updatedAt: \"desc\" },\n      take: 20,\n    },\n  },\n});\n```\n\nیک ایندکس روی (userId, updatedAt) هم اضافه کن تا مرتب‌سازی از ایندکس خوانده شود.",
-  },
-];
-
-function genericThread(title: string): ChatMessage[] {
-  return [
-    { id: "g-m1", role: "user", content: title, time: "۰۹:۱۲" },
-    {
-      id: "g-m2",
-      role: "assistant",
-      time: "۰۹:۱۳",
-      content:
-        "این یک پاسخ نمایشی است. در نسخه‌ی نهایی، پاسخ واقعی مدل همین‌جا استریم می‌شود. از دکمه‌ی مدل داخل کادر نوشتن می‌توانی مدل دلخواهت را عوض کنی.",
-    },
-  ];
-}
-
-const MOCK_REPLY =
-  "پاسخ نمایشی ثبت شد. در نسخه‌ی نهایی، جواب واقعی مدل همین‌جا کلمه‌به‌کلمه استریم می‌شود. تا آن موقع همه‌ی بخش‌های رابط، از انتخاب مدل تا تاریخچه‌ی گفتگو، دقیقاً مثل نسخه‌ی نهایی کار می‌کنند.";
-
-/** Stable empty reference so the auto-scroll effect never loop-fires. */
-const EMPTY_MESSAGES: ChatMessage[] = [];
-
-/* ------------------------------------------------------------------ */
-/* Page                                                                */
-/* ------------------------------------------------------------------ */
-
-export default function ChatPage() {
+  // User session state
   const [user, setUser] = React.useState<{
     name?: string | null;
     email?: string;
     avatarUrl?: string | null;
   } | null>(null);
 
+  // Conversations and messages
+  const [conversations, setConversations] = React.useState<ConversationItem[]>([]);
+  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = React.useState(false);
+
+  // Selected Model
+  const [model, setModel] = React.useState("Anthropic:Claude Sonnet 4");
+
+  // Composer state
+  const [input, setInput] = React.useState("");
+  const [attachment, setAttachment] = React.useState<{ name: string; url: string } | null>(null);
+  const [isStreaming, setIsStreaming] = React.useState(false);
+  const [isThinking, setIsThinking] = React.useState(false);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+
+  // UI state
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const chatScrollRef = React.useRef<HTMLDivElement>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Fetch current user session
   React.useEffect(() => {
     fetch("/api/auth/session")
       .then((res) => res.json())
@@ -219,645 +191,704 @@ export default function ChatPage() {
       })
       .catch(() => {});
   }, []);
-  const [conversations, setConversations] =
-    React.useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [activeId, setActiveId] = React.useState<string | null>("c1");
-  const [query, setQuery] = React.useState("");
-  const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const [model, setModel] = React.useState("OpenAI:GPT-4o");
 
-  const [threads, setThreads] = React.useState<Record<string, ChatMessage[]>>(() => {
-    const initial: Record<string, ChatMessage[]> = {};
-    for (const conversation of INITIAL_CONVERSATIONS) {
-      initial[conversation.id] =
-        MOCK_THREADS[conversation.id] ?? genericThread(conversation.title);
+  // Fetch user conversations
+  const loadConversations = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/conversations");
+      if (res.ok) {
+        const data = await res.json();
+        setConversations(data.conversations || []);
+      }
+    } catch (err) {
+      console.error("Failed to load conversations:", err);
     }
-    return initial;
-  });
-  const [draft, setDraft] = React.useState("");
-  /** Thread currently waiting for the (mock) reply to start. */
-  const [pendingFor, setPendingFor] = React.useState<string | null>(null);
-  /** Assistant message currently being revealed word by word. */
-  const [streamingId, setStreamingId] = React.useState<string | null>(null);
-  /** Short status for screen readers (announced once per phase change). */
-  const [liveStatus, setLiveStatus] = React.useState("");
-
-  const composerRef = React.useRef<HTMLTextAreaElement>(null);
-  const scrollerRef = React.useRef<HTMLDivElement>(null);
-  const replyTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const streamTimer = React.useRef<ReturnType<typeof setInterval> | null>(null);
-  const idCounter = React.useRef(0);
-  /** Only auto-follow the stream while the user is (still) near the bottom. */
-  const nearBottomRef = React.useRef(true);
-  /** Next render must land on the newest message no matter what (send /
-   *  thread switch) — the user just acted on the bottom of the thread. */
-  const forceScrollRef = React.useRef(false);
-  /** Drives the edge-fade bands: hidden at the rest positions so the
-   *  first/last messages are never covered when there is nothing above. */
-  const [atTop, setAtTop] = React.useState(true);
-  const [nearBottom, setNearBottom] = React.useState(true);
-
-  const messages = React.useMemo(
-    () => (activeId ? (threads[activeId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES),
-    [activeId, threads],
-  );
-  const busy = pendingFor !== null || streamingId !== null;
-
-  /* Sidebar search → grouped, filtered conversation list. */
-  const trimmedQuery = query.trim();
-  const visibleConversations = trimmedQuery
-    ? conversations.filter((conversation) =>
-        conversation.title.includes(trimmedQuery),
-      )
-    : conversations;
-  const groups: SpotlightGroup[] = BUCKET_ORDER.map((bucket) => ({
-    label: BUCKET_LABELS[bucket],
-    items: visibleConversations.filter(
-      (conversation) => conversation.bucket === bucket,
-    ),
-  })).filter((group) => group.items.length > 0);
-
-  /* Auto-resize the composer: height = content, capped at max-h. */
-  React.useEffect(() => {
-    const el = composerRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 208)}px`;
-  }, [draft]);
-
-  /* Direct scroller control: assigning scrollTop is deterministic and
-     never fights other ancestors (unlike scrollIntoView on a 0-height
-     anchor, which the spec aborts whenever the anchor is "fully visible"). */
-  const scrollToBottom = React.useCallback(() => {
-    const el = scrollerRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
   }, []);
 
-  /* Switching threads: always start pinned to the newest message. */
   React.useEffect(() => {
-    nearBottomRef.current = true;
-    forceScrollRef.current = true;
+    loadConversations();
+  }, [loadConversations]);
+
+  // Load messages for selected conversation
+  React.useEffect(() => {
+    if (!activeId) {
+      setMessages([]);
+      return;
+    }
+
+    setIsLoadingMessages(true);
+    fetch(`/api/conversations/${activeId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Not found");
+        return res.json();
+      })
+      .then((data) => {
+        setMessages(data.conversation?.messages || []);
+      })
+      .catch(() => {
+        setMessages([]);
+      })
+      .finally(() => {
+        setIsLoadingMessages(false);
+      });
   }, [activeId]);
 
-  /* Keep the newest message in view. A send / thread switch forces the
-     jump; the mock stream only follows while the user is near the bottom,
-     so reading history is never hijacked. */
-  React.useEffect(() => {
-    if (forceScrollRef.current) {
-      forceScrollRef.current = false;
-      nearBottomRef.current = true;
-      setNearBottom(true);
-      scrollToBottom();
-    } else if (nearBottomRef.current) {
-      scrollToBottom();
+  // Auto scroll to bottom
+  const scrollToBottom = React.useCallback((smooth = true) => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTo({
+        top: chatScrollRef.current.scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
+      });
     }
-  }, [messages, pendingFor, scrollToBottom]);
-
-  /* Escape closes the mobile sidebar. */
-  React.useEffect(() => {
-    if (!sidebarOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSidebarOpen(false);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [sidebarOpen]);
-
-  /* Clean up mock-stream timers on unmount. */
-  React.useEffect(() => {
-    return () => {
-      if (replyTimer.current) clearTimeout(replyTimer.current);
-      if (streamTimer.current) clearInterval(streamTimer.current);
-    };
   }, []);
 
-  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  React.useEffect(() => () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }, []);
+  React.useEffect(() => {
+    scrollToBottom(false);
+  }, [messages.length, activeId, scrollToBottom]);
 
-  const selectConversation = (id: string) => {
-    setActiveId(id);
-    // Mobile drawer: let the spotlight finish gliding to the new item,
-    // then slide the drawer out (instead of vanishing mid-animation).
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    if (window.matchMedia("(max-width: 767px)").matches) {
-      closeTimer.current = setTimeout(() => setSidebarOpen(false), 260);
+  // Group conversations by date and pin status
+  const conversationGroups = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = q
+      ? conversations.filter((c) => c.title.toLowerCase().includes(q))
+      : conversations;
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
+    const weekStart = todayStart - 7 * 24 * 60 * 60 * 1000;
+    const monthStart = todayStart - 30 * 24 * 60 * 60 * 1000;
+
+    const pinned: SpotlightEntry[] = [];
+    const today: SpotlightEntry[] = [];
+    const yesterday: SpotlightEntry[] = [];
+    const week: SpotlightEntry[] = [];
+    const month: SpotlightEntry[] = [];
+    const older: SpotlightEntry[] = [];
+
+    for (const conv of filtered) {
+      const entry: SpotlightEntry = {
+        id: conv.id,
+        title: conv.title,
+        isPinned: conv.isPinned,
+      };
+
+      if (conv.isPinned) {
+        pinned.push(entry);
+        continue;
+      }
+
+      const t = new Date(conv.updatedAt).getTime();
+      if (t >= todayStart) {
+        today.push(entry);
+      } else if (t >= yesterdayStart) {
+        yesterday.push(entry);
+      } else if (t >= weekStart) {
+        week.push(entry);
+      } else if (t >= monthStart) {
+        month.push(entry);
+      } else {
+        older.push(entry);
+      }
     }
-  };
 
-  const startNewChat = () => {
-    setActiveId(null);
+    const groups: SpotlightGroup[] = [];
+    if (pinned.length > 0) groups.push({ label: "سنجاق‌شده‌ها", items: pinned });
+    if (today.length > 0) groups.push({ label: "امروز", items: today });
+    if (yesterday.length > 0) groups.push({ label: "دیروز", items: yesterday });
+    if (week.length > 0) groups.push({ label: "۷ روز گذشته", items: week });
+    if (month.length > 0) groups.push({ label: "۳۰ روز گذشته", items: month });
+    if (older.length > 0) groups.push({ label: "قدیمی‌تر", items: older });
+
+    return groups;
+  }, [conversations, searchQuery]);
+
+  // Conversation Actions
+  const handleSelectConversation = (id: string) => {
+    router.push(`/chat?id=${id}`);
     setSidebarOpen(false);
-    requestAnimationFrame(() => composerRef.current?.focus());
   };
 
-  const onScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const el = event.currentTarget;
-    const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
-    nearBottomRef.current = gap < 160;
-    setNearBottom(gap < 160);
-    setAtTop(el.scrollTop < 24);
+  const handleNewChat = () => {
+    router.push("/chat");
+    setMessages([]);
+    setAttachment(null);
+    setInput("");
+    setSidebarOpen(false);
+    requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
-  const sendMessage = (raw?: string) => {
-    const text = (raw ?? draft).trim();
-    if (!text || busy) return;
-
-    const isNewThread = activeId === null;
-    const threadId = activeId ?? `draft-${++idCounter.current}`;
-    if (isNewThread) {
-      // First message of a fresh chat: create a sidebar entry for it.
-      const title = text.length > 26 ? `${text.slice(0, 26)}…` : text;
-      setConversations((prev) => [
-        { id: threadId, title, bucket: "today" },
-        ...prev,
-      ]);
+  const handlePin = async (id: string, isPinned: boolean) => {
+    try {
+      const res = await fetch(`/api/conversations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPinned }),
+      });
+      if (res.ok) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, isPinned } : c)),
+        );
+      }
+    } catch (err) {
+      console.error("Pin failed:", err);
     }
+  };
 
-    const userMessage: ChatMessage = {
-      id: `u-${++idCounter.current}`,
+  const handleRename = async (id: string, newTitle: string) => {
+    try {
+      const res = await fetch(`/api/conversations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      if (res.ok) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c)),
+        );
+      }
+    } catch (err) {
+      console.error("Rename failed:", err);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/conversations/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+        if (activeId === id) {
+          handleNewChat();
+        }
+      }
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
+  // Attachment upload simulation
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    setAttachment({
+      name: file.name,
+      url,
+    });
+    e.target.value = "";
+  };
+
+  // Stop Streaming
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsStreaming(false);
+    setIsThinking(false);
+  };
+
+  // Send Message with Streaming
+  const handleSend = async (messageText?: string) => {
+    const textToSend = (messageText ?? input).trim();
+    if (!textToSend && !attachment) return;
+    if (isStreaming) return;
+
+    const currentModelName = model.split(":")[1] || model;
+    const tempUserMsgId = `user-${Date.now()}`;
+    const userMsg: ChatMessage = {
+      id: tempUserMsgId,
       role: "user",
-      content: text,
-      time: nowTime(),
+      content: textToSend,
+      contentType: attachment ? "image" : "text",
     };
-    const assistantId = `a-${++idCounter.current}`;
-    /* The sender must always SEE their message land — even if they had
-       scrolled up to read history right before sending. */
-    forceScrollRef.current = true;
 
-    setThreads((prev) => ({
-      ...prev,
-      [threadId]: [...(prev[threadId] ?? []), userMessage],
-    }));
-    setActiveId(threadId);
-    setDraft("");
-    setPendingFor(threadId);
-    setLiveStatus("دستیار در حال نوشتن است");
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setAttachment(null);
+    setIsThinking(true);
+    setIsStreaming(true);
 
-    replyTimer.current = setTimeout(() => {
-      setPendingFor(null);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-      const prefersReducedMotion =
-        typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: activeId || undefined,
+          message: textToSend,
+          model: currentModelName,
+          attachment: attachment?.url,
+        }),
+        signal: controller.signal,
+      });
 
-      if (prefersReducedMotion) {
-        // No motion: the reply appears in full, instantly.
-        setThreads((prev) => ({
-          ...prev,
-          [threadId]: [
-            ...(prev[threadId] ?? []),
-            { id: assistantId, role: "assistant", content: MOCK_REPLY, time: nowTime() },
-          ],
-        }));
-        setLiveStatus("دستیار پاسخ داد");
+      if (!res.ok) {
+        throw new Error(`Chat error: ${res.status}`);
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+
+      // Non-streaming image response
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        setIsThinking(false);
+        setIsStreaming(false);
+
+        if (data.type === "image") {
+          const assistantMsg: ChatMessage = {
+            id: data.assistantMessageId || `img-${Date.now()}`,
+            role: "assistant",
+            content: JSON.stringify({
+              imageUrl: data.imageUrl,
+              caption: data.caption,
+            }),
+            contentType: "image",
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+        }
+
+        if (data.isNewConversation && data.conversationId) {
+          router.push(`/chat?id=${data.conversationId}`);
+          loadConversations();
+        }
         return;
       }
 
-      // Add an empty assistant message, then reveal it word by word —
-      // the same feel as a real streamed response.
-      setThreads((prev) => ({
-        ...prev,
-        [threadId]: [
-          ...(prev[threadId] ?? []),
-          { id: assistantId, role: "assistant", content: "", time: nowTime() },
-        ],
-      }));
-      setStreamingId(assistantId);
+      // Streaming text response (SSE)
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No reader");
 
-      const words = MOCK_REPLY.split(" ");
-      let shown = 0;
-      streamTimer.current = setInterval(() => {
-        shown += 1;
-        const partial = words.slice(0, shown).join(" ");
-        setThreads((prev) => ({
-          ...prev,
-          [threadId]: (prev[threadId] ?? []).map((message) =>
-            message.id === assistantId
-              ? { ...message, content: partial }
-              : message,
-          ),
-        }));
-        if (shown >= words.length) {
-          if (streamTimer.current) clearInterval(streamTimer.current);
-          setStreamingId(null);
-          setLiveStatus("دستیار پاسخ داد");
+      const decoder = new TextDecoder();
+      const assistantMsgId = `assistant-${Date.now()}`;
+      let accumulatedText = "";
+      let hasAddedAssistantMsg = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const dataStr = line.slice(6).trim();
+            if (!dataStr) continue;
+
+            try {
+              const eventData = JSON.parse(dataStr);
+
+              if (eventData.type === "start") {
+                setIsThinking(false);
+                if (eventData.isNewConversation && eventData.conversationId) {
+                  router.push(`/chat?id=${eventData.conversationId}`);
+                  loadConversations();
+                }
+              } else if (eventData.type === "chunk") {
+                setIsThinking(false);
+                accumulatedText += eventData.text;
+
+                if (!hasAddedAssistantMsg) {
+                  hasAddedAssistantMsg = true;
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: assistantMsgId,
+                      role: "assistant",
+                      content: accumulatedText,
+                      isStreaming: true,
+                    },
+                  ]);
+                } else {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMsgId
+                        ? { ...msg, content: accumulatedText }
+                        : msg,
+                    ),
+                  );
+                }
+                scrollToBottom();
+              } else if (eventData.type === "done") {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMsgId
+                      ? { ...msg, isStreaming: false }
+                      : msg,
+                  ),
+                );
+              }
+            } catch {
+              // Ignore partial JSON
+            }
+          }
         }
-      }, 55);
-    }, 700);
+      }
+    } catch (err: unknown) {
+      if ((err as Error)?.name !== "AbortError") {
+        console.error("Send error:", err);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            role: "assistant",
+            content: "متأسفانه در برقراری ارتباط با مدل خطایی رخ داد. لطفاً دوباره تلاش کنید.",
+          },
+        ]);
+      }
+    } finally {
+      setIsThinking(false);
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
   };
 
-  const currentModelLabel = model.split(":")[1] ?? "مدل";
-  const canSend = draft.trim().length > 0 && !busy;
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   const activeTitle = conversations.find((c) => c.id === activeId)?.title;
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
-      {/* Screen-reader status for the mock reply lifecycle */}
-      <p aria-live="polite" role="status" className="sr-only">
-        {liveStatus}
-      </p>
-
-      {/* Mobile backdrop */}
-      <div
-        aria-hidden
-        onClick={() => setSidebarOpen(false)}
-        className={cn(
-          "fixed inset-0 z-30 bg-black/60 transition-opacity duration-300 md:hidden",
-          sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      />
-
-      {/* ================= Sidebar ================= */}
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground" dir="rtl">
+      {/* ================= Right Sidebar (Fixed in screen) ================= */}
       <aside
-        aria-label="فهرست گفتگوها"
         className={cn(
-          "sidebar-bg w-72 shrink-0 flex-col gap-3.5 border-line p-4",
-          "max-md:fixed max-md:inset-y-0 max-md:start-0 max-md:z-40 max-md:flex max-md:border-e",
-          // visibility flips only AFTER the slide-out finishes (delay on
-          // close, none on open), so the drawer glides out instead of
-          // disappearing instantly; it still leaves the tab order when closed.
-          "max-md:transition-[translate,transform,visibility] max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)]",
-          "md:flex md:border-e",
-          sidebarOpen
-            ? "max-md:visible max-md:translate-x-0 max-md:delay-0"
-            : "max-md:invisible max-md:translate-x-full max-md:[transition-delay:0ms,0ms,300ms]",
+          "fixed inset-y-0 start-0 z-40 flex w-72 shrink-0 flex-col border-e border-line bg-[#0d0d0d] p-3 transition-transform duration-300 md:static md:w-80 md:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
-        <div className="flex items-center justify-between px-1">
-          <span className="flex items-center gap-2"><ArkaMark className="size-6" /><span dir="ltr" className="font-display text-[17px] font-bold tracking-[-0.02em]">ARKA</span></span>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="بستن فهرست گفتگوها"
-            className="md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X aria-hidden />
-          </Button>
+        {/* Brand & New Chat */}
+        <div className="flex items-center justify-between pb-3">
+          <Link href="/" className="flex items-center gap-2 px-1">
+            <ArkaMark className="size-6 text-white" />
+            <span dir="ltr" className="font-display text-[17px] font-bold tracking-tight text-white">
+              ARKA
+            </span>
+          </Link>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleNewChat}
+              className="gap-1.5 text-xs font-semibold"
+            >
+              <Plus className="size-3.5" />
+              گفتگوی جدید
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8 md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
 
-        <Button onClick={startNewChat} variant="outline" className="h-10 w-full justify-start bg-transparent">
-          <Plus aria-hidden />
-          گفتگوی جدید
-        </Button>
-
-        <div className="relative">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-foreground-3"
-          />
+        {/* Search */}
+        <div className="relative my-2">
+          <Search className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-foreground-3" />
           <Input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            aria-label="جستجو در گفتگوها"
-            placeholder="جستجو در گفتگوها…"
-            className="ps-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="جستجو در گفتگوها..."
+            className="h-8 ps-8 text-xs bg-[#141414] border-line"
           />
         </div>
 
-        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
-          {groups.length > 0 ? (
+        {/* Scrollable Conversation List */}
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 py-1">
+          {conversationGroups.length > 0 ? (
             <SpotlightList
-              groups={groups}
+              groups={conversationGroups}
               activeId={activeId}
-              onSelect={selectConversation}
-              ariaLabel="تاریخچه‌ی گفتگوها"
+              onSelect={handleSelectConversation}
+              onPin={handlePin}
+              onRename={handleRename}
+              onDelete={handleDelete}
+              ariaLabel="فهرست گفتگوها"
             />
           ) : (
-            <p className="px-3 py-6 text-center text-[12px] text-foreground-3">
-              گفتگویی پیدا نشد.
-            </p>
+            <div className="flex flex-col items-center justify-center py-12 text-center text-xs text-foreground-3">
+              <p>گفتگویی وجود ندارد.</p>
+              <button
+                type="button"
+                onClick={handleNewChat}
+                className="mt-2 text-white underline hover:opacity-80"
+              >
+                شروع اولین گفتگو
+              </button>
+            </div>
           )}
         </div>
 
-        <div className="border-t border-line pt-2">
+        {/* User profile footer inside sidebar for mobile fallback */}
+        <div className="border-t border-line pt-2 md:hidden">
           <UserMenu
             name={user?.name || "کاربر ارکا"}
-            subtitle={user?.email || "حساب کاربری"}
+            subtitle={user?.email || "حساب گوگل"}
             avatarUrl={user?.avatarUrl}
           />
         </div>
       </aside>
 
-      {/* ================= Main column ================= */}
-      <main className="relative flex min-w-0 flex-1 flex-col">
-        {/* Same restrained glow language as the hero, dimmer. */}
-        
+      {/* Backdrop for mobile sidebar */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-        <header className="relative z-[1] flex h-14 shrink-0 items-center gap-2 border-b border-line px-3 sm:px-5">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="باز کردن فهرست گفتگوها"
-            className="md:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu aria-hidden />
-          </Button>
-          <p className="min-w-0 truncate text-[14px] font-medium text-foreground-2">
-            {activeTitle ?? "گفتگوی جدید"}
-          </p>
+      {/* ================= Main Chat Section ================= */}
+      <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Top Header Bar */}
+        <header className="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-line bg-background/80 px-4 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="size-4" />
+            </Button>
+
+            {/* Model Picker */}
+            <ModelPicker
+              groups={MODEL_GROUPS}
+              value={model}
+              onChange={setModel}
+              className="text-xs"
+            />
+
+            <span className="hidden text-xs text-foreground-3 sm:inline">
+              {activeTitle ? `• ${activeTitle}` : ""}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleNewChat}
+              className="hidden gap-1.5 text-xs text-foreground-2 hover:text-white sm:inline-flex"
+            >
+              <Plus className="size-3.5" />
+              گفتگوی جدید
+            </Button>
+
+            {/* User Menu with Google profile + Logout */}
+            <div className="w-44">
+              <UserMenu
+                name={user?.name || "کاربر ارکا"}
+                subtitle={user?.email || "حساب گوگل"}
+                avatarUrl={user?.avatarUrl}
+              />
+            </div>
+          </div>
         </header>
 
-        {activeId === null ? (
-          /* ---------- Welcome ---------- */
-          <div className="relative z-[1] flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-4">
-            <div className="w-full max-w-2xl">
-              <div aria-hidden className="icon-tile mx-auto grid size-14 place-items-center rounded-card">
-                <Sparkles className="size-7" strokeWidth={1.75} />
+        {/* Chat Messages Scroll View with top fade/blur */}
+        <div
+          ref={chatScrollRef}
+          className="relative min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 [mask-image:linear-gradient(to_bottom,transparent_0%,black_24px,black_100%)]"
+        >
+          {messages.length === 0 && !isLoadingMessages ? (
+            /* Welcome / Zero State */
+            <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
+              <div className="mb-6 grid size-14 place-items-center rounded-2xl border border-line bg-card shadow-sm">
+                <ArkaMark className="size-8 text-white" />
               </div>
-              <h1 className="mt-6 text-center text-[1.75rem] font-bold leading-[1.4] sm:text-[2.25rem]">
-                امروز روی چه چیزی کار کنیم؟
+              <h1 className="text-xl font-bold sm:text-2xl">
+                سلام {user?.name ? `${user.name} عزیز` : ""}، چه کمکی از من برمی‌آید؟
               </h1>
-              <div className="mt-8 grid gap-2.5 sm:grid-cols-2">
-                {SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion.title}
-                    type="button"
-                    onClick={() => {
-                      setDraft(suggestion.prompt);
-                      requestAnimationFrame(() => composerRef.current?.focus());
-                    }}
-                    className="group flex items-start gap-3 rounded-card border border-line bg-elevated p-4 text-start transition-colors duration-150 hover:border-blue-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <suggestion.icon
-                      aria-hidden
-                      className="mt-0.5 size-4 shrink-0 text-blue"
-                      strokeWidth={1.75}
-                    />
-                    <span>
-                      <span className="block text-[14px] font-medium">{suggestion.title}</span>
-                      <span className="mt-1 block text-[13px] leading-6 text-foreground-3">
-                        {suggestion.prompt}
-                      </span>
-                    </span>
-                  </button>
-                ))}
+              <p className="mt-2 text-xs leading-6 text-foreground-3 sm:text-sm">
+                می‌توانید مدل موردنظرتان را از نوار بالا انتخاب کرده و پرسش، کد یا درخواست تصویر را بفرستید.
+              </p>
+
+              {/* Suggestions Grid */}
+              <div className="mt-8 grid w-full gap-3 sm:grid-cols-2">
+                {SUGGESTIONS.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.title}
+                      type="button"
+                      onClick={() => handleSend(item.prompt)}
+                      className="group flex flex-col items-start rounded-card border border-line bg-card/60 p-4 text-start transition-all hover:border-white/30 hover:bg-card"
+                    >
+                      <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                        <Icon className="size-4 text-foreground-2 group-hover:text-white" />
+                        <span>{item.title}</span>
+                      </div>
+                      <p className="mt-1 text-[11.5px] leading-5 text-foreground-3 group-hover:text-foreground-2">
+                        {item.prompt}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        ) : (
-          /* ---------- Messages ---------- */
-          <div className="relative z-[1] min-h-0 flex-1">
-            <div
-              ref={scrollerRef}
-              onScroll={onScroll}
-              className="absolute inset-0 overflow-y-auto"
-              aria-label={`گفتگو: ${activeTitle ?? ""}`}
-            >
-              <div className="mx-auto flex w-full max-w-[46rem] flex-col gap-9 px-4 pb-16 pt-4 sm:px-6">
-                {messages.map((message) =>
-                  message.role === "user" ? (
-                    /* Me: bubble on the START side (right in RTL), like every Persian messenger. */
-                    <div key={message.id} className="msg-blur flex flex-col items-start">
-                    <div className="msg-text bubble-user max-w-[88%] whitespace-pre-wrap rounded-[18px] rounded-ss-md px-4 py-2.5 text-[15px] leading-[1.9] sm:max-w-[78%]">
-                      {message.content}
+          ) : (
+            /* Message List */
+            <div className="mx-auto flex max-w-3xl flex-col gap-6 pb-4">
+              {messages.map((msg) => {
+                const isUser = msg.role === "user";
+
+                if (isUser) {
+                  return (
+                    <div key={msg.id} className="ms-auto flex max-w-[85%] flex-col items-end sm:max-w-[75%]">
+                      <div className="rounded-card border border-white/10 bg-[#1c1c1c] px-4 py-3 text-start text-[14px] leading-7 text-white shadow-sm">
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      </div>
                     </div>
-                    {message.time && (
-                      <time className="mt-1.5 ps-1 text-[11.5px] text-foreground-3">
-                        {message.time}
-                      </time>
+                  );
+                }
+
+                // Assistant Message (Full-width / Left-aligned, no heavy bubble)
+                return (
+                  <div key={msg.id} className="me-auto flex w-full flex-col items-start text-start">
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <ArkaMark className="size-4 text-white/80" />
+                      <span className="text-xs font-semibold text-foreground-2">ارکا</span>
+                    </div>
+
+                    {msg.contentType === "image" ? (
+                      <ImageMessageCard content={msg.content} />
+                    ) : (
+                      <div className="w-full text-[14.5px] leading-8 text-neutral-200">
+                        <FormattedMessage content={msg.content} />
+                      </div>
                     )}
                   </div>
-                ) : (
-                  /* Assistant: card on the END side (left in RTL), avatar at the far edge. */
-                  <div key={message.id} className="msg-blur flex flex-row-reverse items-start gap-3">
-                    <AssistantAvatar />
-                    <div className="min-w-0 max-w-[88%] rounded-[18px] rounded-se-md border border-line bg-card px-4 py-3 sm:max-w-[82%]">
-                      <MessageContent
-                        content={message.content}
-                        streaming={streamingId === message.id}
-                      />
-                      {message.time && streamingId !== message.id && (
-                        <time className="mt-1 block text-[11.5px] text-foreground-3">
-                          {message.time}
-                        </time>
-                      )}
-                    </div>
-                  </div>
-                ),
-              )}
+                );
+              })}
 
-              {pendingFor === activeId && (
-                <div className="msg-blur flex flex-row-reverse items-center gap-3">
-                  <AssistantAvatar thinking />
-                  <span className="thinking-text text-[14px] font-medium">
-                    در حال فکر کردن…
-                  </span>
-                </div>
-              )}
+              {/* Claude-style Thinking/Typing Pulse */}
+              {isThinking && <ClaudeThinkingIndicator />}
+            </div>
+          )}
+        </div>
 
+        {/* ================= Composer (Unified Input Box) ================= */}
+        <div className="shrink-0 border-t border-line/60 bg-background/95 p-3 backdrop-blur sm:p-4">
+          <div className="mx-auto max-w-3xl">
+            {/* Attachment preview chip */}
+            {attachment && (
+              <div className="mb-2 inline-flex items-center gap-2 rounded-control border border-line bg-card px-3 py-1 text-xs text-foreground-2">
+                <Paperclip className="size-3.5 text-foreground-3" />
+                <span className="max-w-[180px] truncate">{attachment.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setAttachment(null)}
+                  className="rounded p-0.5 hover:bg-white/10"
+                >
+                  <X className="size-3 text-foreground-3" />
+                </button>
               </div>
-            </div>
+            )}
 
-            {/* Progressive edge fade: messages dissolve as they travel up
-                and re-resolve while scrolling back (per-message scroll blur
-                below + these gradient veils). Each band hides itself at its
-                rest position, so the top of a conversation is never smeared
-                when you scroll fully up and the newest message is never
-                covered while you are at the bottom. */}
-            <div
-              aria-hidden
-              className={cn(
-                "chat-fade chat-fade--top pointer-events-none absolute inset-x-0 top-0 z-[2] transition-opacity duration-300",
-                atTop ? "opacity-0" : "opacity-100",
-              )}
-            >
-              <span /><span />
-            </div>
-            <div
-              aria-hidden
-              className={cn(
-                "chat-fade chat-fade--bottom pointer-events-none absolute inset-x-0 bottom-0 z-[2] transition-opacity duration-300",
-                nearBottom ? "opacity-0" : "opacity-100",
-              )}
-            >
-              <span />
-            </div>
-          </div>
-        )}
-
-        {/* ---------- Composer ---------- */}
-        <div className="relative z-[1] shrink-0 px-3 pb-3 sm:px-6 sm:pb-5">
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              sendMessage();
-            }}
-            className="composer-ring mx-auto w-full max-w-[46rem] rounded-[20px] p-3"
-          >
-            <textarea
-              ref={composerRef}
-              rows={1}
-              aria-label="متن پیام"
-              placeholder="پیامت را بنویس…"
-              value={draft}
-              dir="auto"
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-                  event.preventDefault();
-                  sendMessage();
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (isStreaming) {
+                  handleStop();
+                } else {
+                  handleSend();
                 }
               }}
-              className="block max-h-52 min-h-[2.75rem] w-full resize-none bg-transparent px-2 pb-1 pt-1.5 text-[15px] leading-7 text-foreground outline-none placeholder:text-foreground-3 [text-align:start]"
-            />
-            <div className="mt-1.5 flex items-center gap-1.5">
-              <button
+              className="relative flex items-end gap-2 rounded-card border border-line bg-card p-2 shadow-sm transition-colors focus-within:border-white/30"
+            >
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*,text/*,.pdf"
+                onChange={handleFileChange}
+              />
+
+              {/* Single Unified Attachment Button */}
+              <Button
                 type="button"
-                aria-label="پیوست فایل (به‌زودی)"
-                title="پیوست فایل (به‌زودی)"
-                className="grid size-8 place-items-center rounded-control text-foreground-3 transition-colors duration-150 hover:bg-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                className="size-9 shrink-0 rounded-control text-foreground-3 hover:text-white"
+                title="پیوست فایل یا تصویر"
               >
-                <Paperclip aria-hidden className="size-4" />
-              </button>
-              <ModelPicker groups={MODEL_GROUPS} value={model} onChange={setModel} />
-              <button
-                type="submit"
-                aria-label="ارسال پیام"
-                title={`ارسال با ${currentModelLabel} (Enter)، خط جدید با Shift+Enter`}
-                data-ready={canSend}
-                aria-disabled={!canSend}
-                className={cn(
-                  "ms-auto grid size-10 shrink-0 place-items-center rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
-                  canSend ? "btn-blue" : "cursor-not-allowed border border-line bg-soft text-foreground-3",
-                )}
-              >
-                <ArrowUp aria-hidden className="size-[18px]" strokeWidth={2.25} />
-              </button>
+                <Paperclip className="size-4" />
+              </Button>
+
+              {/* Textarea */}
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="پیامی بنویسید یا برای تولید تصویر پرامپت وارد کنید... (Enter برای ارسال، Shift+Enter برای خط بعد)"
+                rows={1}
+                className="max-h-36 min-h-[38px] flex-1 resize-none bg-transparent py-2 text-[13.5px] leading-6 text-foreground placeholder:text-foreground-3 focus:outline-none"
+              />
+
+              {/* Send or Stop Button */}
+              {isStreaming ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={handleStop}
+                  className="size-9 shrink-0 rounded-control bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                  title="توقف تولید پاسخ"
+                >
+                  <Square className="size-4 fill-current" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={!input.trim() && !attachment}
+                  className="size-9 shrink-0 rounded-control bg-white text-black hover:bg-neutral-200 disabled:opacity-40"
+                  title="ارسال پیام"
+                >
+                  <ArrowUp className="size-4 stroke-[2.5]" />
+                </Button>
+              )}
+            </form>
+
+            <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-foreground-3">
+              <span>ارکا ممکن است اشتباه کند؛ اطلاعات مهم را بررسی کنید.</span>
+              <span className="hidden sm:inline">مدل: {model.split(":")[1] || model}</span>
             </div>
-          </form>
-          <p className="mx-auto mt-2 max-w-[46rem] text-center text-[11.5px] text-foreground-3">
-            پاسخ‌ها در این نسخه‌ی نمایشی ساختگی هستند.
-          </p>
+          </div>
         </div>
       </main>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Message rendering                                                   */
-/* ------------------------------------------------------------------ */
-
-function AssistantAvatar({ thinking = false }: { thinking?: boolean }) {
+export default function ChatPage() {
   return (
-    <div
-      aria-hidden
-      className="orb grid size-8 shrink-0 place-items-center rounded-full text-white"
+    <React.Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
+          <div className="size-6 animate-spin rounded-full border-2 border-line border-t-white" />
+        </div>
+      }
     >
-      {thinking ? <span className="thinking-orb" /> : <Sparkles className="size-4" strokeWidth={1.75} />}
-    </div>
-  );
-}
-
-type Segment = { kind: "text"; value: string } | { kind: "code"; lang: string; value: string };
-
-/** Split a message on ``` fences. An unterminated fence (mid-stream) is
- *  rendered as code too, so streaming never flashes raw backticks. */
-function parseSegments(content: string): Segment[] {
-  const segments: Segment[] = [];
-  const parts = content.split("```");
-  parts.forEach((part, index) => {
-    if (index % 2 === 0) {
-      if (part.trim()) segments.push({ kind: "text", value: part.trim() });
-    } else {
-      const newline = part.indexOf("\n");
-      const lang = newline === -1 ? part.trim() : part.slice(0, newline).trim();
-      const value = newline === -1 ? "" : part.slice(newline + 1).replace(/\n$/, "");
-      segments.push({ kind: "code", lang, value });
-    }
-  });
-  return segments;
-}
-
-function MessageContent({ content, streaming }: { content: string; streaming: boolean }) {
-  const segments = parseSegments(content);
-  return (
-    <div className="space-y-4 text-[15px] leading-[2] text-foreground">
-      {segments.map((segment, index) =>
-        segment.kind === "text" ? (
-          <p key={index} className="msg-text whitespace-pre-wrap">
-            {segment.value}
-            {streaming && index === segments.length - 1 && <Caret />}
-          </p>
-        ) : (
-          <CodeBlock key={index} lang={segment.lang} code={segment.value} />
-        ),
-      )}
-      {streaming && (segments.length === 0 || segments[segments.length - 1].kind === "code") && (
-        <p>
-          <Caret />
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Caret() {
-  return (
-    <span
-      aria-hidden
-      className="caret ms-0.5 inline-block h-[1.1em] w-[2px] translate-y-[0.2em] rounded-full bg-blue"
-    />
-  );
-}
-
-function CodeBlock({ lang, code }: { lang: string; code: string }) {
-  const [copied, setCopied] = React.useState(false);
-  const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  React.useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-    } catch {
-      // Fallback for non-secure contexts.
-      const area = document.createElement("textarea");
-      area.value = code;
-      area.style.position = "fixed";
-      area.style.opacity = "0";
-      document.body.appendChild(area);
-      area.select();
-      document.execCommand("copy");
-      area.remove();
-    }
-    setCopied(true);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(false), 1600);
-  };
-
-  return (
-    <div className="overflow-hidden rounded-[12px] border border-line bg-background">
-      <div className="flex h-10 items-center justify-between border-b border-line ps-4 pe-1.5">
-        <span dir="ltr" className="font-mono text-[12px] text-foreground-3">
-          {lang || "code"}
-        </span>
-        <button
-          type="button"
-          onClick={copy}
-          aria-label={copied ? "کپی شد" : "کپی کد"}
-          className={cn(
-            "flex h-7 items-center gap-1.5 rounded-control px-2 text-[12px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            copied ? "text-blue" : "text-foreground-3 hover:bg-soft hover:text-foreground",
-          )}
-        >
-          {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
-          {copied ? "کپی شد" : "کپی"}
-        </button>
-      </div>
-      <pre dir="ltr" className="overflow-x-auto p-4 text-left font-mono text-[13px] leading-6 text-foreground">
-        <code>{code}</code>
-      </pre>
-      <span aria-live="polite" className="sr-only">
-        {copied ? "کد کپی شد" : ""}
-      </span>
-    </div>
+      <ChatContent />
+    </React.Suspense>
   );
 }

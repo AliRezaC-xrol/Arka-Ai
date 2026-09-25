@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-
+import { Check, Edit2, Pin, PinOff, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SpotlightEntry {
   id: string;
   title: string;
   meta?: string;
+  isPinned?: boolean;
 }
 
 export interface SpotlightGroup {
@@ -16,11 +17,12 @@ export interface SpotlightGroup {
 }
 
 interface SpotlightListProps {
-  /** Conversation groups rendered in order, each with its own header row. */
   groups: SpotlightGroup[];
-  /** Null = no active item (e.g. the "new chat" welcome state). */
   activeId: string | null;
   onSelect?: (id: string) => void;
+  onPin?: (id: string, isPinned: boolean) => void;
+  onRename?: (id: string, newTitle: string) => void;
+  onDelete?: (id: string) => void;
   className?: string;
   ariaLabel?: string;
 }
@@ -32,143 +34,128 @@ interface SpotlightBox {
   h: number;
 }
 
-/**
- * Spotlight selection box (SPEC §5): a soft, low-contrast background+border
- * box that sits behind the active item and glides to the clicked item.
- *
- * Items are rendered as flat rows inside *grouped* sections (امروز، دیروز،
- * ۷ روز گذشته، …). Group headers are plain presentational rows inside the
- * same relatively-positioned container, so every item button still resolves
- * its offsetTop/offsetLeft against the container and the spotlight math is
- * unchanged — the box glides across group boundaries exactly as smoothly.
- *
- * Implementation notes:
- * - The destination item's offsetTop/offsetLeft/width/height are measured at
- *   selection time, then the box moves via `transform: translate(...)` with
- *   easing `cubic-bezier(0.65,0,0.35,1)` over 350ms (never a jump).
- * - offsetLeft/offsetTop are *physical* coordinates relative to the
- *   offsetParent, and translate() is physical too — so the glide is correct
- *   in RTL and LTR alike.
- * - The box animates ONLY on selection changes. Layout-driven re-measurements
- *   (resize, font load, search filtering, list changes) re-apply the position
- *   with transitions disabled so the box never drifts across the list.
- * - The ResizeObserver is subscribed ONCE (refs carry the latest state);
- *   re-subscribing on every selection would fire a fresh initial callback
- *   and cancel the glide mid-flight (that was the jump bug).
- * - When a filter hides the active item, the box is hidden; when the filter
- *   clears, a re-measure restores it without animation.
- * - Honors prefers-reduced-motion via the global CSS media query (.spotlight).
- */
 export function SpotlightList({
   groups,
   activeId,
   onSelect,
+  onPin,
+  onRename,
+  onDelete,
   className,
-  ariaLabel,
+  ariaLabel = "فهرست گفتگوها",
 }: SpotlightListProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const itemRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
-  const activeIdRef = React.useRef(activeId);
+  const itemRefs = React.useRef<Record<string, HTMLElement | null>>({});
   const [box, setBox] = React.useState<SpotlightBox | null>(null);
-  // Transitions are only enabled right after a selection-triggered move.
   const [animate, setAnimate] = React.useState(false);
 
+  // Inline rename state
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editTitle, setEditTitle] = React.useState("");
+
+  const activeIdRef = React.useRef(activeId);
   activeIdRef.current = activeId;
 
-  /** Flattened items in render order — used for keyboard navigation. */
-  const flatItems = React.useMemo(
-    () => groups.flatMap((group) => group.items),
-    [groups],
-  );
-  const flatItemsRef = React.useRef(flatItems);
-  flatItemsRef.current = flatItems;
-
-  /** Re-position without animating (layout changed, not the selection). */
-  const remeasure = React.useCallback(() => {
-    const el = activeIdRef.current
-      ? itemRefs.current[activeIdRef.current]
-      : undefined;
-    if (!el) {
-      setBox((prev) => (prev === null ? prev : null));
-      return;
-    }
-    const next = {
-      x: el.offsetLeft,
-      y: el.offsetTop,
-      w: el.offsetWidth,
-      h: el.offsetHeight,
-    };
-    setBox((prev) => {
-      // Skip identical measurements entirely — this keeps `animate` (and the
-      // in-flight glide) untouched when nothing actually moved.
-      if (
-        prev &&
-        prev.x === next.x &&
-        prev.y === next.y &&
-        prev.w === next.w &&
-        prev.h === next.h
-      ) {
-        return prev;
+  const measure = React.useCallback(
+    (id: string | null, shouldAnimate: boolean) => {
+      if (!id) {
+        setBox(null);
+        return;
       }
-      setAnimate(false);
-      return next;
-    });
-  }, []);
+      const el = itemRefs.current[id];
+      const container = containerRef.current;
+      if (!el || !container) {
+        setBox(null);
+        return;
+      }
+      setAnimate(shouldAnimate);
+      setBox({
+        x: el.offsetLeft,
+        y: el.offsetTop,
+        w: el.offsetWidth,
+        h: el.offsetHeight,
+      });
+    },
+    [],
+  );
 
-  /** Glide to the active item (selection changed or first mount). */
+  // Animate on activeId change
   React.useEffect(() => {
-    const el = activeId ? itemRefs.current[activeId] : undefined;
-    if (!el) {
-      setAnimate(false);
-      setBox(null);
-      return;
-    }
-    setAnimate(true);
-    setBox({
-      x: el.offsetLeft,
-      y: el.offsetTop,
-      w: el.offsetWidth,
-      h: el.offsetHeight,
-    });
-  }, [activeId]);
+    measure(activeId, true);
+  }, [activeId, measure]);
 
-  // Layout listeners — subscribed once, always reading fresh state via refs.
+  // Non-animating re-measure on layout/content changes
+  React.useEffect(() => {
+    measure(activeIdRef.current, false);
+  }, [groups, measure]);
+
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const observer = new ResizeObserver(remeasure);
+    let rafId: number | null = null;
+    const observer = new ResizeObserver(() => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        measure(activeIdRef.current, false);
+      });
+    });
+
     observer.observe(container);
-    window.addEventListener("resize", remeasure);
-    // Re-measure once web fonts finish loading (metrics change).
-    document.fonts?.ready.then(remeasure).catch(() => undefined);
+
+    const onResize = () => measure(activeIdRef.current, false);
+    window.addEventListener("resize", onResize);
+    document.fonts?.ready?.then(() => measure(activeIdRef.current, false));
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       observer.disconnect();
-      window.removeEventListener("resize", remeasure);
+      window.removeEventListener("resize", onResize);
     };
-  }, [remeasure]);
+  }, [measure]);
 
-  // Group contents change (e.g. the sidebar search filter): re-apply the
-  // position without animation so the box is never left on a stale spot.
-  React.useEffect(() => {
-    remeasure();
-  }, [flatItems, remeasure]);
+  const allItems = React.useMemo(
+    () => groups.flatMap((group) => group.items),
+    [groups],
+  );
 
-  const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
-    const count = flatItemsRef.current.length;
-    if (count === 0) return;
-    let next: number | null = null;
-    if (event.key === "ArrowDown") next = (index + 1) % count;
-    else if (event.key === "ArrowUp") next = (index - 1 + count) % count;
-    else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = count - 1;
-    if (next === null) return;
+  const handleKeyDown = (event: React.KeyboardEvent, currentIndex: number) => {
+    let nextIndex: number | null = null;
 
-    event.preventDefault();
-    const item = flatItemsRef.current[next];
-    onSelect?.(item.id);
-    itemRefs.current[item.id]?.focus();
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      nextIndex = (currentIndex + 1) % allItems.length;
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      nextIndex = (currentIndex - 1 + allItems.length) % allItems.length;
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      event.preventDefault();
+      nextIndex = allItems.length - 1;
+    }
+
+    if (nextIndex !== null) {
+      const nextItem = allItems[nextIndex];
+      if (nextItem) {
+        onSelect?.(nextItem.id);
+        itemRefs.current[nextItem.id]?.focus();
+      }
+    }
+  };
+
+  const startRename = (id: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(id);
+    setEditTitle(currentTitle);
+  };
+
+  const submitRename = (id: string) => {
+    if (editTitle.trim()) {
+      onRename?.(id, editTitle.trim());
+    }
+    setEditingId(null);
   };
 
   let flatIndex = -1;
@@ -185,7 +172,7 @@ export function SpotlightList({
         <div
           aria-hidden
           data-spotlight=""
-          className="spotlight pointer-events-none absolute left-0 top-0 z-0 rounded-control border border-blue-line bg-blue-soft"
+          className="spotlight pointer-events-none absolute left-0 top-0 z-0 rounded-control border border-white/20 bg-white/[0.06]"
           style={{
             width: box.w,
             height: box.h,
@@ -196,52 +183,134 @@ export function SpotlightList({
           }}
         />
       )}
-      {groups.map((group, groupIndex) => (
-        <React.Fragment key={group.label}>
-          <p
-            role="presentation"
-            className={cn(
-              "px-3 pb-1.5 text-[11px] font-medium text-foreground-3",
-              groupIndex === 0 ? "pt-1" : "pt-5",
-            )}
-          >
-            {group.label}
-          </p>
-          {group.items.map((item) => {
-            flatIndex += 1;
-            const index = flatIndex;
-            const active = item.id === activeId;
-            return (
-              <button
-                key={item.id}
-                ref={(el) => {
-                  itemRefs.current[item.id] = el;
-                }}
-                type="button"
-                role="option"
-                aria-selected={active}
-                // Roving tab index: the active item is reachable; with no
-                // active item the first one is, so the listbox stays
-                // keyboard-accessible.
-                tabIndex={active || (!activeId && index === 0) ? 0 : -1}
-                onClick={() => onSelect?.(item.id)}
-                onKeyDown={(event) => handleKeyDown(event, index)}
-                className={cn(
-                  "relative z-[1] flex w-full flex-col items-start gap-0.5 rounded-control px-3 py-2.5 text-start transition-colors duration-200 hover:bg-soft focus-visible:outline-none",
-                  active ? "text-foreground" : "text-foreground-2",
-                )}
-              >
-                <span className="w-full truncate text-[13px] font-medium">
-                  {item.title}
-                </span>
-                {item.meta && (
-                  <span className="text-[11px] text-foreground-3">{item.meta}</span>
-                )}
-              </button>
-            );
-          })}
-        </React.Fragment>
-      ))}
+      {groups.map((group, groupIndex) => {
+        if (group.items.length === 0) return null;
+        return (
+          <React.Fragment key={group.label}>
+            <p
+              role="presentation"
+              className={cn(
+                "px-3 pb-1.5 text-[11px] font-medium text-foreground-3",
+                groupIndex === 0 ? "pt-1" : "pt-4",
+              )}
+            >
+              {group.label}
+            </p>
+            {group.items.map((item) => {
+              flatIndex += 1;
+              const index = flatIndex;
+              const active = item.id === activeId;
+              const isEditing = editingId === item.id;
+
+              return (
+                <div
+                  key={item.id}
+                  ref={(el) => {
+                    itemRefs.current[item.id] = el;
+                  }}
+                  role="option"
+                  aria-selected={active}
+                  tabIndex={active || (!activeId && index === 0) ? 0 : -1}
+                  onClick={() => !isEditing && onSelect?.(item.id)}
+                  onKeyDown={(event) => !isEditing && handleKeyDown(event, index)}
+                  className={cn(
+                    "group relative z-[1] mb-1 flex w-full cursor-pointer items-center justify-between rounded-control px-3 py-2 text-start transition-colors duration-200 hover:bg-soft focus-visible:outline-none",
+                    active ? "text-foreground" : "text-foreground-2",
+                  )}
+                >
+                  {isEditing ? (
+                    <div
+                      className="flex w-full items-center gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") submitRename(item.id);
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        autoFocus
+                        className="h-7 w-full rounded border border-line bg-background px-2 text-xs text-foreground focus:border-white focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => submitRename(item.id)}
+                        className="rounded p-1 text-emerald-400 hover:bg-white/10"
+                        title="ذخیره"
+                      >
+                        <Check className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        className="rounded p-1 text-foreground-3 hover:bg-white/10"
+                        title="انصراف"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        {item.isPinned && (
+                          <Pin className="size-3 shrink-0 text-white fill-white/80" />
+                        )}
+                        <span className="truncate text-[13px] font-medium">
+                          {item.title}
+                        </span>
+                      </div>
+
+                      {/* Hover action buttons (pin, rename, delete) */}
+                      <div className="ms-2 hidden shrink-0 items-center gap-1 group-hover:flex">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPin?.(item.id, !item.isPinned);
+                          }}
+                          className="rounded p-1 text-foreground-3 transition-colors hover:bg-white/10 hover:text-foreground"
+                          title={item.isPinned ? "برداشتن پین" : "سنجاق کردن"}
+                        >
+                          {item.isPinned ? (
+                            <PinOff className="size-3.5" />
+                          ) : (
+                            <Pin className="size-3.5" />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => startRename(item.id, item.title, e)}
+                          className="rounded p-1 text-foreground-3 transition-colors hover:bg-white/10 hover:text-foreground"
+                          title="تغییر نام"
+                        >
+                          <Edit2 className="size-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm("آیا از حذف این گفتگو اطمینان دارید؟")) {
+                              onDelete?.(item.id);
+                            }
+                          }}
+                          className="rounded p-1 text-foreground-3 transition-colors hover:bg-red-500/20 hover:text-red-400"
+                          title="حذف گفتگو"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }
