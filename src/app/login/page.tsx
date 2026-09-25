@@ -1,12 +1,8 @@
-"use client";
-
-import * as React from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { ArrowRight, Check, Loader2, RotateCcw } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 
 import { ArkaMark } from "@/components/site-navbar";
-import { Button } from "@/components/ui/button";
+import { GoogleLoginButton } from "@/components/google-login-button";
 
 const BRAND_POINTS = [
   {
@@ -23,35 +19,14 @@ const BRAND_POINTS = [
   },
 ];
 
-function GoogleGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-5 shrink-0">
-      <path
-        fill="#4285F4"
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-      />
-    </svg>
-  );
-}
-
-function LoginCard() {
-  const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = React.useState(false);
-
-  const error = searchParams.get("error");
-  const returnTo = searchParams.get("returnTo") || "/chat";
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; returnTo?: string; until?: string }>;
+}) {
+  const params = await searchParams;
+  const error = params.error;
+  const returnTo = params.returnTo || "/chat";
 
   let errorMessage: string | null = null;
   let canRetry = false;
@@ -70,7 +45,7 @@ function LoginCard() {
         canRetry = false;
         break;
       case "timeout_until":
-        const until = searchParams.get("until");
+        const until = params.until;
         const formattedUntil = until ? new Date(until).toLocaleString("fa-IR") : "مدتی دیگر";
         errorMessage = `دسترسی شما به سامانه تا ${formattedUntil} موقتاً محدود شده است.`;
         canRetry = false;
@@ -87,89 +62,6 @@ function LoginCard() {
     }
   }
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    const googleLoginUrl = `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`;
-    window.location.href = googleLoginUrl;
-  };
-
-  return (
-    <div className="w-full max-w-[26rem]">
-      {/* Mobile brand row */}
-      <div className="mb-6 flex items-center justify-center gap-2.5 lg:hidden">
-        <ArkaMark className="size-6" />
-        <span dir="ltr" className="font-display text-[18px] font-bold tracking-[-0.02em]">
-          ARKA
-        </span>
-      </div>
-
-      <div className="rounded-card border border-line bg-card p-6 sm:p-8">
-        <div>
-          <h1 className="text-[1.4rem] font-extrabold leading-snug">ورود یا ساخت حساب</h1>
-          <p className="mt-2 text-[13.5px] leading-7 text-foreground-2">
-            با یک کلیک و فقط از طریق حساب گوگل، وارد محیط جامع هوش مصنوعی شوید.
-          </p>
-        </div>
-
-        {/* Error notification */}
-        {errorMessage && (
-          <div
-            role="alert"
-            className="mt-6 rounded-control border border-red-500/30 bg-red-500/10 p-3.5 text-[13px] leading-6 text-red-300"
-          >
-            <p>{errorMessage}</p>
-            {canRetry && (
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-white underline underline-offset-4 hover:opacity-80"
-              >
-                <RotateCcw className="size-3.5" />
-                تلاش دوباره
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Google OAuth Action Button - The ONLY method */}
-        <div className="mt-7 grid gap-3">
-          <Button
-            size="lg"
-            disabled={isLoading}
-            onClick={handleGoogleLogin}
-            className="group relative flex h-12 w-full items-center justify-center gap-3 border border-white/20 bg-white text-[14.5px] font-semibold text-black shadow-sm transition-all duration-200 hover:bg-neutral-200 active:scale-[0.99] disabled:opacity-70"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="size-5 animate-spin text-black" />
-                <span>در حال انتقال به گوگل...</span>
-              </>
-            ) : (
-              <>
-                <GoogleGlyph />
-                <span>ورود با حساب گوگل</span>
-              </>
-            )}
-          </Button>
-        </div>
-
-        <div className="mt-6 border-t border-line/60 pt-5 text-center">
-          <p className="text-[12px] leading-6 text-foreground-3">
-            ورود اول حساب جدید می‌سازد و ورودهای بعدی همان حساب قبلی را باز می‌کنند.
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 space-y-2 text-center">
-        <p className="text-[11.5px] leading-5 text-foreground-3">
-          با ادامه، شرایط استفاده و حریم خصوصی Arka را می‌پذیرید.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-export default function LoginPage() {
   return (
     <div className="flex min-h-dvh bg-background text-foreground">
       {/* Brand panel (desktop) */}
@@ -221,7 +113,7 @@ export default function LoginPage() {
         <p className="relative text-[12.5px] text-white/35">© ۲۰۲۶ ارکا — پلتفرم هوش مصنوعی</p>
       </aside>
 
-      {/* Main form area */}
+      {/* Main login card area */}
       <main className="relative flex min-h-dvh flex-1 flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-8">
         <div
           aria-hidden
@@ -234,18 +126,62 @@ export default function LoginPage() {
           className="absolute start-4 top-5 z-[1] inline-flex items-center gap-1.5 rounded-control px-2 py-1.5 text-[13.5px] text-foreground-2 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:start-8"
         >
           <ArrowRight aria-hidden className="size-4" />
-          بازگشت
+          بازگشت به خانه
         </Link>
 
-        <React.Suspense
-          fallback={
-            <div className="flex h-64 w-full max-w-[26rem] items-center justify-center rounded-card border border-line bg-card p-6">
-              <Loader2 className="size-6 animate-spin text-foreground-3" />
+        <div className="w-full max-w-[26rem]">
+          {/* Mobile brand row */}
+          <div className="mb-6 flex items-center justify-center gap-2.5 lg:hidden">
+            <ArkaMark className="size-6" />
+            <span dir="ltr" className="font-display text-[18px] font-bold tracking-[-0.02em]">
+              ARKA
+            </span>
+          </div>
+
+          <div className="rounded-card border border-line bg-card p-6 sm:p-8">
+            <div>
+              <h1 className="text-[1.4rem] font-extrabold leading-snug">ورود یا ساخت حساب</h1>
+              <p className="mt-2 text-[13.5px] leading-7 text-foreground-2">
+                با یک کلیک و فقط از طریق حساب گوگل، وارد محیط جامع هوش مصنوعی شوید.
+              </p>
             </div>
-          }
-        >
-          <LoginCard />
-        </React.Suspense>
+
+            {/* Error notification */}
+            {errorMessage && (
+              <div
+                role="alert"
+                className="mt-6 rounded-control border border-red-500/30 bg-red-500/10 p-3.5 text-[13px] leading-6 text-red-300"
+              >
+                <p>{errorMessage}</p>
+                {canRetry && (
+                  <Link
+                    href={`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`}
+                    className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-white underline underline-offset-4 hover:opacity-80"
+                  >
+                    تلاش دوباره با حساب گوگل
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {/* Google OAuth Action Button - The ONLY method */}
+            <div className="mt-7 grid gap-3">
+              <GoogleLoginButton returnTo={returnTo} />
+            </div>
+
+            <div className="mt-6 border-t border-line/60 pt-5 text-center">
+              <p className="text-[12px] leading-6 text-foreground-3">
+                ورود اول حساب جدید می‌سازد و ورودهای بعدی همان حساب قبلی را باز می‌کنند.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-2 text-center">
+            <p className="text-[11.5px] leading-5 text-foreground-3">
+              با ادامه، شرایط استفاده و حریم خصوصی Arka را می‌پذیرید.
+            </p>
+          </div>
+        </div>
       </main>
     </div>
   );

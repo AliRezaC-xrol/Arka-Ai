@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { Check, Gauge, Image as ImageIcon, KeyRound, Lock } from "lucide-react";
 
 import { FaqList } from "@/components/faq-list";
@@ -7,6 +9,7 @@ import { Reveal } from "@/components/reveal";
 import { StepsScroll } from "@/components/steps-scroll";
 import { HeroWindow } from "@/components/chat-preview";
 import { ArkaMark, SiteNavbar } from "@/components/site-navbar";
+import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 
 const MODELS = [
   { name: "GPT", org: "OpenAI" },
@@ -40,7 +43,16 @@ const FAQ = [
   { q: "چطور حسابم را حذف کنم؟", a: "از بخش تنظیمات حساب، با یک کلیک؛ همه‌ی گفتگوها و کلیدها برای همیشه پاک می‌شوند." },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (token) {
+    const payload = await verifySessionToken(token);
+    if (payload?.sub) {
+      redirect("/chat");
+    }
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <SiteNavbar />

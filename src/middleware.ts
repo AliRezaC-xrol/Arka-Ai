@@ -80,8 +80,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. If logged in user navigates to /login, redirect to /chat or returnTo
-  if (isLoginPage && sessionPayload) {
+  // 2. If logged in user navigates to /login or root /, redirect to /chat or returnTo
+  if ((isLoginPage || pathname === "/") && sessionPayload) {
     const returnTo = request.nextUrl.searchParams.get("returnTo");
     const target = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
       ? returnTo
