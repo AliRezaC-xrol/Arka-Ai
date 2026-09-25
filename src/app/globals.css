@@ -152,6 +152,74 @@
   }
 }
 
+/* ---------- Hero background (marketing page) ----------
+   Two achromatic light fields drifting on transform-only animations
+   (GPU-cheap, compositor-only) plus a faint static dot field. */
+.hero-aurora {
+  background:
+    radial-gradient(42rem 30rem at 78% 12%, rgba(255, 255, 255, 0.07), transparent 64%),
+    radial-gradient(36rem 26rem at 12% 82%, rgba(255, 255, 255, 0.045), transparent 66%);
+  animation: aurora-a 22s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-a {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-48px, 32px, 0) scale(1.08);
+  }
+}
+
+.hero-aurora-2 {
+  background: radial-gradient(
+    30rem 22rem at 55% 42%,
+    rgba(255, 255, 255, 0.035),
+    transparent 70%
+  );
+  animation: aurora-b 30s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-b {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: translate3d(40px, -28px, 0) scale(1.12);
+    opacity: 1;
+  }
+}
+
+.hero-dots {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1.4px
+  );
+  background-size: 28px 28px;
+  /* Fade the dot field out toward the edges so it never meets the sections
+     below with a hard seam. */
+  mask-image: radial-gradient(75rem 40rem at 50% 22%, black 30%, transparent 78%);
+}
+
+/* Slow vertical float for the layered hero cards (transform-only). */
+.hero-float {
+  animation: hero-float 9s ease-in-out infinite alternate;
+}
+
+.hero-float-late {
+  animation: hero-float 11s ease-in-out 1.2s infinite alternate;
+}
+
+@keyframes hero-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}
+
 /* ---------- Reduced motion: keep everything readable, kill movement ---------- */
 @media (prefers-reduced-motion: reduce) {
   .reveal {
@@ -170,7 +238,139 @@
   }
 
   .dot-grid,
-  .glow {
+  .glow,
+  .hero-aurora,
+  .hero-aurora-2,
+  .hero-float,
+  .hero-float-late {
     animation: none !important;
   }
+
+  /* Kill remaining motion (mobile sidebar slide, transitions) — content
+     must simply appear in its final position. */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
+
+/* --- vibefarsi:theme-graphite ---
+ * Block written by `npx vibefarsi@latest init`; token VALUES re-pointed to the
+ * Arka SPEC §10 primitives so the whole site stays pure black/white/gray
+ * (the graphite defaults shipped with chromatic brand/destructive/success/
+ * warning tokens — neutralized here per SPEC §10).
+ */
+:root {
+  color-scheme: dark;
+
+  /* رنگ — wired to SPEC §10 tokens */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--bg-card);
+  --card-foreground: var(--text);
+  --popover: var(--bg-elevated);
+  --popover-foreground: var(--text);
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: var(--bg-card);
+  --secondary-foreground: var(--text);
+  --muted: var(--bg-elevated);
+  --muted-foreground: var(--text-2);
+  --accent: var(--hover);
+  --accent-foreground: var(--text);
+  --destructive: var(--text-2);
+  --success: var(--text-2);
+  --warning: var(--text-2);
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: rgba(255, 255, 255, 0.6);
+  --brand: #ffffff;
+  --brand-foreground: #000000;
+
+  /* زبان طراحی: فونت، فرم، خط، عمق، حرکت و تراکم */
+  --radius: 0.625rem;
+  --type-display-weight: 700;
+  --shape-control: calc(var(--radius) - 2px);
+  --shape-field: calc(var(--radius) - 2px);
+  --shape-surface: calc(var(--radius) + 12px);
+  --shape-overlay: calc(var(--radius) + 4px);
+  --line: 1px;
+  --line-field: 1px;
+  --line-style: solid;
+  --field: color-mix(in oklch, var(--background) 60%, transparent);
+  /* SPEC §10: no shadows — depths stay fully transparent. The vibefarsi
+     Button's shadow-control/press utilities resolve to these (no visible box
+     shadow anywhere, elevation comes from hairline borders only). */
+  --depth-control: 0 0 #0000;
+  --depth-press: 0 0 #0000;
+  --depth-field: 0 0 #0000;
+  --depth-surface: 0 0 #0000;
+  --depth-overlay: 0 0 #0000;
+  --surface-filter: none;
+  --press: scale(0.98);
+  --motion: 200ms;
+  --motion-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --backdrop: none;
+  --spacing: 0.25rem;
+}
+/* --- vibefarsi:theme-graphite-end --- */
+
+/* --- vibefarsi:tailwind-map --- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  /* Arka additions: make the vibefarsi Button's utility classes resolve.
+     shadow-control/press -> transparent depths (SPEC: no shadows).
+     ease-motion -> the SPEC §5 easing curve. */
+  --shadow-control: var(--depth-control);
+  --shadow-press: var(--depth-press);
+  --ease-motion: var(--motion-ease);
+}
+
+@layer base {
+  body {
+    font-size: 16.5px;
+    line-height: 1.8;
+    letter-spacing: 0;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+/* --- vibefarsi:tailwind-map-end --- */
+
+/* --- vibefarsi:font ---
+ * Value re-pointed to the SPEC §10 stack: Latin-first (SF-like on Apple
+ * devices), Persian falls through to the self-hosted Vazirmatn variable
+ * written by the vibefarsi init block in layout.tsx.
+ */
+@theme inline {
+  --font-sans: -apple-system, BlinkMacSystemFont, var(--font-vazirmatn),
+    "Vazirmatn", system-ui, sans-serif;
+}
+/* --- vibefarsi:font-end --- */

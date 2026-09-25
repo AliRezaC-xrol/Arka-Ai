@@ -3,6 +3,10 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 /* Self-hosted Vazirmatn (SPEC §1: local font file, not Google Fonts).
+   Note: `npx vibefarsi init` added src/app/fonts.ts with next/font/google;
+   it was removed because SPEC §1 mandates the self-hosted woff2 files and
+   the Google import collided with this localFont declaration (TS2440).
+   The `--font-vazirmatn` variable vibefarsi's theme block expects is kept.
    Latin glyphs are handled by the system stack declared in globals.css;
    Vazirmatn covers Persian and any glyph the system stack lacks. */
 const vazirmatn = localFont({

@@ -28,6 +28,13 @@ export function OtpInput({ length = 6, onComplete, className }: OtpInputProps) {
     refs.current[clamped]?.focus();
   };
 
+  // Auto-focus the first box when the group mounts (the user just asked
+  // for a code — start typing immediately).
+  React.useEffect(() => {
+    focusAt(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const commit = (next: string[], focusIndex: number) => {
     setValues(next);
     focusAt(focusIndex);
