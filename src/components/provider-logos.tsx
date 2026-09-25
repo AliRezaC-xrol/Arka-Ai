@@ -70,6 +70,14 @@ export function MetaLlamaLogo({ className }: { className?: string }) {
   );
 }
 
+export function MistralLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M3 3h4.5v4.5H3V3zm13.5 0H21v4.5h-4.5V3zM3 9.75h4.5v4.5H3v-4.5zm13.5 0H21v4.5h-4.5v-4.5zM3 16.5h18V21H3v-4.5zm4.5-6.75h9v4.5h-9v-4.5z" />
+    </svg>
+  );
+}
+
 export const PROVIDERS_LIST: ProviderLogoItem[] = [
   { id: "openai", name: "OpenAI", subname: "GPT-4o", icon: OpenAILogo },
   { id: "claude", name: "Claude", subname: "Sonnet 3.7", icon: ClaudeLogo },
@@ -78,34 +86,36 @@ export const PROVIDERS_LIST: ProviderLogoItem[] = [
   { id: "flux", name: "FLUX.1", subname: "Image Studio", badge: "تصویر", icon: FluxLogo },
   { id: "grok", name: "Grok", subname: "xAI 2", icon: GrokLogo },
   { id: "llama", name: "Llama", subname: "Meta 3.3", icon: MetaLlamaLogo },
+  { id: "mistral", name: "Mistral", subname: "Large 2", icon: MistralLogo },
 ];
 
 export function ProviderLogosRow({ className }: { className?: string }) {
   return (
-    <div className={cn("relative w-full overflow-hidden select-none py-3 border-y border-white/5 bg-[#08080a]", className)}>
+    <div className={cn("relative w-full overflow-hidden select-none py-4 border-y border-white/5 bg-[#08080a]", className)}>
       {/* Edge gradient masks for silky seamless fade */}
-      <div className="pointer-events-none absolute inset-y-0 start-0 z-10 w-24 bg-gradient-to-r from-[#08080a] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 end-0 z-10 w-24 bg-gradient-to-l from-[#08080a] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 start-0 z-10 w-28 bg-gradient-to-r from-[#08080a] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 end-0 z-10 w-28 bg-gradient-to-l from-[#08080a] to-transparent" />
 
-      {/* Uninterrupted Continuous Marquee Loop (2 sets of identical elements translated -50%) */}
+      {/* Uninterrupted Continuous Marquee Loop — Endless and unbreakable */}
       <div
         dir="ltr"
-        className="flex w-max will-change-transform"
+        className="flex w-max will-change-transform animate-infinite-marquee"
         style={{
-          animation: "marquee 28s linear infinite",
+          animation: "marquee 32s linear infinite",
         }}
       >
+        {/* We duplicate the full set multiple times so half is always >= viewport width */}
         {[0, 1].map((copyIndex) => (
           <div
             key={copyIndex}
             aria-hidden={copyIndex === 1}
-            className="flex shrink-0 items-center gap-5 sm:gap-7 pe-5 sm:pe-7"
+            className="flex shrink-0 items-center gap-6 sm:gap-8 pe-6 sm:pe-8"
           >
-            {PROVIDERS_LIST.map((p) => {
+            {PROVIDERS_LIST.concat(PROVIDERS_LIST).map((p, itemIdx) => {
               const Icon = p.icon;
               return (
                 <div
-                  key={`${copyIndex}-${p.id}`}
+                  key={`${copyIndex}-${p.id}-${itemIdx}`}
                   className="group flex items-center gap-2.5 rounded-full border border-white/10 bg-[#111114] px-4 py-2 transition-all duration-300 hover:border-white/30 hover:bg-white/[0.08]"
                 >
                   <div className="grid size-6 place-items-center rounded-full bg-white/10 text-white transition-colors group-hover:bg-white group-hover:text-black">

@@ -34,8 +34,10 @@ async function runPhase11Tests() {
   pass("Original feature list under 'شروع رایگان' is rendered properly");
 
   const pageSource = fs.readFileSync(path.join(process.cwd(), "src/app/page.tsx"), "utf-8");
-  assert(pageSource.includes('id="how"') && pageSource.includes("<MeshCanvas"), "Sleeping MeshCanvas is embedded in #how section");
-  pass("Sleeping MeshCanvas is embedded in 'چطور کار می‌کند' (#how) section");
+  assert(pageSource.includes('id="how"') && pageSource.includes("<StepsScroll"), "Scroll-driven StepsScroll is embedded in #how section");
+  const howSection = pageSource.split('id="how"')[1]?.split("</section>")[0] || "";
+  assert(!howSection.includes("<MeshCanvas"), "How it works section is clean without background mesh");
+  pass("Steps scroll is clean without background mesh in 'چطور کار می‌کند' (#how) section");
 
   const providerLogosSource = fs.readFileSync(path.join(process.cwd(), "src/components/provider-logos.tsx"), "utf-8");
   assert(providerLogosSource.includes("rounded-full") && providerLogosSource.includes("border-white/10"), "Provider strip is compact and sleek");

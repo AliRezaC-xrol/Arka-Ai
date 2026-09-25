@@ -85,22 +85,17 @@ git add .
 git commit -m "feat: complete enterprise release of ARKA unified AI platform"
 ```
 
-### Step 4.4. Create a Private GitHub Repository
-1. Go to [https://github.com/new](https://github.com/new).
-2. Set the repository name to `arka-ai` (or your preferred name).
-3. Select **Private** (do **not** make it Public, as this is proprietary software).
-4. Do **not** initialize with README, .gitignore, or license (we already have them).
-5. Click **Create repository**.
-
-### Step 4.5. Add Remote and Push
+### Step 4.4. Set Remote to Your GitHub Repo (`AliRezaC-xrol/arka`)
 ```bash
 # Rename branch to main
 git branch -M main
 
-# Add your private remote (replace <YOUR_USERNAME> with your GitHub username)
-git remote add origin https://github.com/<YOUR_USERNAME>/arka-ai.git
+# Set remote origin to your GitHub repository
+git remote add origin https://github.com/AliRezaC-xrol/arka.git
+# If origin already exists:
+# git remote set-url origin https://github.com/AliRezaC-xrol/arka.git
 
-# Push to your private repo (authenticate with your GitHub Personal Access Token or SSH key)
+# Push to your private repo (using your Personal Access Token or SSH Key)
 git push -u origin main
 ```
 
@@ -141,8 +136,8 @@ sudo mkdir -p /var/www/arka
 sudo chown -R $USER:$USER /var/www/arka
 cd /var/www/arka
 
-# Using HTTPS with GitHub Personal Access Token, or SSH with an authorized server deploy key:
-git clone https://github.com/<YOUR_USERNAME>/arka-ai.git .
+# Clone using your GitHub repository
+git clone https://github.com/AliRezaC-xrol/arka.git .
 ```
 
 ### Step 5.5. Configure Environment Variables

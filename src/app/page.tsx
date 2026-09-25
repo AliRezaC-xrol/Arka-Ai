@@ -212,17 +212,9 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ================= How it works (With Sleeping Mesh Background) ================= */}
-        <section id="how" aria-labelledby="steps-title" className="relative scroll-mt-16 border-b border-line bg-elevated overflow-hidden">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_40%,transparent_90%)] opacity-60"
-          >
-            <MeshCanvas spacing={62} />
-          </div>
-          <div className="relative z-10">
-            <StepsScroll steps={STEPS} />
-          </div>
+        {/* ================= How it works (Scroll-driven 1 to 3 progress line, no background) ================= */}
+        <section id="how" aria-labelledby="steps-title" className="scroll-mt-16 border-b border-line bg-elevated">
+          <StepsScroll steps={STEPS} />
         </section>
 
         {/* ================= FAQ ================= */}
