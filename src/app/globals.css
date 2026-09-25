@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+/*
+ * Arka design tokens — SPEC §10
+ * Single black theme. No light/dark switch. Grayscale only.
+ * Elevation comes from hairline borders only — no shadows anywhere.
+ */
+:root {
+  --bg: #000000;
+  --bg-elevated: #0d0d0d;
+  --bg-card: #121212;
+  --text: #ffffff;
+  --text-2: #a0a0a0;
+  --text-3: #6b6b6b;
+  --border: rgba(255, 255, 255, 0.1);
+  --hover: rgba(255, 255, 255, 0.06);
+  --radius-control: 10px;
+  --radius-card: 16px;
+  /* Latin first (SF-like on Apple devices, OS font elsewhere),
+     Persian falls through to self-hosted Vazirmatn. */
+  --font-sans: -apple-system, BlinkMacSystemFont, var(--font-vazirmatn),
+    "Vazirmatn", system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-elevated: var(--bg-elevated);
+  --color-card: var(--bg-card);
+  --color-foreground: var(--text);
+  --color-foreground-2: var(--text-2);
+  --color-foreground-3: var(--text-3);
+  --color-line: var(--border);
+  --color-soft: var(--hover);
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --font-sans: -apple-system, BlinkMacSystemFont, var(--font-vazirmatn),
+    "Vazirmatn", system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background-color: rgba(255, 255, 255, 0.16);
+  }
+
+  /* Visible keyboard focus everywhere — grayscale, follows border-radius */
+  :focus-visible {
+    outline: 1.5px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+/* ---------- Scroll-triggered reveal (SPEC §6) ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 450ms ease-out,
+    transform 450ms cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity, transform;
+}
+
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- Step transition on the login card (SPEC §7.1) ---------- */
+.step-in {
+  animation: step-in 260ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Ambient background for the login page (SPEC §7.1) ----------
+   Very low-contrast drifting dot grid + a soft light gradient. */
+.dot-grid {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.055) 1px,
+    transparent 1.4px
+  );
+  background-size: 26px 26px;
+  animation: drift 90s linear infinite alternate;
+}
+
+@keyframes drift {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 208px 156px;
+  }
+}
+
+.glow {
+  background: radial-gradient(
+    560px circle at 28% 18%,
+    rgba(255, 255, 255, 0.05),
+    transparent 62%
+  );
+  animation: glow-move 26s ease-in-out infinite alternate;
+}
+
+@keyframes glow-move {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.85;
+  }
+  to {
+    transform: translate3d(-56px, 40px, 0) scale(1.12);
+    opacity: 1;
+  }
+}
+
+/* ---------- Reduced motion: keep everything readable, kill movement ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .step-in {
+    animation: none;
+  }
+
+  /* The spotlight uses an inline transition style; !important wins over it. */
+  .spotlight {
+    transition: none !important;
+  }
+
+  .dot-grid,
+  .glow {
+    animation: none !important;
+  }
+}

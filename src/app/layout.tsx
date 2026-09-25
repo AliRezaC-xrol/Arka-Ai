@@ -1,0 +1,47 @@
+import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
+import "./globals.css";
+
+/* Self-hosted Vazirmatn (SPEC §1: local font file, not Google Fonts).
+   Latin glyphs are handled by the system stack declared in globals.css;
+   Vazirmatn covers Persian and any glyph the system stack lacks. */
+const vazirmatn = localFont({
+  src: [
+    { path: "../fonts/Vazirmatn-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/Vazirmatn-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/Vazirmatn-SemiBold.woff2", weight: "600", style: "normal" },
+  ],
+  variable: "--font-vazirmatn",
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: {
+    default: "Arka — دستیار هوش مصنوعی",
+    template: "%s — Arka",
+  },
+  description:
+    "ارکا محیط چت و تولید تصویر با هوش مصنوعی است؛ هر پروایدری که بخواهی وصل کن، بقیه‌اش با ما.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="fa" dir="rtl" className={vazirmatn.variable}>
+      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
+        {/* Without JS the scroll-reveal elements must stay visible */}
+        <noscript>
+          <style>{".reveal{opacity:1 !important;transform:none !important}"}</style>
+        </noscript>
+        {children}
+      </body>
+    </html>
+  );
+}
