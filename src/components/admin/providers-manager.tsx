@@ -8,6 +8,7 @@
 
 import { adminFetch } from "@/lib/admin-fetch";
 import { API_FORMATS, resolveApiFormat, type ApiFormat } from "@/lib/ai-client";
+import { ModelListEditor, type ModelEntry } from "@/components/admin/model-list-editor";
 
 import * as React from "react";
 import {
@@ -131,6 +132,7 @@ export function ProvidersManager() {
   const [formBaseUrl, setFormBaseUrl] = React.useState("");
   const [formApiFormat, setFormApiFormat] = React.useState<ApiFormat>("chat_completions");
   const [formModels, setFormModels] = React.useState("");
+  const [formModelsConfig, setFormModelsConfig] = React.useState<ModelEntry[]>([]);
   const [formApiKey, setFormApiKey] = React.useState("");
   const [formKeyLabel, setFormKeyLabel] = React.useState("");
   const [formSubmitLoading, setFormSubmitLoading] = React.useState(false);
@@ -263,6 +265,7 @@ export function ProvidersManager() {
           baseUrl: formBaseUrl || null,
           apiFormat: formApiFormat,
           models: formModels,
+          modelsConfig: formModelsConfig,
           apiKey: formApiKey || undefined,
           keyLabel: formKeyLabel || undefined,
         }),
@@ -301,6 +304,7 @@ export function ProvidersManager() {
           baseUrl: formBaseUrl || null,
           apiFormat: formApiFormat,
           models: formModels,
+          modelsConfig: formModelsConfig,
         }),
       });
 
@@ -416,6 +420,7 @@ export function ProvidersManager() {
     setFormBaseUrl("");
     setFormApiFormat("chat_completions");
     setFormModels("");
+    setFormModelsConfig([]);
     setFormApiKey("");
     setFormKeyLabel("");
     setFormError(null);
@@ -428,6 +433,7 @@ export function ProvidersManager() {
     setFormBaseUrl(p.baseUrl || "");
     setFormApiFormat(resolveApiFormat(p.type, p.apiFormat));
     setFormModels(p.models || "");
+    setFormModelsConfig(Array.isArray(p.modelsConfig) ? (p.modelsConfig as ModelEntry[]) : []);
     setFormError(null);
   };
 
@@ -1234,16 +1240,11 @@ export function ProvidersManager() {
               </div>
 
               <div>
-                <label className="block font-medium text-foreground-2 mb-1">
-                  مدل‌های در دسترس (با کاما جدا کنید)
-                </label>
-                <Input
+                <ModelListEditor
                   value={formModels}
-                  onChange={(e) => setFormModels(e.target.value)}
-                  placeholder="gpt-4o, gpt-4o-mini, o1"
-                  dir="ltr"
-                  required
-                  className="h-9 text-xs font-mono"
+                  onChange={setFormModels}
+                  config={formModelsConfig}
+                  onConfigChange={setFormModelsConfig}
                 />
                 <span className="text-[10.5px] text-foreground-3 mt-1 block">
                   این مدل‌ها مستقیماً در لیست مدل‌های قابل انتخاب کاربران نمایش داده خواهند شد.
@@ -1377,15 +1378,11 @@ export function ProvidersManager() {
               </div>
 
               <div>
-                <label className="block font-medium text-foreground-2 mb-1">
-                  مدل‌های در دسترس (با کاما جدا کنید)
-                </label>
-                <Input
+                <ModelListEditor
                   value={formModels}
-                  onChange={(e) => setFormModels(e.target.value)}
-                  dir="ltr"
-                  required
-                  className="h-9 text-xs font-mono"
+                  onChange={setFormModels}
+                  config={formModelsConfig}
+                  onConfigChange={setFormModelsConfig}
                 />
               </div>
 

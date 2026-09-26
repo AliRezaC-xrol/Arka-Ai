@@ -81,6 +81,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (typeof body.models === "string") {
       dataToUpdate.models = body.models.trim();
     }
+    if (Array.isArray(body.modelsConfig)) {
+      dataToUpdate.modelsConfig = body.modelsConfig;
+    }
     if (typeof body.isActive === "boolean") {
       dataToUpdate.isActive = body.isActive;
     }
