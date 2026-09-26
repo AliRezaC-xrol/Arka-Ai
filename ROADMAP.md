@@ -1,5 +1,9 @@
 # ARKA — نقشه راه کارهای باقی‌مانده
 
+> **ARKA — Confidential & Proprietary. Copyright (c) 2026 AliRezaC-xrol. All rights reserved.**
+> This repository is closed source. See [LICENSE](./LICENSE). Do not copy, redistribute,
+> or reuse any part of this project.
+
 این فایل وضعیت دقیق کارها را نگه می‌دارد. هر بسته پس از `tsc` + `eslint` +
 `next build` سبز، کامیت می‌شود.
 

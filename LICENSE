@@ -1,28 +1,92 @@
-PROPRIETARY AND CONFIDENTIAL SOURCE CODE LICENSE
+ALL RIGHTS RESERVED — PROPRIETARY & CLOSED SOURCE
 
-Copyright (c) 2026 AliRezaC-xrol / ARKA AI (https://github.com/AliRezaC-xrol/arka)
-All Rights Reserved.
+Copyright (c) 2026 AliRezaC-xrol. All rights reserved.
 
-STRICTLY CLOSED-SOURCE AND PROPRIETARY SOFTWARE
+Project: ARKA (https://github.com/AliRezaC-xrol/arka)
+Holder : AliRezaC-xrol
 
-This software, its source code, documentation, algorithms, architecture, design assets, and compiled binaries (collectively, the "Software") are the exclusive proprietary property of AliRezaC-xrol and ARKA.
 
-TERMS AND CONDITIONS:
+1. PROPRIETARY SOFTWARE
 
-1. PROPRIETARY NATURE
-   The Software is strictly proprietary and confidential. It is NOT open-source software, and is NOT licensed under any open-source license (such as MIT, Apache, GPL, BSD, etc.).
+ARKA and every part of it — source code, object code, algorithms, architecture,
+data models, database schema, API design, prompts, user interface, visual design,
+documentation, configuration, and assets (together, the "Software") — is the
+exclusive property of the copyright holder.
 
-2. PROHIBITION OF COPYING AND DISTRIBUTION
-   No individual or legal entity may copy, reproduce, mirror, republish, download, distribute, transmit, broadcast, sell, rent, lease, license, sublicense, or otherwise exploit this Software, in whole or in part, without the prior express written consent of AliRezaC-xrol.
+The Software is NOT open source. It is NOT released under, and must not be
+treated as released under, any open-source licence, including but not limited to
+MIT, Apache-2.0, GPL, LGPL, AGPL, BSD, MPL, ISC, or any Creative Commons licence.
 
-3. PROHIBITION OF MODIFICATION AND DERIVATIVE WORKS
-   You may not modify, adapt, alter, translate, or create derivative works based upon the Software.
 
-4. PROHIBITION OF REVERSE ENGINEERING
-   You may not decompile, reverse engineer, disassemble, decrypt, or otherwise attempt to derive the source code, underlying structure, or ideas of the Software.
+2. NO LICENCE GRANTED
+
+No licence, right, or permission of any kind is granted to you, whether
+expressly, implicitly, by estoppel, or otherwise. Possession of, access to, or
+ability to view any part of the Software grants you no rights in it.
+
+
+3. PROHIBITED ACTS
+
+Without the prior written permission of the copyright holder, you must not:
+
+  a. copy, reproduce, mirror, clone, or archive the Software, in whole or in part;
+  b. publish, post, upload, distribute, transmit, broadcast, or otherwise make the
+     Software available to any third party;
+  c. sell, resell, rent, lease, sublicense, host, or offer the Software as a
+     service to others;
+  d. modify, adapt, translate, port, refactor, or create derivative works from
+     the Software;
+  e. merge the Software into another product, or incorporate any part of it into
+     your own work;
+  f. decompile, disassemble, reverse engineer, or attempt to derive the source
+     code, structure, or underlying ideas of the Software, except to the extent
+     this restriction is unenforceable under applicable law;
+  g. remove, obscure, or alter any copyright notice, licence notice, or
+     proprietary marking contained in the Software;
+  h. use the Software, or any part of it, to train, fine-tune, benchmark, or
+     otherwise develop a machine-learning model.
+
+
+4. CONTRIBUTIONS
+
+Any contribution submitted to this project is assigned to the copyright holder
+and becomes part of the Software, subject to these same terms, unless a separate
+written agreement states otherwise.
+
 
 5. RESERVATION OF RIGHTS
-   All rights, title, and interest in and to the Software, including all associated intellectual property rights, remain exclusively with AliRezaC-xrol.
 
-DISCLAIMER:
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+All right, title, and interest in and to the Software, including all
+intellectual property rights, remain vested in the copyright holder. Nothing in
+this notice transfers any of them.
+
+
+6. ENFORCEMENT
+
+Unauthorised use of the Software is a violation of copyright and may result in
+civil and criminal liability. The copyright holder will pursue every available
+legal and equitable remedy, including injunctive relief, statutory damages, and
+recovery of legal costs.
+
+
+7. DISCLAIMER OF WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, TITLE, AND NONINFRINGEMENT.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+
+8. THIRD-PARTY COMPONENTS
+
+This notice covers the ARKA codebase. Third-party libraries used by the Software
+remain under their own licences, which are recorded in the package manifest. The
+user interface is built with the vibefarsi component set, used with permission.
+
+
+For licensing enquiries, contact the copyright holder through
+https://github.com/AliRezaC-xrol

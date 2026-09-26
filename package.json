@@ -1,10 +1,10 @@
 {
   "name": "arka",
   "version": "1.0.0",
-  "description": "ARKA AI Platform — Proprietary Closed-Source Unified AI Gateway & Conversational Interface",
+  "description": "ARKA — a Persian-first AI chat platform. Proprietary and closed source.",
   "author": "AliRezaC-xrol",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
     "url": "https://github.com/AliRezaC-xrol/arka.git"
