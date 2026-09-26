@@ -43,6 +43,8 @@ interface ByokManagerProps {
   onClose: () => void;
   onChanged: () => void;
   providers: UserProviderRow[];
+  /** Render as a plain panel instead of a full-screen modal (settings page). */
+  inline?: boolean;
 }
 
 const PRESET_KEYS = Object.keys(PROVIDER_PRESETS);
@@ -72,7 +74,7 @@ function statusBadge(status: string) {
   );
 }
 
-export function ByokManager({ open, onClose, onChanged, providers }: ByokManagerProps) {
+export function ByokManager({ open, onClose, onChanged, providers, inline = false }: ByokManagerProps) {
   const [mode, setMode] = React.useState<"list" | "form">("list");
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
@@ -227,13 +229,26 @@ export function ByokManager({ open, onClose, onChanged, providers }: ByokManager
     }
   };
 
-  if (!open) return null;
+  if (!open && !inline) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" dir="rtl">
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
+    <div
+      className={cn(
+        "flex items-center justify-center",
+        inline ? "w-full" : "fixed inset-0 z-[100] p-4",
+      )}
+      dir="rtl"
+    >
+      {!inline && (
+        <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
+      )}
 
-      <div className="relative z-10 flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-white/10 bg-[#101013] shadow-2xl">
+      <div
+        className={cn(
+          "relative z-10 flex w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-white/10 bg-[#101013] shadow-2xl",
+          !inline && "max-h-[88dvh]",
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
           <div className="flex items-center gap-2.5">
