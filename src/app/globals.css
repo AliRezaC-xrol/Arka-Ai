@@ -1212,3 +1212,153 @@ html { color-scheme: dark; }
     animation: none !important;
   }
 }
+
+/* ==================================================================
+   Round 10 — chat aurora + message motion (video-reference pass)
+   ================================================================== */
+
+/* ---------- Monochrome aurora ----------
+   The flowing-light background from the reference video, retinted to the
+   black/white palette: white + cool grey instead of the old blue. Pure
+   transform/opacity so it stays on the compositor. */
+.aurora-mono {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora-mono::before,
+.aurora-mono::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  filter: blur(70px);
+  will-change: transform;
+}
+
+.aurora-mono::before {
+  top: -30rem;
+  width: min(80rem, 180vw);
+  height: 60rem;
+  background:
+    radial-gradient(closest-side at 50% 58%, rgba(255, 255, 255, 0.26), transparent 70%),
+    radial-gradient(closest-side at 31% 63%, rgba(196, 208, 226, 0.20), transparent 72%),
+    radial-gradient(closest-side at 69% 59%, rgba(255, 255, 255, 0.14), transparent 72%);
+  animation: aurora-mono-drift 26s ease-in-out infinite;
+}
+
+.aurora-mono::after {
+  bottom: -36rem;
+  width: min(66rem, 155vw);
+  height: 50rem;
+  background: radial-gradient(closest-side at 50% 40%, rgba(255, 255, 255, 0.13), transparent 70%);
+  animation: aurora-mono-drift 34s ease-in-out infinite reverse;
+}
+
+@keyframes aurora-mono-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(-4%, 3%, 0) scale(1.07);
+  }
+  66% {
+    transform: translate3d(4%, -2%, 0) scale(0.96);
+  }
+}
+
+/* ---------- Message motion ---------- */
+
+/* Outgoing bubble: the springy "sent" pop from the reference motion study.
+   Origin is set per-bubble so it grows out of the send corner. */
+@keyframes msg-send-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.7);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.msg-send-pop {
+  transform-origin: var(--bubble-origin, 100% 100%);
+  animation: msg-send-pop 440ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Incoming bubble: soft un-blur reveal. */
+@keyframes msg-soft-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.msg-soft-in {
+  animation: msg-soft-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Copy confirmation: the icon springs and lifts. */
+@keyframes copy-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.copy-pop {
+  animation: copy-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ---------- Composer ---------- */
+
+/* Typed characters ease in instead of snapping. */
+@keyframes char-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.char-in {
+  animation: char-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-mono::before,
+  .aurora-mono::after,
+  .msg-send-pop,
+  .msg-soft-in,
+  .copy-pop,
+  .char-in {
+    animation: none !important;
+  }
+}

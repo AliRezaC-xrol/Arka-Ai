@@ -44,7 +44,6 @@ import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormattedMessage } from "@/components/code-block";
-import { MeshCanvas } from "@/components/mesh-canvas";
 import { cn } from "@/lib/utils";
 
 interface ConversationItem {
@@ -859,15 +858,6 @@ function ChatContent() {
               >
                 <Key className="size-3.5" />
               </Link>
-
-              <button
-                type="button"
-                onClick={() => setDesktopCollapsed(false)}
-                className="grid size-9 place-items-center rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
-                title="گسترش نوار کناری"
-              >
-                <PanelRightOpen className="size-4" />
-              </button>
             </div>
           </div>
         ) : (
@@ -882,14 +872,7 @@ function ChatContent() {
               </Link>
 
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setDesktopCollapsed(true)}
-                  className="hidden md:grid size-8 place-items-center rounded-control text-neutral-400 hover:bg-white/5 hover:text-white transition-colors"
-                  title="جمع‌کردن سایدبار"
-                >
-                  <PanelRightClose className="size-4" />
-                </button>
+                {/* Only the header carries the sidebar toggle — see below. */}
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}
@@ -980,13 +963,10 @@ function ChatContent() {
 
       {/* ================= Main Chat Section ================= */}
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[#070709]">
-        {/* Animated Monochrome Sleeping Mesh Background (Black & White, NO BLUE) */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_30%,transparent_90%)] opacity-35"
-        >
-          <MeshCanvas spacing={60} />
-        </div>
+        {/* Animated monochrome aurora — the flowing-light look from the
+            reference video, retinted to the black/white palette (no blue).
+            Negative z-index keeps it above the panel colour but below content. */}
+        <div aria-hidden className="aurora-mono -z-10" />
 
         {/* Top Header Bar matching Video 1 exactly */}
         <header className="relative z-20 flex h-14 shrink-0 items-center justify-between px-4 sm:px-6 bg-background/60 backdrop-blur-md">
@@ -1254,7 +1234,14 @@ function ChatContent() {
                 if (isUser) {
                   return (
                     <div key={msg.id} className="ms-auto flex max-w-[85%] flex-col items-end sm:max-w-[75%]">
-                      <div className="rounded-[22px] rounded-se-sm border border-white/10 bg-[#1a1a1f] px-4 py-3 text-start text-[14px] leading-7 text-white shadow-sm">
+                      <div
+                        className={cn(
+                          "rounded-[22px] rounded-se-sm border border-white/10 bg-[#1a1a1f] px-4 py-3 text-start text-[14px] leading-7 text-white shadow-sm",
+                          // Bubble grows out of the send corner, iMessage-style.
+                          "[--bubble-origin:100%_100%]",
+                          msg.id.startsWith("user-") && "msg-send-pop",
+                        )}
+                      >
                         <p className="whitespace-pre-wrap">{msg.content}</p>
                       </div>
                     </div>
@@ -1286,9 +1273,12 @@ function ChatContent() {
           )}
         </div>
 
-        {/* ================= Bottom Docked Composer (When messages exist) ================= */}
+        {/* ================= Bottom Docked Composer (When messages exist) =================
+            No border and no tinted backdrop: the page background (and the aurora)
+            flow straight under the composer instead of it sitting in its own
+            separated box. */}
         {messages.length > 0 && (
-          <div className="shrink-0 border-t border-white/[0.05] bg-background/80 p-3 backdrop-blur-xl sm:p-4">
+          <div className="relative z-10 shrink-0 p-3 sm:p-4">
             <div className="mx-auto max-w-3xl">
               {attachment && (
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#161619] px-3 py-1 text-xs text-neutral-300">
