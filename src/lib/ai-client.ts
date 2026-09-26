@@ -749,6 +749,139 @@ export async function generateImage(
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * Model capabilities
+ * ------------------------------------------------------------------ */
+
+export interface ModelCapabilities {
+  vision: boolean;
+  files: boolean;
+  /** 0 when the model cannot take images at all. */
+  maxImages: number;
+  contextLength: number | null;
+  source: "provider" | "heuristic";
+  note?: string;
+}
+
+/**
+ * Fallback used when the provider publishes no capability metadata.
+ * Deliberately conservative: a wrong "yes" makes the UI offer an attachment the
+ * model will reject, a wrong "no" only hides a feature.
+ */
+function heuristicCapabilities(model: string): ModelCapabilities {
+  const m = model.toLowerCase();
+  const vision =
+    /(gpt-4o|gpt-4\.1|gpt-5|o3|o4|claude|gemini|llama-3\.2|llava|qwen-?vl|pixtral|grok-2|grok-3|vision|-vl)/.test(m);
+  const files = /(claude|gemini|gpt-4o|gpt-4\.1|gpt-5)/.test(m);
+
+  return {
+    vision,
+    files,
+    maxImages: vision ? 8 : 0,
+    contextLength: null,
+    source: "heuristic",
+    note: "سرویس‌دهنده متادیتای قابلیت‌ها را منتشر نمی‌کند؛ این مقادیر از روی نام مدل تخمین زده شده‌اند.",
+  };
+}
+
+/**
+ * Asks the provider what the selected model can actually accept.
+ * OpenRouter-style gateways expose `architecture.input_modalities`; Gemini
+ * exposes `supportedGenerationMethods`; everything else falls back to the
+ * name heuristic.
+ */
+export async function getModelCapabilities(options: {
+  type: string;
+  apiKey: string;
+  baseUrl?: string | null;
+  model: string;
+}): Promise<ModelCapabilities> {
+  const type = normalizeType(options.type);
+  const base = resolveBase(type, options.baseUrl);
+  const model = options.model;
+
+  if (!base || !options.apiKey) return heuristicCapabilities(model);
+
+  try {
+    const url =
+      type === "google"
+        ? `${joinUrl(base, `/models/${encodeURIComponent(model)}`)}?key=${encodeURIComponent(options.apiKey)}`
+        : type === "anthropic"
+          ? joinUrl(base, `/models/${encodeURIComponent(model)}`)
+          : joinUrl(base, "/models");
+
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (type === "anthropic") {
+      headers["x-api-key"] = options.apiKey;
+      headers["anthropic-version"] = "2023-06-01";
+    } else if (type !== "google") {
+      headers.Authorization = `Bearer ${options.apiKey}`;
+    }
+
+    const res = await fetch(url, {
+      headers,
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return heuristicCapabilities(model);
+
+    const json = (await res.json()) as Record<string, unknown>;
+    const fallback = heuristicCapabilities(model);
+
+    // OpenRouter & friends: a full catalogue carrying per-model architecture.
+    const list = Array.isArray(json?.data)
+      ? (json.data as Array<Record<string, unknown>>)
+      : Array.isArray(json?.models)
+        ? (json.models as Array<Record<string, unknown>>)
+        : null;
+
+    if (list) {
+      const entry = list.find((e) => {
+        const id = String(e?.id ?? e?.name ?? "").replace(/^models\//, "");
+        return id === model;
+      });
+
+      if (entry) {
+        const arch = (entry.architecture ?? {}) as { input_modalities?: string[] };
+        const modalities = Array.isArray(arch.input_modalities) ? arch.input_modalities : [];
+        const ctx = entry.context_length ?? entry.context_window ?? entry.inputTokenLimit;
+
+        const vision = modalities.includes("image") || fallback.vision;
+        const files = modalities.includes("file") || vision;
+
+        return {
+          vision,
+          files,
+          maxImages: vision ? 8 : 0,
+          contextLength: typeof ctx === "number" ? ctx : null,
+          source: "provider",
+          note: modalities.length
+            ? `ورودی‌های پشتیبانی‌شده: ${modalities.join(", ")}`
+            : undefined,
+        };
+      }
+    }
+
+    // Gemini: single-model endpoint with the supported method list.
+    if (type === "google" && typeof json?.name === "string") {
+      const methods = Array.isArray(json.supportedGenerationMethods)
+        ? (json.supportedGenerationMethods as string[])
+        : [];
+      const limit = json.inputTokenLimit;
+      return {
+        ...fallback,
+        contextLength: typeof limit === "number" ? limit : null,
+        source: "provider",
+        note: methods.length ? `متدهای پشتیبانی‌شده: ${methods.join(", ")}` : fallback.note,
+      };
+    }
+
+    return fallback;
+  } catch {
+    return heuristicCapabilities(model);
+  }
+}
+
 export function defaultModelFor(type: ProviderType): string {
   switch (type) {
     case "openai":

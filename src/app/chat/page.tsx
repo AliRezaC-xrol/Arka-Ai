@@ -43,6 +43,7 @@ import {
 import { UserMenu } from "@/components/user-menu";
 import { NotificationsMenu } from "@/components/notifications-menu";
 import { ByokManager } from "@/components/byok-manager";
+import type { ModelCapabilities } from "@/lib/ai-client";
 import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -291,6 +292,56 @@ function ChatContent() {
     }
     if (!ids.includes(model)) setModel(ids[0]);
   }, [modelGroups, model]);
+
+  /**
+   * What the selected model can actually accept. Asked from the provider on
+   * every model switch so the attach button reflects reality instead of a
+   * hardcoded guess.
+   */
+  const [modelCaps, setModelCaps] = React.useState<ModelCapabilities | null>(null);
+
+  React.useEffect(() => {
+    const sep = model.indexOf(":");
+    if (sep === -1) {
+      setModelCaps(null);
+      return;
+    }
+
+    const providerName = model.slice(0, sep);
+    const modelId = model.slice(sep + 1);
+
+    const up = userProviders.find((p) => p.name === providerName && p.status === "connected");
+    const sp = siteProviders.find((p) => p.name === providerName);
+
+    if (!up && !sp) {
+      setModelCaps(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch("/api/model-capabilities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: modelId,
+        userProviderId: up?.id,
+        providerId: up ? undefined : sp?.id,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data?.capabilities) setModelCaps(data.capabilities);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [model, userProviders, siteProviders]);
+
+  /** The model cannot take any attachment at all. */
+  const attachmentsBlocked = Boolean(modelCaps && !modelCaps.vision && !modelCaps.files);
 
   // Composer state
   const [input, setInput] = React.useState("");
@@ -1242,9 +1293,13 @@ function ChatContent() {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
-                        className="grid size-8 place-items-center rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
-                        title="پیوست تصویر"
+                        disabled={Boolean(
+                          attachmentsBlocked ||
+                            user?.isBanned ||
+                            (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0),
+                        )}
+                        className="grid size-8 place-items-center rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-40"
+                        title={attachmentsBlocked ? "این مدل از پیوست تصویر پشتیبانی نمی‌کند" : "پیوست تصویر"}
                       >
                         <ImageIcon className="size-3.5" />
                       </button>
@@ -1447,10 +1502,14 @@ function ChatContent() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
+                  disabled={Boolean(
+                    attachmentsBlocked ||
+                      user?.isBanned ||
+                      (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0),
+                  )}
                   onClick={() => fileInputRef.current?.click()}
                   className="size-8 shrink-0 rounded-full text-neutral-400 hover:text-white"
-                  title="پیوست فایل یا تصویر"
+                  title={attachmentsBlocked ? "این مدل از پیوست پشتیبانی نمی‌کند" : "پیوست فایل یا تصویر"}
                 >
                   <Paperclip className="size-4" />
                 </Button>
