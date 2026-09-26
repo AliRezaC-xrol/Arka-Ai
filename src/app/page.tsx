@@ -12,6 +12,7 @@ import { Check, Cpu, Lock, Sparkles, Zap } from "lucide-react";
 import { FaqList } from "@/components/faq-list";
 import { MeshCanvas } from "@/components/mesh-canvas";
 import { Reveal } from "@/components/reveal";
+import { ScrollLink } from "@/components/scroll-link";
 import { StepsScroll } from "@/components/steps-scroll";
 import { HeroWindow } from "@/components/chat-preview";
 import { ArkaMark, SiteNavbar } from "@/components/site-navbar";
@@ -110,14 +111,14 @@ export default async function Home() {
             className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_60%_50%_at_50%_15%,rgba(255,255,255,0.06),transparent_80%)]"
           />
 
-          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16 md:grid-cols-2 md:gap-8 lg:grid-cols-[1fr_1.15fr] lg:gap-14 lg:pb-24 lg:pt-20 xl:grid-cols-[1fr_1.2fr] xl:gap-16">
+          <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16 md:grid-cols-2 md:gap-8 lg:grid-cols-[1fr_1.07fr] lg:gap-12 lg:pb-24 lg:pt-20 xl:gap-14">
             {/* Right Column: Hero Heading, Description, CTA and Bullets */}
             <div>
               <Link
                 href="/login"
-                className="enter inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-1 pe-3.5 ps-1 text-[12px] sm:text-[13px] text-neutral-200 transition-colors hover:border-white/30"
+                className="enter inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-1 pe-3.5 ps-1 text-[12px] text-neutral-200 transition-colors hover:border-white/30 sm:text-[13px]"
               >
-                <span className="rounded-full bg-white px-2.5 py-0.5 text-[10.5px] sm:text-[11px] font-bold text-black shadow-sm">
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-[10.5px] font-bold text-black shadow-sm sm:text-[11px]">
                   رایگان
                 </span>
                 ۱۰۰ پیام رایگان پس از اولین ورود
@@ -125,44 +126,52 @@ export default async function Home() {
 
               <h1
                 id="hero-title"
-                className="enter mt-5 sm:mt-6 text-[2.2rem] font-extrabold leading-[1.25] tracking-tight sm:text-[3rem] md:text-[2.5rem] lg:text-[3.4rem] xl:text-[3.8rem] text-white"
+                className="enter mt-5 text-[1.85rem] font-extrabold leading-[1.3] tracking-tight text-white sm:mt-6 sm:text-[2.6rem] md:text-[2.1rem] lg:text-[2.95rem] xl:text-[3.35rem]"
                 style={{ ["--enter-delay" as string]: "80ms" }}
               >
-                یک حساب
+                همه‌ی مدل‌های هوش مصنوعی،
                 <br />
-                برای همه‌ی مدل‌های
-                <br />
-                هوش مصنوعی.
+                <span className="text-neutral-500">در یک گفتگو.</span>
               </h1>
 
               <p
-                className="enter mt-4 sm:mt-5 max-w-xl text-[15px] leading-[1.85] text-neutral-300 sm:text-[16.5px] md:text-[15.5px] lg:text-[17px]"
+                className="enter mt-4 max-w-xl text-[14.5px] leading-[1.9] text-neutral-300 sm:mt-5 sm:text-[16px] md:text-[14.5px] lg:text-[16.5px]"
                 style={{ ["--enter-delay" as string]: "180ms" }}
               >
-                GPT، Claude، Gemini، Grok و DeepSeek در یک محیط یکپارچه، سریع و کاملاً فارسی؛
-                با اتصال کلید اختصاصی یا پروایدرهای متمرکز ارکا.
+                بین GPT، Claude، Gemini، Grok و DeepSeek جابه‌جا شوید — بدون از دست دادن رشته‌ی
+                گفتگو. کلید اختصاصی خودتان را وصل کنید یا از پروایدرهای آماده‌ی ارکا استفاده کنید.
+                فارسی، سریع و بدون قطعی.
               </p>
 
-              <div className="enter mt-7 sm:mt-8 flex flex-wrap gap-3.5" style={{ ["--enter-delay" as string]: "260ms" }}>
+              <div
+                className="enter mt-7 flex flex-wrap items-center gap-3 sm:mt-8"
+                style={{ ["--enter-delay" as string]: "260ms" }}
+              >
                 <Link
                   href="/login"
-                  className="btn-ink inline-flex h-11 sm:h-12 items-center rounded-control px-7 text-[14.5px] sm:text-[15px] font-semibold"
+                  className="btn-ink inline-flex h-11 items-center rounded-control px-7 text-[14.5px] font-semibold sm:h-12 sm:text-[15px]"
                 >
                   شروع رایگان
                 </Link>
+                <ScrollLink
+                  target="how"
+                  className="inline-flex h-11 items-center rounded-control border border-line-strong px-6 text-[14.5px] text-foreground-2 transition-colors hover:border-line-stronger hover:text-foreground sm:h-12"
+                >
+                  چطور کار می‌کند؟
+                </ScrollLink>
               </div>
 
               <ul
-                className="enter mt-7 sm:mt-8 space-y-2.5 sm:space-y-3 text-[13.5px] sm:text-[14.5px] text-foreground-2"
+                className="enter mt-7 grid gap-2.5 text-[13px] text-foreground-2 sm:mt-8 sm:text-[14px]"
                 style={{ ["--enter-delay" as string]: "340ms" }}
               >
                 {[
                   "سازگار با OpenAI، Anthropic، Google و DeepSeek",
-                  "جابه‌جایی خودکار بین کلیدها بدون قطعی چت",
-                  "رمزنگاری امن کلیدها با استاندارد AES-256-GCM",
+                  "جابه‌جایی خودکار بین کلیدها، بدون قطع شدن پاسخ",
+                  "رمزنگاری کلیدها با استاندارد AES-256-GCM",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-2.5 sm:gap-3">
-                    <span className="grid size-5 place-items-center rounded-full bg-white/10 text-white shrink-0">
+                    <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white/10 text-white">
                       <Check aria-hidden className="size-3.5 stroke-[2.5]" />
                     </span>
                     <span>{item}</span>

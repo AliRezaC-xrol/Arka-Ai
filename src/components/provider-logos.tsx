@@ -159,9 +159,10 @@ const PROVIDER_STREAM = [
 export function ProviderLogosRow({ className }: { className?: string }) {
   return (
     <div
+      id="models"
       dir="ltr"
       className={cn(
-        "relative w-full overflow-hidden select-none py-3.5 border-y border-white/5 bg-[#08080a]",
+        "relative w-full overflow-hidden select-none py-3.5 border-y border-white/5 bg-[#08080a] scroll-mt-20",
         className
       )}
     >

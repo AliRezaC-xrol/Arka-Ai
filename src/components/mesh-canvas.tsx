@@ -58,7 +58,6 @@ export function MeshCanvas({
       py = new Float32Array(cols * rows);
       glow = new Float32Array(cols * rows);
     };
-
     const R = 190;
 
     const frame = () => {
@@ -133,7 +132,25 @@ export function MeshCanvas({
     };
 
     resize();
-    start();
+    // Paint one frame immediately so the hero is never empty, then defer the
+    // animation loop until the main thread is idle — otherwise the first frame
+    // competes with hydration and the hero feels laggy on load.
+    frame();
+
+    let idleHandle: number | null = null;
+    let timeoutHandle: number | null = null;
+
+    if (!reduced) {
+      const idleWin = window as Window & {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+        cancelIdleCallback?: (handle: number) => void;
+      };
+      if (typeof idleWin.requestIdleCallback === "function") {
+        idleHandle = idleWin.requestIdleCallback(() => start(), { timeout: 1200 });
+      } else {
+        timeoutHandle = window.setTimeout(start, 200);
+      }
+    }
 
     const ro = new ResizeObserver(() => {
       resize();
@@ -166,6 +183,9 @@ export function MeshCanvas({
 
     return () => {
       cancelAnimationFrame(raf);
+      const idleWin = window as Window & { cancelIdleCallback?: (handle: number) => void };
+      if (idleHandle !== null) idleWin.cancelIdleCallback?.(idleHandle);
+      if (timeoutHandle !== null) window.clearTimeout(timeoutHandle);
       ro.disconnect();
       io.disconnect();
       window.removeEventListener("pointermove", onMove);
