@@ -292,6 +292,15 @@ function ChatContent() {
   const [input, setInput] = React.useState("");
   const [attachment, setAttachment] = React.useState<{ name: string; url: string } | null>(null);
   const [isStreaming, setIsStreaming] = React.useState(false);
+  /**
+   * The conversation we are actually talking to.
+   *
+   * Kept in a ref instead of deriving it from the URL: the URL is only synced
+   * with history.replaceState, because a real router.push() mid-stream
+   * re-renders this page and destroys the in-flight answer. That was why every
+   * conversation appeared to answer only its first message.
+   */
+  const conversationIdRef = React.useRef<string | null>(null);
   const [isThinking, setIsThinking] = React.useState(false);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
@@ -343,26 +352,34 @@ function ChatContent() {
 
   // Load messages for selected conversation
   React.useEffect(() => {
+    conversationIdRef.current = activeId ?? null;
+
     if (!activeId) {
       setMessages([]);
       return;
     }
 
+    let cancelled = false;
     setIsLoadingMessages(true);
+
     fetch(`/api/conversations/${activeId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Not found");
         return res.json();
       })
       .then((data) => {
-        setMessages(data.conversation?.messages || []);
+        if (!cancelled) setMessages(data.conversation?.messages || []);
       })
       .catch(() => {
-        setMessages([]);
+        if (!cancelled) setMessages([]);
       })
       .finally(() => {
-        setIsLoadingMessages(false);
+        if (!cancelled) setIsLoadingMessages(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeId]);
 
   // Auto scroll to bottom
@@ -605,7 +622,7 @@ function ChatContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          conversationId: activeId || undefined,
+          conversationId: conversationIdRef.current || activeId || undefined,
           message: textToSend,
           model: currentModelName,
           providerId: matchingSiteProvider?.id,
@@ -655,27 +672,35 @@ function ChatContent() {
       const assistantMsgId = `assistant-${Date.now()}`;
       let accumulatedText = "";
       let hasAddedAssistantMsg = false;
+      /**
+       * SSE frames get split across network chunks constantly. Without this
+       * buffer a frame cut in half fails JSON.parse and is silently discarded,
+       * which truncated long answers. Keep the trailing partial line.
+       */
+      let lineBuffer = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      const handleEvent = (line: string) => {
+        if (!line.startsWith("data: ")) return;
+        const dataStr = line.slice(6).trim();
+        if (!dataStr) return;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        try {
+          const eventData = JSON.parse(dataStr);
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const dataStr = line.slice(6).trim();
-            if (!dataStr) continue;
-
-            try {
-              const eventData = JSON.parse(dataStr);
-
-              if (eventData.type === "start") {
+          if (eventData.type === "start") {
                 setIsThinking(false);
-                if (eventData.isNewConversation && eventData.conversationId) {
-                  router.push(`/chat?id=${eventData.conversationId}`);
-                  loadConversations();
+                if (eventData.conversationId) {
+                  conversationIdRef.current = eventData.conversationId;
+                  if (eventData.isNewConversation) {
+                    // Sync the URL WITHOUT a router navigation. A push() here
+                    // re-renders the page mid-stream and wipes the answer.
+                    window.history.replaceState(
+                      null,
+                      "",
+                      `/chat?id=${eventData.conversationId}`,
+                    );
+                    loadConversations();
+                  }
                 }
               } else if (eventData.type === "chunk") {
                 setIsThinking(false);
@@ -733,12 +758,24 @@ function ChatContent() {
                   ),
                 );
               }
-            } catch {
-              // ignore
-            }
-          }
+        } catch {
+          // ignore a malformed frame rather than killing the whole stream
         }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        lineBuffer += decoder.decode(value, { stream: true });
+        const lines = lineBuffer.split("\n");
+        lineBuffer = lines.pop() ?? "";
+
+        for (const line of lines) handleEvent(line);
       }
+
+      // Flush a final frame that arrived without a trailing newline.
+      if (lineBuffer) handleEvent(lineBuffer);
     } catch (err: unknown) {
       if ((err as Error)?.name !== "AbortError") {
         console.error("Send error:", err);

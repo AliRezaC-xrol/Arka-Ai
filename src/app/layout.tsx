@@ -34,7 +34,7 @@ const sora = Sora({ subsets: ["latin"], weight: ["600", "700", "800"], variable:
 
 export const metadata: Metadata = {
   title: {
-    default: "Arka — دستیار هوش مصنوعی",
+    default: "Arka",
     template: "%s — Arka",
   },
   description:
