@@ -14,6 +14,7 @@ import {
   Clock,
   Flame,
   Lock,
+  LifeBuoy,
   LogOut,
   MessageSquare,
   Radio,
@@ -28,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { ProvidersManager } from "@/components/admin/providers-manager";
 import { UsersManager } from "@/components/admin/users-manager";
 import { BroadcastsManager } from "@/components/admin/broadcasts-manager";
+import { TicketsManager } from "@/components/admin/tickets-manager";
 import { adminFetch, getStoredAdminToken, setStoredAdminToken } from "@/lib/admin-fetch";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +74,10 @@ export default function AdminPage() {
   const [chartLoading, setChartLoading] = React.useState(false);
 
   // Active section in sidebar
-  const [activeTab, setActiveTab] = React.useState<"dashboard" | "users" | "providers" | "broadcasts">("dashboard");
+  const [activeTab, setActiveTab] = React.useState<"dashboard" | "users" | "providers" | "broadcasts" | "tickets">("dashboard");
+
+  // Open-support-ticket badge in the sidebar
+  const [openTickets, setOpenTickets] = React.useState<number>(0);
 
   // Check initial admin session by attempting to fetch stats
   const checkSession = React.useCallback(async (explicitToken?: string) => {
@@ -127,6 +132,25 @@ export default function AdminPage() {
       loadChart(chartDays);
     }
   }, [isAdmin, chartDays, loadChart]);
+
+  // Keep the sidebar badge in sync with the open-ticket queue.
+  const refreshTicketBadge = React.useCallback(async () => {
+    try {
+      const res = await adminFetch("/api/admin/tickets?status=open");
+      if (!res.ok) return;
+      const data = await res.json();
+      setOpenTickets(data?.counts?.open ?? 0);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!isAdmin) return;
+    refreshTicketBadge();
+    const timer = window.setInterval(refreshTicketBadge, 60_000);
+    return () => window.clearInterval(timer);
+  }, [isAdmin, refreshTicketBadge]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -359,6 +383,34 @@ export default function AdminPage() {
               فعال
             </span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("tickets")}
+            className={cn(
+              "flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
+              activeTab === "tickets"
+                ? "bg-white text-black shadow-sm"
+                : "text-neutral-400 hover:bg-white/[0.04] hover:text-white",
+            )}
+          >
+            <span className="flex items-center gap-3">
+              <LifeBuoy className="size-4" />
+              <span>تیکت‌های پشتیبانی</span>
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.2 text-[9.5px] font-mono",
+                activeTab === "tickets"
+                  ? "bg-black/10 text-black font-bold"
+                  : openTickets > 0
+                    ? "border border-amber-500/25 bg-amber-500/10 font-bold text-amber-400"
+                    : "border border-white/10 bg-white/[0.04] text-neutral-500",
+              )}
+            >
+              {openTickets > 0 ? openTickets.toLocaleString("fa-IR") : "۰"}
+            </span>
+          </button>
         </nav>
 
         <div className="border-t border-white/5 pt-4">
@@ -385,7 +437,9 @@ export default function AdminPage() {
                   ? "مدیریت و نظارت بر کاربران سیستم"
                   : activeTab === "broadcasts"
                     ? "پیام‌رسانی و اعلان‌های همگانی"
-                    : "داشبورد نظارت و آمار سامانه"}
+                    : activeTab === "tickets"
+                      ? "صندوق تیکت‌های پشتیبانی کاربران"
+                      : "داشبورد نظارت و آمار سامانه"}
             </h1>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-0.5 text-[11px] font-medium text-emerald-400">
               <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -406,6 +460,16 @@ export default function AdminPage() {
                 <span>به‌روزرسانی داده‌ها</span>
               </Button>
             )}
+            {openTickets > 0 && activeTab !== "tickets" && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("tickets")}
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-300 transition-colors hover:bg-amber-500/20"
+              >
+                <LifeBuoy className="size-3.5" />
+                {openTickets.toLocaleString("fa-IR")} تیکت در انتظار بررسی
+              </button>
+            )}
           </div>
         </header>
 
@@ -415,6 +479,8 @@ export default function AdminPage() {
           <UsersManager />
         ) : activeTab === "broadcasts" ? (
           <BroadcastsManager />
+        ) : activeTab === "tickets" ? (
+          <TicketsManager />
         ) : (
           /* Dashboard Content Area with Generous Spacing */
           <div className="flex-1 overflow-y-auto p-8 space-y-8">
