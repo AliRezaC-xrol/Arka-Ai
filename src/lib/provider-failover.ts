@@ -12,7 +12,7 @@
 
 import { prisma } from "./prisma";
 import { decryptApiKey } from "./crypto";
-import { openChatStream, completeChat, type ChatTurn } from "./ai-client";
+import { openChatStream, completeChat, type ChatTurn, type StreamDelta } from "./ai-client";
 
 export interface FailoverExecutionResult {
   success: boolean;
@@ -30,7 +30,7 @@ export interface StreamFailoverResult {
   keyId?: string;
   keyMask?: string;
   attempts: number;
-  stream?: AsyncGenerator<string, void, unknown>;
+  stream?: AsyncGenerator<StreamDelta, void, unknown>;
   message?: string;
   statusCode?: number;
 }
@@ -137,10 +137,12 @@ export async function streamWithFailover(options: {
     const upstream = opened.stream;
     let accumulated = "";
 
-    async function* tracked(): AsyncGenerator<string, void, unknown> {
+    async function* tracked(): AsyncGenerator<StreamDelta, void, unknown> {
       try {
         for await (const delta of upstream) {
-          accumulated += delta;
+          // Only the answer text counts towards the token estimate — reasoning
+          // is reported separately and would skew the numbers.
+          if (delta.kind === "content") accumulated += delta.text;
           yield delta;
         }
       } finally {

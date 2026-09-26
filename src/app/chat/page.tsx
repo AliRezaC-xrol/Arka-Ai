@@ -62,6 +62,8 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  /** The model's chain of thought, streamed separately from the answer. */
+  reasoning?: string;
   contentType?: "text" | "image" | "code";
   createdAt?: string;
   isStreaming?: boolean;
@@ -704,6 +706,7 @@ function ChatContent() {
       const decoder = new TextDecoder();
       const assistantMsgId = `assistant-${Date.now()}`;
       let accumulatedText = "";
+      let accumulatedReasoning = "";
       let hasAddedAssistantMsg = false;
       /**
        * SSE frames get split across network chunks constantly. Without this
@@ -737,6 +740,36 @@ function ChatContent() {
                 }
               } else if (eventData.type === "chunk") {
                 setIsThinking(false);
+
+                // Reasoning arrives first and separately: show it in the
+                // "thinking" block, then the answer streams in below it.
+                if (eventData.reasoning) {
+                  accumulatedReasoning += eventData.text;
+                  if (!hasAddedAssistantMsg) {
+                    hasAddedAssistantMsg = true;
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: assistantMsgId,
+                        role: "assistant",
+                        content: "",
+                        reasoning: accumulatedReasoning,
+                        isStreaming: true,
+                      },
+                    ]);
+                  } else {
+                    setMessages((prev) =>
+                      prev.map((msg) =>
+                        msg.id === assistantMsgId
+                          ? { ...msg, reasoning: accumulatedReasoning }
+                          : msg,
+                      ),
+                    );
+                  }
+                  scrollToBottom();
+                  return;
+                }
+
                 accumulatedText += eventData.text;
 
                 if (!hasAddedAssistantMsg) {
@@ -1330,6 +1363,29 @@ function ChatContent() {
                         </button>
                       )}
                     </div>
+
+                    {msg.reasoning && (
+                      <details
+                        open={Boolean(msg.isStreaming)}
+                        className="msg-soft-in mb-3 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-2.5"
+                      >
+                        <summary className="cursor-pointer select-none list-none text-[11.5px] font-semibold text-neutral-300 transition-colors hover:text-white">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span
+                              aria-hidden
+                              className={cn(
+                                "size-1.5 rounded-full bg-neutral-400",
+                                msg.isStreaming && "animate-pulse bg-emerald-400",
+                              )}
+                            />
+                            {msg.isStreaming ? "در حال فکر کردن…" : "روند فکر کردن مدل"}
+                          </span>
+                        </summary>
+                        <p className="mt-2.5 whitespace-pre-wrap text-[12.5px] leading-6 text-neutral-400">
+                          {msg.reasoning}
+                        </p>
+                      </details>
+                    )}
 
                     {msg.contentType === "image" ? (
                       <ImageMessageCard content={msg.content} />

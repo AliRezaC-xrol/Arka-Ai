@@ -15,6 +15,7 @@ import {
   normalizeType,
   openChatStream,
   type ChatTurn,
+  type StreamDelta,
 } from "@/lib/ai-client";
 
 export const dynamic = "force-dynamic";
@@ -321,7 +322,7 @@ export async function POST(request: NextRequest) {
 
   const clientSignal = request.signal;
 
-  let openResult: { stream: AsyncGenerator<string, void, unknown>; attempts: number };
+  let openResult: { stream: AsyncGenerator<StreamDelta, void, unknown>; attempts: number };
 
   try {
     openResult = await (async () => {
@@ -393,12 +394,22 @@ export async function POST(request: NextRequest) {
       );
 
       let accumulated = "";
+      let reasoning = "";
       let streamError: string | null = null;
 
       try {
         for await (const delta of openResult.stream) {
-          accumulated += delta;
-          controller.enqueue(encoder.encode(sse({ type: "chunk", text: delta })));
+          if (delta.kind === "reasoning") {
+            // The model's chain of thought — streamed separately so the UI can
+            // show it in its own "thinking" block, then reveal the answer.
+            reasoning += delta.text;
+            controller.enqueue(
+              encoder.encode(sse({ type: "chunk", text: delta.text, reasoning: true })),
+            );
+          } else {
+            accumulated += delta.text;
+            controller.enqueue(encoder.encode(sse({ type: "chunk", text: delta.text })));
+          }
         }
       } catch (err: unknown) {
         const e = err as Error;
@@ -423,6 +434,7 @@ export async function POST(request: NextRequest) {
             conversationId: conversationId as string,
             role: "assistant",
             content: finalContent || "پاسخی از پروایدر دریافت نشد.",
+            reasoning: reasoning || null,
             contentType: hasCode ? "code" : "text",
           },
         });

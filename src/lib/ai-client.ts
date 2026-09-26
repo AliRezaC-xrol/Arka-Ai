@@ -308,46 +308,83 @@ function buildRequest(
   };
 }
 
+/**
+ * One streamed piece of output. `reasoning` carries the model's private
+ * chain-of-thought (DeepSeek's reasoning_content, Anthropic thinking_delta,
+ * Gemini thought parts, the Responses reasoning summary) so the UI can show it
+ * in a separate "thinking" block instead of mixing it into the answer.
+ */
+export interface StreamDelta {
+  text: string;
+  kind: "content" | "reasoning";
+}
+
+const EMPTY_DELTA: StreamDelta = { text: "", kind: "content" };
+
 /** Extract the incremental text out of one SSE payload. */
-function extractDelta(format: ApiFormat, payload: string): string {
-  if (!payload || payload === "[DONE]") return "";
+function extractDelta(format: ApiFormat, payload: string): StreamDelta {
+  if (!payload || payload === "[DONE]") return EMPTY_DELTA;
 
   let json: Record<string, unknown>;
   try {
     json = JSON.parse(payload);
   } catch {
-    return "";
+    return EMPTY_DELTA;
   }
 
   if (format === "anthropic_messages") {
     const t = json.type as string | undefined;
     if (t === "content_block_delta") {
-      const delta = json.delta as { text?: string } | undefined;
-      return delta?.text || "";
+      const delta = json.delta as { type?: string; text?: string; thinking?: string } | undefined;
+      if (delta?.type === "thinking_delta") return { text: delta.thinking || "", kind: "reasoning" };
+      return { text: delta?.text || "", kind: "content" };
     }
-    return "";
+    return EMPTY_DELTA;
   }
 
   if (format === "google_generate") {
-    const candidates = json.candidates as Array<{ content?: { parts?: Array<{ text?: string }> } }> | undefined;
+    const candidates = json.candidates as
+      | Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>
+      | undefined;
     const parts = candidates?.[0]?.content?.parts;
-    if (!Array.isArray(parts)) return "";
-    return parts.map((p) => p?.text || "").join("");
+    if (!Array.isArray(parts)) return EMPTY_DELTA;
+
+    let content = "";
+    let reasoning = "";
+    for (const p of parts) {
+      if (!p?.text) continue;
+      if (p.thought) reasoning += p.text;
+      else content += p.text;
+    }
+    if (content) return { text: content, kind: "content" };
+    if (reasoning) return { text: reasoning, kind: "reasoning" };
+    return EMPTY_DELTA;
   }
 
   if (format === "responses") {
     const t = json.type as string | undefined;
-    if (t === "response.output_text.delta" || t === "response.refusal.delta") {
-      return (json.delta as string) || "";
+    if (t === "response.reasoning_summary_text.delta") {
+      return { text: (json.delta as string) || "", kind: "reasoning" };
     }
-    return "";
+    if (t === "response.output_text.delta" || t === "response.refusal.delta") {
+      return { text: (json.delta as string) || "", kind: "content" };
+    }
+    return EMPTY_DELTA;
   }
 
-  // chat_completions
-  const choices = json.choices as Array<{ delta?: { content?: string; reasoning_content?: string }; text?: string }> | undefined;
-  const choice = choices?.[0];
-  if (!choice) return "";
-  return choice.delta?.content ?? choice.delta?.reasoning_content ?? choice.text ?? "";
+  // chat_completions — DeepSeek and friends stream the CoT in reasoning_content.
+  const choices = json.choices as
+    | Array<{
+        delta?: { content?: string; reasoning_content?: string; reasoning?: string };
+        text?: string;
+      }>
+    | undefined;
+  const delta = choices?.[0]?.delta;
+  if (choices?.[0]?.text) return { text: choices[0].text as string, kind: "content" };
+  if (delta?.content) return { text: delta.content, kind: "content" };
+  const reasoning = delta?.reasoning_content || delta?.reasoning;
+  if (reasoning) return { text: reasoning, kind: "reasoning" };
+  return EMPTY_DELTA;
 }
 
 /** Non-streaming extraction (used by the verification ping). */
@@ -390,8 +427,8 @@ export interface OpenedStream {
   ok: boolean;
   status: number;
   message?: string;
-  /** yields incremental text deltas */
-  stream?: AsyncGenerator<string, void, unknown>;
+  /** yields tagged deltas (answer text vs. model reasoning) */
+  stream?: AsyncGenerator<StreamDelta, void, unknown>;
 }
 
 /**
@@ -450,7 +487,7 @@ export async function openChatStream(
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
 
-  async function* generate(): AsyncGenerator<string, void, unknown> {
+  async function* generate(): AsyncGenerator<StreamDelta, void, unknown> {
     let buffer = "";
     try {
       while (true) {
@@ -483,7 +520,7 @@ export async function openChatStream(
           }
 
           const delta = extractDelta(format, payload);
-          if (delta) yield delta;
+          if (delta.text) yield delta;
         }
       }
     } finally {
