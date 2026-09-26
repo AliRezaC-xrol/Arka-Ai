@@ -19,6 +19,7 @@ import {
   Download,
   Image as ImageIcon,
   Key,
+  MessageSquarePlus,
   PanelRightClose,
   PanelRightOpen,
   Paperclip,
@@ -43,6 +44,7 @@ import {
 import { UserMenu } from "@/components/user-menu";
 import { NotificationsMenu } from "@/components/notifications-menu";
 import { ByokManager } from "@/components/byok-manager";
+import { SupportTickets } from "@/components/support-tickets";
 import type { ModelCapabilities } from "@/lib/ai-client";
 import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
@@ -362,6 +364,8 @@ function ChatContent() {
   // UI state: Dock / Sidebar
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [byokOpen, setByokOpen] = React.useState(false);
+  const [supportOpen, setSupportOpen] = React.useState(false);
+  const [answeredTickets, setAnsweredTickets] = React.useState(0);
   const [desktopCollapsed, setDesktopCollapsed] = React.useState(true); // Collapsed by default like reference video
   const [searchQuery, setSearchQuery] = React.useState("");
   const chatScrollRef = React.useRef<HTMLDivElement>(null);
@@ -1059,6 +1063,20 @@ function ChatContent() {
                 </span>
               </button>
 
+              <button
+                type="button"
+                onClick={() => setSupportOpen(true)}
+                className="flex w-full items-center gap-2.5 rounded-xl border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2.5 text-start text-xs text-sky-200 transition-colors hover:border-sky-500/40 hover:bg-sky-500/[0.1]"
+              >
+                <MessageSquarePlus className="size-3.5 shrink-0 text-sky-400" />
+                <span className="flex-1 font-semibold">پشتیبانی</span>
+                {answeredTickets > 0 && (
+                  <span className="rounded-full bg-sky-500/15 px-1.5 py-0.5 font-mono text-[10px] text-sky-300">
+                    {answeredTickets} پاسخ
+                  </span>
+                )}
+              </button>
+
               <Link
                 href="/settings"
                 className="flex w-full items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-xs text-neutral-300 transition-colors hover:border-white/15 hover:bg-white/[0.05] hover:text-white"
@@ -1571,6 +1589,13 @@ function ChatContent() {
           loadSiteProviders();
         }}
         providers={userProviders}
+      />
+
+      {/* Support tickets — open a ticket, follow the thread, see the status */}
+      <SupportTickets
+        open={supportOpen}
+        onClose={() => setSupportOpen(false)}
+        onUnreadChange={setAnsweredTickets}
       />
     </div>
   );
