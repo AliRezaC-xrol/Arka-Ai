@@ -122,6 +122,9 @@ if [[ -n "$GITHUB_TOKEN" ]]; then
   REPO_AUTH="https://${GITHUB_TOKEN}@github.com/AliRezaC-xrol/arka.git"
 else
   REPO_AUTH="$REPO_PLAIN"
+  echo -e " ${CLR_YELLOW}⚠ متغیر GITHUB_TOKEN تنظیم نشده است.${CLR_RESET}"
+  echo -e " ${CLR_WHITE}   چون مخزن خصوصی است، اگر اعتبارنامه گیت روی سرور ذخیره نشده باشد کلون شکست می‌خورد.${CLR_RESET}"
+  echo -e " ${CLR_WHITE}   روش صحیح:  sudo -E GITHUB_TOKEN=ghp_xxx bash scripts/quick-install.sh <domain>${CLR_RESET}"
 fi
 
 if [[ -d "$TARGET_DIR/.git" ]]; then
