@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminTokenFromRequest, verifyAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { encryptApiKey, maskApiKey } from "@/lib/crypto";
-import { verifyProvider } from "@/lib/ai-client";
+import { verifyProvider, resolveApiFormat } from "@/lib/ai-client";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -71,6 +71,8 @@ export async function POST(request: NextRequest) {
   const models = (body.models || "").trim();
   const initialApiKey = (body.apiKey || "").trim();
   const initialKeyLabel = (body.keyLabel || "کلید اولیه").trim();
+  const apiFormat = resolveApiFormat(type, body.apiFormat);
+  const modelsConfig = Array.isArray(body.modelsConfig) ? body.modelsConfig : null;
 
   if (!name) {
     return NextResponse.json({ error: "نام پروایدر الزامی است." }, { status: 400 });
@@ -81,11 +83,13 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         type,
+        apiFormat,
         baseUrl,
         // No fake placeholder: an empty catalogue is resolved by the live
         // verification below, or left empty so the provider stays hidden
         // from users until real models are known.
         models: models || null,
+        modelsConfig: modelsConfig ?? undefined,
         isActive: true,
       },
     });
@@ -100,6 +104,7 @@ export async function POST(request: NextRequest) {
 
       const check = await verifyProvider({
         type,
+        apiFormat,
         apiKey: initialApiKey,
         baseUrl,
         model: models ? models.split(",")[0].trim() : null,

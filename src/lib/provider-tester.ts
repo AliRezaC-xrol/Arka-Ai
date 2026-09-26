@@ -27,12 +27,14 @@ export async function testProviderConnection(options: {
   providerType: string;
   apiKey: string;
   baseUrl?: string | null;
+  apiFormat?: string | null;
   model?: string | null;
 }): Promise<ConnectionTestResult> {
   return verifyProvider({
     type: options.providerType,
     apiKey: options.apiKey,
     baseUrl: options.baseUrl,
+    apiFormat: options.apiFormat,
     model: options.model,
   });
 }

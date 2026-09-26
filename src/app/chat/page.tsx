@@ -905,20 +905,28 @@ function ChatContent() {
               />
             </div>
 
-            <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-neutral-400">
-              <Link
-                href="/settings/providers"
-                className="flex items-center gap-1.5 hover:text-white transition-colors"
+            {/* Footer: API-keys box (BYOK) + a working account entry.
+                The old "حساب کاربری" link pointed at /settings/account, which
+                does not exist — every click 404'd. */}
+            <div className="mt-3 space-y-2 border-t border-white/5 pt-3">
+              <button
+                type="button"
+                onClick={() => setByokOpen(true)}
+                className="flex w-full items-center gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2.5 text-start text-xs text-amber-200 transition-colors hover:border-amber-500/40 hover:bg-amber-500/[0.1]"
               >
-                <Key className="size-3.5" />
-                <span>کلیدهای BYOK</span>
-              </Link>
+                <Key className="size-3.5 shrink-0 text-amber-400" />
+                <span className="flex-1 font-semibold">کلیدهای API من</span>
+                <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 font-mono text-[10px] text-amber-300">
+                  {userProviders.filter((p) => p.status === "connected").length} متصل
+                </span>
+              </button>
+
               <Link
-                href="/settings/account"
-                className="flex items-center gap-1.5 hover:text-white transition-colors"
+                href="/settings"
+                className="flex w-full items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-xs text-neutral-300 transition-colors hover:border-white/15 hover:bg-white/[0.05] hover:text-white"
               >
-                <Settings className="size-3.5" />
-                <span>حساب کاربری</span>
+                <Settings className="size-3.5 shrink-0" />
+                <span className="flex-1 font-semibold">حساب کاربری و تنظیمات</span>
               </Link>
             </div>
           </div>
@@ -985,17 +993,8 @@ function ChatContent() {
             </span>
           </div>
 
-          {/* Right Side: Status dot + Export + Theme Icon + User */}
+          {/* Right Side: Export + User */}
           <div className="flex items-center gap-2.5">
-            {/* Green connection dot (pulse) */}
-            <div
-              className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10.5px] text-emerald-400"
-              title="متصل به کلاستر هوش مصنوعی ارکا"
-            >
-              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="hidden sm:inline">متصل به کلاستر</span>
-            </div>
-
             {/* Export conversation */}
             {messages.length > 0 && (
               <button

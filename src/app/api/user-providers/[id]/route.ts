@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { encryptApiKey, maskApiKey } from "@/lib/crypto";
+import { resolveApiFormat } from "@/lib/ai-client";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         id: true,
         name: true,
         providerType: true,
+        apiFormat: true,
         baseUrl: true,
         keyMask: true,
         models: true,
@@ -77,6 +79,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       dataToUpdate.baseUrl = body.baseUrl ? body.baseUrl.trim() : null;
     }
 
+    if (typeof body.apiFormat === "string" && body.apiFormat.trim()) {
+      dataToUpdate.apiFormat = resolveApiFormat(
+        (body.providerType as string) || existing.providerType,
+        body.apiFormat,
+      );
+    }
+
+    if (typeof body.providerType === "string" && body.providerType.trim()) {
+      dataToUpdate.providerType = body.providerType.trim().toLowerCase();
+    }
+
     if (typeof body.models === "string") {
       dataToUpdate.models = body.models.trim();
     }
@@ -95,6 +108,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         id: true,
         name: true,
         providerType: true,
+        apiFormat: true,
         baseUrl: true,
         keyMask: true,
         models: true,

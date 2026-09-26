@@ -35,6 +35,8 @@ export interface ProviderTarget {
   apiKey: string;
   baseUrl?: string | null;
   model: string;
+  /** Explicit wire format; falls back to the legacy `type` when omitted. */
+  apiFormat?: string | null;
 }
 
 /** Preset base URLs for the OpenAI-compatible services people actually use. */
@@ -66,6 +68,37 @@ export function normalizeType(type: string | null | undefined): ProviderType {
   if (t.includes("gemini") || t.includes("google")) return "google";
   if (t.includes("openai") || t.includes("gpt")) return "openai";
   return "custom";
+}
+
+/**
+ * Wire format actually used to talk to the provider. This is what the admin
+ * picks in the "API format" selector, mirroring how other clients expose it.
+ */
+export type ApiFormat = "chat_completions" | "anthropic_messages" | "responses" | "google_generate";
+
+export const API_FORMATS: Array<{ value: ApiFormat; label: string; hint: string }> = [
+  { value: "chat_completions", label: "Chat completions", hint: "/chat/completions" },
+  { value: "anthropic_messages", label: "Anthropic messages", hint: "/v1/messages" },
+  { value: "responses", label: "Responses", hint: "/responses" },
+  { value: "google_generate", label: "Google generateContent", hint: "models/{model}:streamGenerateContent" },
+];
+
+export function resolveApiFormat(type: string, apiFormat?: string | null): ApiFormat {
+  const f = (apiFormat || "").trim().toLowerCase();
+  if (
+    f === "chat_completions" ||
+    f === "anthropic_messages" ||
+    f === "responses" ||
+    f === "google_generate"
+  ) {
+    return f;
+  }
+
+  // Backward compatible: derive from the legacy `type` column.
+  const t = normalizeType(type);
+  if (t === "anthropic") return "anthropic_messages";
+  if (t === "google") return "google_generate";
+  return "chat_completions";
 }
 
 /** Strip trailing slashes so we can join paths predictably. */
@@ -212,7 +245,7 @@ export async function listModels(options: {
  * ------------------------------------------------------------------ */
 
 function buildRequest(
-  type: ProviderType,
+  format: ApiFormat,
   base: string,
   apiKey: string,
   model: string,
@@ -220,7 +253,7 @@ function buildRequest(
   stream: boolean,
   maxTokens: number,
 ): { url: string; headers: Record<string, string>; body: string } {
-  if (type === "anthropic") {
+  if (format === "anthropic_messages") {
     return {
       url: joinUrl(base, "/messages"),
       headers: {
@@ -232,7 +265,7 @@ function buildRequest(
     };
   }
 
-  if (type === "google") {
+  if (format === "google_generate") {
     const action = stream ? "streamGenerateContent?alt=sse" : "generateContent";
     return {
       url: `${joinUrl(base, `/models/${encodeURIComponent(model)}`)}:${action}${stream ? "&" : "?"}key=${encodeURIComponent(apiKey)}`,
@@ -247,7 +280,24 @@ function buildRequest(
     };
   }
 
-  // openai + custom (both OpenAI-compatible)
+  // OpenAI Responses API — a different shape from chat/completions.
+  if (format === "responses") {
+    return {
+      url: joinUrl(base, "/responses"),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        input: messages.map((m) => ({ role: m.role, content: m.content })),
+        stream,
+        max_output_tokens: maxTokens,
+      }),
+    };
+  }
+
+  // chat_completions — the OpenAI-compatible default (also used by `custom`).
   return {
     url: joinUrl(base, "/chat/completions"),
     headers: {
@@ -259,7 +309,7 @@ function buildRequest(
 }
 
 /** Extract the incremental text out of one SSE payload. */
-function extractDelta(type: ProviderType, payload: string): string {
+function extractDelta(format: ApiFormat, payload: string): string {
   if (!payload || payload === "[DONE]") return "";
 
   let json: Record<string, unknown>;
@@ -269,7 +319,7 @@ function extractDelta(type: ProviderType, payload: string): string {
     return "";
   }
 
-  if (type === "anthropic") {
+  if (format === "anthropic_messages") {
     const t = json.type as string | undefined;
     if (t === "content_block_delta") {
       const delta = json.delta as { text?: string } | undefined;
@@ -278,14 +328,22 @@ function extractDelta(type: ProviderType, payload: string): string {
     return "";
   }
 
-  if (type === "google") {
+  if (format === "google_generate") {
     const candidates = json.candidates as Array<{ content?: { parts?: Array<{ text?: string }> } }> | undefined;
     const parts = candidates?.[0]?.content?.parts;
     if (!Array.isArray(parts)) return "";
     return parts.map((p) => p?.text || "").join("");
   }
 
-  // openai / custom
+  if (format === "responses") {
+    const t = json.type as string | undefined;
+    if (t === "response.output_text.delta" || t === "response.refusal.delta") {
+      return (json.delta as string) || "";
+    }
+    return "";
+  }
+
+  // chat_completions
   const choices = json.choices as Array<{ delta?: { content?: string; reasoning_content?: string }; text?: string }> | undefined;
   const choice = choices?.[0];
   if (!choice) return "";
@@ -293,16 +351,33 @@ function extractDelta(type: ProviderType, payload: string): string {
 }
 
 /** Non-streaming extraction (used by the verification ping). */
-function extractFullText(type: ProviderType, json: Record<string, unknown>): string {
-  if (type === "anthropic") {
+function extractFullText(format: ApiFormat, json: Record<string, unknown>): string {
+  if (format === "anthropic_messages") {
     const content = json.content as Array<{ text?: string }> | undefined;
     return Array.isArray(content) ? content.map((c) => c?.text || "").join("") : "";
   }
-  if (type === "google") {
+
+  if (format === "google_generate") {
     const candidates = json.candidates as Array<{ content?: { parts?: Array<{ text?: string }> } }> | undefined;
     const parts = candidates?.[0]?.content?.parts;
     return Array.isArray(parts) ? parts.map((p) => p?.text || "").join("") : "";
   }
+
+  if (format === "responses") {
+    const output = json.output as
+      | Array<{ content?: Array<{ type?: string; text?: string }> }>
+      | undefined;
+    if (Array.isArray(output)) {
+      return output
+        .flatMap((item) => item?.content || [])
+        .filter((c) => c?.type === "output_text" || typeof c?.text === "string")
+        .map((c) => c?.text || "")
+        .join("");
+    }
+    // Some gateways return the convenience field directly.
+    return typeof json.output_text === "string" ? json.output_text : "";
+  }
+
   const choices = json.choices as Array<{ message?: { content?: string } }> | undefined;
   return choices?.[0]?.message?.content || "";
 }
@@ -330,6 +405,7 @@ export async function openChatStream(
   options: { signal?: AbortSignal; maxTokens?: number } = {},
 ): Promise<OpenedStream> {
   const type = normalizeType(target.type);
+  const format = resolveApiFormat(target.type, target.apiFormat);
   const base = resolveBase(type, target.baseUrl);
 
   if (!base) {
@@ -340,7 +416,7 @@ export async function openChatStream(
   }
 
   const { url, headers, body } = buildRequest(
-    type,
+    format,
     base,
     target.apiKey,
     target.model,
@@ -406,7 +482,7 @@ export async function openChatStream(
             }
           }
 
-          const delta = extractDelta(type, payload);
+          const delta = extractDelta(format, payload);
           if (delta) yield delta;
         }
       }
@@ -428,12 +504,13 @@ export async function completeChat(
   options: { signal?: AbortSignal; maxTokens?: number } = {},
 ): Promise<{ ok: boolean; status: number; text: string; message?: string }> {
   const type = normalizeType(target.type);
+  const format = resolveApiFormat(target.type, target.apiFormat);
   const base = resolveBase(type, target.baseUrl);
 
   if (!base) return { ok: false, status: 0, text: "", message: "آدرس Base URL تنظیم نشده است." };
 
   const { url, headers, body } = buildRequest(
-    type,
+    format,
     base,
     target.apiKey,
     target.model,
@@ -457,7 +534,7 @@ export async function completeChat(
       return { ok: false, status: res.status, text: "", message: "پاسخ سرویس قابل خواندن نبود." };
     }
 
-    return { ok: true, status: res.status, text: extractFullText(type, json) };
+    return { ok: true, status: res.status, text: extractFullText(format, json) };
   } catch (err: unknown) {
     const e = err as Error;
     if (e?.name === "AbortError") return { ok: false, status: 0, text: "", message: "مهلت زمانی به پایان رسید (Timeout)." };
@@ -480,10 +557,11 @@ export async function verifyProvider(options: {
   type: string;
   apiKey: string;
   baseUrl?: string | null;
+  apiFormat?: string | null;
   model?: string | null;
   timeoutMs?: number;
 }): Promise<ConnectionTestResult> {
-  const { type, apiKey, baseUrl } = options;
+  const { type, apiKey, baseUrl, apiFormat } = options;
 
   if (!apiKey || !apiKey.trim()) {
     return { ok: false, message: "کلید API وارد نشده است." };
@@ -500,7 +578,7 @@ export async function verifyProvider(options: {
     const model = (options.model && options.model.trim()) || catalogue.models[0] || fallback;
 
     const ping = await completeChat(
-      { type, apiKey, baseUrl, model },
+      { type, apiKey, baseUrl, apiFormat, model },
       [{ role: "user", content: "ping" }],
       { signal: controller.signal, maxTokens: 16 },
     );

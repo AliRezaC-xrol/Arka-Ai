@@ -86,10 +86,17 @@ action_change_admin_password() {
     return 1
   fi
 
-  echo -en " لطفاً گذرواژه جدید مدیریت را وارد کنید: "
-  read -r new_pass1
-  echo -en " تکرار گذرواژه جدید: "
-  read -r new_pass2
+  local new_pass1="" new_pass2=""
+
+  # Hidden input (no echo). Falls back to stdin when there is no tty, so the
+  # script still works when piped.
+  echo -en " ${CLR_WHITE}لطفاً گذرواژه جدید مدیریت را وارد کنید: ${CLR_RESET}"
+  if [[ -r /dev/tty ]]; then read -rs new_pass1 < /dev/tty; else read -rs new_pass1; fi
+  echo ""
+
+  echo -en " ${CLR_WHITE}تکرار گذرواژه جدید: ${CLR_RESET}"
+  if [[ -r /dev/tty ]]; then read -rs new_pass2 < /dev/tty; else read -rs new_pass2; fi
+  echo ""
 
   if [[ "$new_pass1" != "$new_pass2" ]]; then
     log_error "تکرار گذرواژه همخوانی ندارد."
@@ -103,19 +110,54 @@ action_change_admin_password() {
     return 1
   fi
 
-  if grep -q "^ADMIN_PANEL_PASSWORD=" "$ENV_FILE"; then
-    sed -i "s|^ADMIN_PANEL_PASSWORD=.*|ADMIN_PANEL_PASSWORD=\"$new_pass1\"|g" "$ENV_FILE"
-  else
-    echo "ADMIN_PANEL_PASSWORD=\"$new_pass1\"" >> "$ENV_FILE"
+  # The value is written double-quoted into .env and @next/env expands $VAR
+  # inside it, so reject anything that would corrupt the file or be expanded.
+  if [[ "$new_pass1" =~ [\"\'\\\$\`[:space:]] ]]; then
+    log_error "گذرواژه نباید شامل فاصله، \" ' \\ \$ یا بک‌تیک باشد."
+    press_enter
+    return 1
   fi
 
-  if grep -q "^ADMIN_PASSWORD=" "$ENV_FILE"; then
-    sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=\"$new_pass1\"|g" "$ENV_FILE"
+  # awk (not sed) so the password can contain | & / etc. without breaking.
+  _set_env_var() {
+    local key="$1" value="$2" file="$3" tmp
+    tmp="$(mktemp)"
+    if grep -q "^${key}=" "$file" 2>/dev/null; then
+      awk -v k="$key" -v v="$value" '
+        index($0, k "=") == 1 { print k "=\"" v "\""; next }
+        { print }
+      ' "$file" > "$tmp"
+    else
+      cat "$file" > "$tmp"
+      printf '%s="%s"\n' "$key" "$value" >> "$tmp"
+    fi
+    cat "$tmp" > "$file"
+    rm -f "$tmp"
+  }
+
+  _set_env_var "ADMIN_PANEL_PASSWORD" "$new_pass1" "$ENV_FILE"
+  _set_env_var "ADMIN_PASSWORD" "$new_pass1" "$ENV_FILE"
+
+  log_success "گذرواژه در فایل .env به‌روزرسانی شد."
+
+  # CRITICAL: Next.js reads .env once at process start. Without reloading the
+  # service the OLD password keeps working and the NEW one is rejected — which
+  # is exactly the bug where "the password does not change".
+  echo -e " ${CLR_CYAN}ℹ اعمال تغییرات روی سرویس در حال اجرا...${CLR_RESET}"
+  if command -v pm2 &>/dev/null; then
+    if pm2 reload arka 2>/dev/null || pm2 restart arka 2>/dev/null; then
+      pm2 save 2>/dev/null || true
+      log_success "سرویس ارکا ری‌لود شد و گذرواژه جدید فعال گردید."
+    else
+      log_warn "ری‌لود PM2 ناموفق بود. لطفاً دستی اجرا کنید: pm2 restart arka"
+    fi
   else
-    echo "ADMIN_PASSWORD=\"$new_pass1\"" >> "$ENV_FILE"
+    log_warn "PM2 پیدا نشد. تا سرویس را ری‌استارت نکنید گذرواژه جدید اعمال نمی‌شود."
   fi
 
-  log_success "گذرواژه پنل مدیریت با موفقیت به‌روزرسانی شد: $new_pass1"
+  echo ""
+  echo -e " ${CLR_WHITE}گذرواژه فعال فعلی:${CLR_RESET} ${CLR_YELLOW}${new_pass1}${CLR_RESET}"
+  echo -e " ${CLR_WHITE}آدرس پنل:${CLR_RESET}        ${CLR_CYAN}${ARKA_DIR} → /c-xroladi1n${CLR_RESET}"
   press_enter
 }
 

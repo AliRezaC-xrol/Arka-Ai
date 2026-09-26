@@ -98,7 +98,15 @@ export async function POST(request: NextRequest) {
   /* ---------- Resolve the target provider ---------- */
 
   type Target =
-    | { kind: "user"; providerId: string; name: string; type: string; baseUrl: string | null; apiKey: string }
+    | {
+        kind: "user";
+        providerId: string;
+        name: string;
+        type: string;
+        apiFormat: string | null;
+        baseUrl: string | null;
+        apiKey: string;
+      }
     | { kind: "site"; providerId: string; name: string };
 
   let target: Target | null = null;
@@ -132,6 +140,7 @@ export async function POST(request: NextRequest) {
       providerId: userProv.id,
       name: userProv.name,
       type: normalizeType(userProv.providerType),
+      apiFormat: userProv.apiFormat,
       baseUrl: userProv.baseUrl,
       apiKey,
     };
@@ -193,11 +202,18 @@ export async function POST(request: NextRequest) {
   if (isImageModel(model)) {
     // Image generation always needs a concrete key, so resolve one either from
     // the user's BYOK provider or from the site provider's active key pool.
-    let imageTarget: { type: string; apiKey: string; baseUrl: string | null; name: string };
+    let imageTarget: {
+      type: string;
+      apiFormat: string | null;
+      apiKey: string;
+      baseUrl: string | null;
+      name: string;
+    };
 
     if (target.kind === "user") {
       imageTarget = {
         type: target.type,
+        apiFormat: target.apiFormat,
         apiKey: target.apiKey,
         baseUrl: target.baseUrl,
         name: target.name,
@@ -218,6 +234,7 @@ export async function POST(request: NextRequest) {
       }
       imageTarget = {
         type: normalizeType(provider.type),
+        apiFormat: provider.apiFormat,
         apiKey: key,
         baseUrl: provider.baseUrl,
         name: provider.name,
@@ -310,7 +327,13 @@ export async function POST(request: NextRequest) {
     openResult = await (async () => {
       if (target.kind === "user") {
         const res = await openChatStream(
-          { type: target.type, apiKey: target.apiKey, baseUrl: target.baseUrl, model },
+          {
+            type: target.type,
+            apiFormat: target.apiFormat,
+            apiKey: target.apiKey,
+            baseUrl: target.baseUrl,
+            model,
+          },
           chatMessages,
           { signal: clientSignal },
         );

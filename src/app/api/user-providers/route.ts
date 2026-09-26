@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { encryptApiKey, maskApiKey } from "@/lib/crypto";
 import { getDefaultModels, testProviderConnection } from "@/lib/provider-tester";
+import { resolveApiFormat } from "@/lib/ai-client";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
   const baseUrl = body.baseUrl ? body.baseUrl.trim() : null;
   const apiKey = (body.apiKey || "").trim();
   const testNow = Boolean(body.testNow);
+  const apiFormat = resolveApiFormat(providerType, body.apiFormat);
 
   if (!name) {
     return NextResponse.json({ error: "نام پروایدر الزامی است." }, { status: 400 });
@@ -79,6 +81,7 @@ export async function POST(request: NextRequest) {
       providerType,
       apiKey,
       baseUrl,
+      apiFormat,
     });
     status = testResult.ok ? "connected" : "disconnected";
     lastTestMessage = testResult.message;
@@ -97,6 +100,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         name,
         providerType,
+        apiFormat,
         baseUrl,
         encryptedApiKey,
         keyMask,
@@ -109,6 +113,7 @@ export async function POST(request: NextRequest) {
         id: true,
         name: true,
         providerType: true,
+        apiFormat: true,
         baseUrl: true,
         keyMask: true,
         models: true,

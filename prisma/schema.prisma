@@ -41,6 +41,7 @@ model UserProvider {
   userId          String
   name            String
   providerType    String    // openai | anthropic | google | custom
+  apiFormat       String?   // chat_completions | anthropic_messages | responses | google_generate
   baseUrl         String?
   encryptedApiKey String    @db.Text
   keyMask         String?
@@ -79,9 +80,11 @@ model Provider {
   id        String           @id @default(uuid())
   name      String           // نام پروایدر نمایش داده شده به کاربران
   type      String           // openai | anthropic | google | custom
+  apiFormat String?          // chat_completions | anthropic_messages | responses | google_generate
   baseUrl   String?
   isActive  Boolean          @default(true)
   models    String?          // لیست مدل‌ها جدا شده با کاما (e.g. "gpt-4o,gpt-4o-mini")
+  modelsConfig Json?         // متادیتای هر مدل: [{ id, contextWindow, maxOutputTokens, inputTypes, capabilities, reasoning }]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   apiKeys   ProviderApiKey[]

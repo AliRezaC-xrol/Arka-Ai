@@ -87,6 +87,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       const verification = await verifyProvider({
         type: provider.type,
+        apiFormat: provider.apiFormat,
         apiKey: plainKey,
         baseUrl: provider.baseUrl,
         model: probeModel,

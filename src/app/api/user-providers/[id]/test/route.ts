@@ -38,6 +38,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       providerType: provider.providerType,
       apiKey: plainApiKey,
       baseUrl: provider.baseUrl,
+      apiFormat: provider.apiFormat,
     });
 
     const status = testResult.ok ? "connected" : "disconnected";

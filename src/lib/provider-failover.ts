@@ -109,7 +109,7 @@ export async function streamWithFailover(options: {
     }
 
     const opened = await openChatStream(
-      { type: provider.type, apiKey: plainKey, baseUrl: provider.baseUrl, model },
+      { type: provider.type, apiFormat: provider.apiFormat, apiKey: plainKey, baseUrl: provider.baseUrl, model },
       messages,
       { signal },
     );
@@ -211,7 +211,7 @@ export async function executeWithFailover(options: {
       const plainKey = decryptApiKey(keyRecord.encryptedApiKey);
 
       const result = await completeChat(
-        { type: provider.type, apiKey: plainKey, baseUrl: provider.baseUrl, model },
+        { type: provider.type, apiFormat: provider.apiFormat, apiKey: plainKey, baseUrl: provider.baseUrl, model },
         [{ role: "user", content: prompt }],
         { maxTokens: 2048 },
       );
