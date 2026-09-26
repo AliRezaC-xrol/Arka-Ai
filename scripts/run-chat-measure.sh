@@ -11,8 +11,20 @@ cd "$(dirname "$0")/.." || exit 1
 
 PORT="${PORT:-3178}"
 BASE="http://127.0.0.1:${PORT}"
-export NODE_PATH="C:/Users/ASUS/.workbuddy-ai/binaries/node/workspace/node_modules"
-NODE_BIN="C:/Users/ASUS/.workbuddy-ai/binaries/node/versions/22.22.2-3/node.exe"
+
+# Resolve a node binary portably: this script runs both on the dev machine (which
+# uses the isolated managed runtime) and on the production server (system node).
+if [ -x "C:/Users/ASUS/.workbuddy-ai/binaries/node/versions/22.22.2-3/node.exe" ]; then
+  NODE_BIN="C:/Users/ASUS/.workbuddy-ai/binaries/node/versions/22.22.2-3/node.exe"
+  export NODE_PATH="C:/Users/ASUS/.workbuddy-ai/binaries/node/workspace/node_modules"
+elif command -v node >/dev/null 2>&1; then
+  NODE_BIN="$(command -v node)"
+fi
+
+if [ -z "${NODE_BIN:-}" ]; then
+  echo "No node binary found; set NODE_BIN and NODE_PATH manually."
+  exit 1
+fi
 
 cleanup() {
   [ -n "${SERVER_PID:-}" ] && kill "$SERVER_PID" 2>/dev/null

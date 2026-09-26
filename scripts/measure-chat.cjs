@@ -13,11 +13,41 @@
 // Usage: PORT=3178 bash scripts/run-chat-measure.sh   (or set BASE)
 const { chromium } = require("playwright-core");
 const fs = require("fs");
+const os = require("os");
+const path = require("path");
 
-const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
+// Chrome lives in different places on the dev machine and on the server, so
+// resolve it instead of hardcoding one box's path. CHROME env always wins.
+function resolveChrome() {
+  if (process.env.CHROME) return process.env.CHROME;
+  const candidates = [
+    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+    process.env.LOCALAPPDATA
+      ? path.join(process.env.LOCALAPPDATA, "Google/Chrome/Application/chrome.exe")
+      : null,
+    // Linux (the production server).
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/snap/bin/chromium",
+  ].filter(Boolean);
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c)) return c;
+    } catch {
+      /* ignore */
+    }
+  }
+  return undefined; // let playwright-core fall back to its bundled browser
+}
+
+const CHROME = resolveChrome();
 const BASE = process.env.BASE || "http://127.0.0.1:3178";
-const OUT = process.env.OUT || "C:/tmp/chat-measure.json";
-const SHOTS = process.env.SHOTS || "C:/tmp";
+const TMP = os.tmpdir();
+const OUT = process.env.OUT || path.join(TMP, "chat-measure.json");
+const SHOTS = process.env.SHOTS || TMP;
 
 const VIEWPORTS = [
   { name: "phone-360", width: 360, height: 640, mobile: true },
@@ -105,6 +135,13 @@ function probe() {
 }
 
 (async () => {
+  if (!CHROME) {
+    console.error("No Chrome/Chromium binary found. Set CHROME=/path/to/chrome.");
+    process.exit(1);
+  }
+  fs.mkdirSync(SHOTS, { recursive: true });
+  fs.mkdirSync(path.dirname(OUT), { recursive: true });
+
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   const out = { base: BASE };
 
