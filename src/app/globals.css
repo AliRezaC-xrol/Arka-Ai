@@ -1158,29 +1158,34 @@ html { color-scheme: dark; }
    Stays mounted; data-open drives the transition, inert keeps the
    closed list out of tab order and pointer events. Opens upward,
    so it rises INTO place (translateY from below) while un-blurring. */
+/* ---------- Popovers (model picker) ----------
+   Transform + opacity only. The popover is positioned from JS so it never
+   needs a blur filter to hide its own mount, and open/close stays on the
+   compositor. */
 .picker-pop {
   opacity: 0;
-  transform: translateY(10px) scale(0.96);
-  filter: blur(3px);
+  transform: translateY(6px) scale(0.97);
   pointer-events: none;
   transition:
-    opacity 190ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 190ms ease;
+    opacity 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 170ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: var(--picker-origin, 50% 100%);
 }
 
 .picker-pop[data-open="true"] {
   opacity: 1;
   transform: translateY(0) scale(1);
-  filter: blur(0);
   pointer-events: auto;
+}
+
+.picker-pop[data-flip="down"] {
+  transform-origin: var(--picker-origin, 50% 0%);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .picker-pop {
     transition: none;
     transform: none;
-    filter: none;
   }
 
   /* Static fallback: the gradient veils stay (they are static, not
@@ -1218,14 +1223,25 @@ html { color-scheme: dark; }
    ================================================================== */
 
 /* ---------- Monochrome aurora ----------
-   The flowing-light background from the reference video, retinted to the
-   black/white palette: white + cool grey instead of the old blue. Pure
-   transform/opacity so it stays on the compositor. */
+   The flowing-light background, retinted to the black/white palette: white
+   + cool grey instead of the old blue. Pure transform/opacity so it stays
+   on the compositor.
+
+   PERFORMANCE: `filter: blur()` on a 60–80rem element forces the compositor
+   to re-rasterise a multi-megapixel layer on every animation tick, which is
+   what made the chat feel heavy on load. The softness now comes from the
+   gradient falloff itself (a wide ellipse fading to transparent), so the
+   blur is only a light 34px finishing pass and the layers are promoted once
+   with `will-change` + `backface-visibility`. */
 .aurora-mono {
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  /* Paint containment lets the browser skip the whole subtree when nothing
+     inside it changed. NOT `strict`: size containment would collapse the
+     element and clip the pseudo-elements that deliberately overflow. */
+  contain: layout paint;
 }
 
 .aurora-mono::before,
@@ -1234,27 +1250,40 @@ html { color-scheme: dark; }
   position: absolute;
   left: 50%;
   translate: -50% 0;
-  filter: blur(70px);
+  filter: blur(34px);
   will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
 }
 
 .aurora-mono::before {
   top: -30rem;
-  width: min(80rem, 180vw);
-  height: 60rem;
+  width: min(72rem, 170vw);
+  height: 56rem;
   background:
-    radial-gradient(closest-side at 50% 58%, rgba(255, 255, 255, 0.26), transparent 70%),
-    radial-gradient(closest-side at 31% 63%, rgba(196, 208, 226, 0.20), transparent 72%),
-    radial-gradient(closest-side at 69% 59%, rgba(255, 255, 255, 0.14), transparent 72%);
-  animation: aurora-mono-drift 26s ease-in-out infinite;
+    radial-gradient(closest-side at 50% 58%, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.10) 42%, transparent 74%),
+    radial-gradient(closest-side at 31% 63%, rgba(196, 208, 226, 0.24), transparent 76%),
+    radial-gradient(closest-side at 69% 59%, rgba(255, 255, 255, 0.18), transparent 76%);
+  animation: aurora-mono-drift 34s ease-in-out infinite;
 }
 
 .aurora-mono::after {
-  bottom: -36rem;
-  width: min(66rem, 155vw);
-  height: 50rem;
-  background: radial-gradient(closest-side at 50% 40%, rgba(255, 255, 255, 0.13), transparent 70%);
-  animation: aurora-mono-drift 34s ease-in-out infinite reverse;
+  bottom: -34rem;
+  width: min(62rem, 150vw);
+  height: 48rem;
+  background: radial-gradient(closest-side at 50% 40%, rgba(255, 255, 255, 0.16), transparent 74%);
+  animation: aurora-mono-drift 46s ease-in-out infinite reverse;
+}
+
+/* A third, static veil that needs no animation at all: it gives the pane the
+   depth the user asked for without costing a single extra rAF tick. */
+.aurora-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.045), transparent 62%),
+    radial-gradient(90% 60% at 50% 110%, rgba(255, 255, 255, 0.03), transparent 60%);
 }
 
 @keyframes aurora-mono-drift {
@@ -1263,10 +1292,19 @@ html { color-scheme: dark; }
     transform: translate3d(0, 0, 0) scale(1);
   }
   33% {
-    transform: translate3d(-4%, 3%, 0) scale(1.07);
+    transform: translate3d(-3%, 2%, 0) scale(1.05);
   }
   66% {
-    transform: translate3d(4%, -2%, 0) scale(0.96);
+    transform: translate3d(3%, -1.5%, 0) scale(0.97);
+  }
+}
+
+/* Motion is a luxury on a low-power device; keep the light, drop the drift. */
+@media (max-width: 640px) {
+  .aurora-mono::before,
+  .aurora-mono::after {
+    filter: blur(26px);
+    animation-duration: 60s;
   }
 }
 
@@ -1294,22 +1332,22 @@ html { color-scheme: dark; }
   animation: msg-send-pop 440ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-/* Incoming bubble: soft un-blur reveal. */
+/* Incoming bubble: soft reveal. Deliberately transform+opacity only — an
+   animated `filter: blur()` forces a repaint of the whole bubble subtree on
+   every frame, which is very visible during a fast token stream. */
 @keyframes msg-soft-in {
   from {
     opacity: 0;
-    transform: translateY(7px);
-    filter: blur(5px);
+    transform: translateY(7px) scale(0.995);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
 .msg-soft-in {
-  animation: msg-soft-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: msg-soft-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Copy confirmation: the icon springs and lifts. */
@@ -1334,22 +1372,22 @@ html { color-scheme: dark; }
 
 /* ---------- Composer ---------- */
 
-/* Typed characters ease in instead of snapping. */
+/* Typed characters ease in instead of snapping. Kept to opacity+transform:
+   this runs on every keystroke, so it has to be the cheapest animation in
+   the file. */
 @keyframes char-in {
   from {
     opacity: 0;
-    transform: translateY(3px);
-    filter: blur(3px);
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
 .char-in {
-  animation: char-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: char-in 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1362,7 +1400,6 @@ html { color-scheme: dark; }
     animation: none !important;
   }
 }
-
 /* ---------- Global micro-interactions ---------- */
 
 /* Cards lift toward the reader on hover. Transform + shadow only, so this
@@ -1428,6 +1465,80 @@ html { color-scheme: dark; }
 /* Anchor targets should not hide under the sticky header. */
 :where(#features, #models, #how, #faq) {
   scroll-margin-top: 5rem;
+}
+
+/* ---------- Full-height shells ----------
+   A mobile browser hides and shows its URL bar while you scroll, which makes
+   `100vh` change height mid-gesture and jolts a fixed composer around.
+   `svh` is the small-viewport height (URL bar visible) so the layout is
+   stable, then `dvh` upgrades it on browsers that support dynamic units. */
+.chat-shell,
+.admin-shell {
+  height: 100vh;
+  height: 100svh;
+}
+
+@supports (height: 100dvh) {
+  .chat-shell,
+  .admin-shell {
+    height: 100dvh;
+  }
+}
+
+/* The pane scrolls internally, so the page body itself must never scroll —
+   otherwise the composer drifts and the aurora detaches from the viewport. */
+.chat-shell,
+.admin-shell {
+  overscroll-behavior: none;
+}
+
+/* ---------- Off-canvas drawers (RTL-correct) ----------
+   Tailwind's `translate-x-*` utilities are PHYSICAL. The chat sidebar is
+   pinned with `inset-inline-start`, which is the RIGHT edge in this RTL app —
+   so `-translate-x-full` shoved it further left, i.e. *onto* the screen
+   instead of off it, and the closed drawer stayed visible and clickable.
+   Translating by the element's own width with a direction-aware sign fixes
+   it in both writing modes. */
+.chat-drawer,
+.admin-drawer {
+  transform: translateX(0);
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-drawer[data-open="false"],
+.admin-drawer[data-open="false"] {
+  transform: translateX(-100%);
+}
+
+[dir="rtl"] .chat-drawer[data-open="false"],
+[dir="rtl"] .admin-drawer[data-open="false"] {
+  transform: translateX(100%);
+}
+
+/* Closed drawers must not take keyboard focus or swallow taps. */
+.chat-drawer[data-open="false"],
+.admin-drawer[data-open="false"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Above the md breakpoint the chat sidebar is a normal static column and
+   must always be laid out, whatever the mobile drawer state happens to be. */
+@media (min-width: 768px) {
+  .chat-drawer {
+    transform: none !important;
+    visibility: visible;
+    pointer-events: auto;
+    transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      padding 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-drawer,
+  .admin-drawer {
+    transition: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

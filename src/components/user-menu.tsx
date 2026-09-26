@@ -36,7 +36,12 @@ export function UserMenu({
 }) {
   const [open, setOpen] = React.useState(false);
   const [imgError, setImgError] = React.useState(false);
-  const [pos, setPos] = React.useState<{ top: number; left: number; width: number } | null>(null);
+  const [pos, setPos] = React.useState<{
+    top: number;
+    left: number;
+    width: number;
+    openDown: boolean;
+  } | null>(null);
   const rootRef = React.useRef<HTMLDivElement>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
@@ -68,10 +73,22 @@ export function UserMenu({
       if (!el) return;
       const r = el.getBoundingClientRect();
       const width = Math.max(r.width, 224);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
       let left = r.right - width; // align to the trigger's inline-end edge
-      left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
-      const top = placement === "down" ? r.bottom + 8 : Math.max(12, r.top - 8);
-      setPos({ top, left, width });
+      left = Math.max(12, Math.min(left, vw - width - 12));
+
+      /* Open downward unless there is clearly no room below, in which case
+         flip above the trigger. The old version trusted `placement` blindly,
+         so a header near the bottom of a short window pushed the menu off
+         the bottom of the screen. */
+      const menuHeight = 220;
+      const roomBelow = vh - r.bottom - 12;
+      const openDown = placement === "down" ? roomBelow >= 120 : roomBelow >= menuHeight;
+      const top = openDown ? r.bottom + 8 : Math.max(12, r.top - 8);
+
+      setPos({ top, left, width, openDown });
     };
 
     compute();
@@ -136,7 +153,8 @@ export function UserMenu({
 
   const panelClass = cn(
     "fixed z-[60] rounded-card border border-line bg-popover p-1.5 shadow-xl",
-    "origin-top transition-all duration-150",
+    "transition-all duration-150",
+    pos?.openDown ? "origin-top" : "origin-bottom",
     open ? "pointer-events-auto opacity-100 scale-100" : "pointer-events-none opacity-0 scale-95",
   );
 
@@ -148,7 +166,12 @@ export function UserMenu({
           role="menu"
           aria-label="منوی کاربر"
           onKeyDown={onMenuKeyDown}
-          style={{ top: pos.top, left: pos.left, width: pos.width }}
+          style={{
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            maxHeight: "calc(100dvh - 24px)",
+          }}
           className={panelClass}
         >
           <div className="border-b border-line px-3 py-2">

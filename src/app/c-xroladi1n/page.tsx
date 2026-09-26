@@ -7,6 +7,7 @@
  */
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Activity,
   AlertCircle,
@@ -16,11 +17,13 @@ import {
   Lock,
   LifeBuoy,
   LogOut,
+  Menu,
   MessageSquare,
   Radio,
   RefreshCw,
   Server,
   Users,
+  X,
 } from "lucide-react";
 
 import { ArkaMark } from "@/components/site-navbar";
@@ -75,6 +78,9 @@ export default function AdminPage() {
 
   // Active section in sidebar
   const [activeTab, setActiveTab] = React.useState<"dashboard" | "users" | "providers" | "broadcasts" | "tickets">("dashboard");
+
+  /** Mobile: the sidebar becomes an off-canvas drawer. */
+  const [navOpen, setNavOpen] = React.useState(false);
 
   // Open-support-ticket badge in the sidebar
   const [openTickets, setOpenTickets] = React.useState<number>(0);
@@ -288,12 +294,17 @@ export default function AdminPage() {
   // Screen 2: Admin Dashboard Layout (Spacious, Video 2-inspired)
   // =========================================================================
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-[#070709] text-foreground" dir="rtl">
-      {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-e border-white/5 bg-[#0b0b0e] p-5">
+    <div className="admin-shell flex w-full overflow-hidden bg-[#070709] text-foreground" dir="rtl">
+      {/* Sidebar. On a phone this is an off-canvas drawer — the old fixed
+          `w-64` column could not fit next to any content below ~900px, which
+          is why the admin panel looked broken on a phone. */}
+      <aside
+        data-open={navOpen ? "true" : "false"}
+        className="admin-drawer fixed inset-y-0 start-0 z-50 flex w-64 max-w-[85vw] shrink-0 flex-col border-e border-white/5 bg-[#0b0b0e] p-5 shadow-2xl md:static md:z-auto md:shadow-none"
+      >
         <div className="flex items-center gap-2.5 pb-5 border-b border-white/5">
-          <ArkaMark className="size-6 text-white" />
-          <div className="flex flex-col">
+          <ArkaMark className="size-6 shrink-0 text-white" />
+          <div className="flex min-w-0 flex-1 flex-col">
             <span dir="ltr" className="font-display text-[15px] font-bold text-white tracking-tight">
               ARKA
             </span>
@@ -301,12 +312,24 @@ export default function AdminPage() {
               پنل مدیریت سیستم
             </span>
           </div>
-        </div>
-
-        <nav className="mt-5 flex-1 space-y-1.5">
+          {/* Mobile-only close affordance. */}
           <button
             type="button"
-            onClick={() => setActiveTab("dashboard")}
+            onClick={() => setNavOpen(false)}
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white md:hidden"
+            aria-label="بستن منو"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <nav className="mt-5 flex-1 space-y-1.5 overflow-y-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("dashboard");
+              setNavOpen(false);
+            }}
             className={cn(
               "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "dashboard"
@@ -320,7 +343,10 @@ export default function AdminPage() {
 
           <button
             type="button"
-            onClick={() => setActiveTab("users")}
+            onClick={() => {
+              setActiveTab("users");
+              setNavOpen(false);
+            }}
             className={cn(
               "flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "users"
@@ -342,7 +368,10 @@ export default function AdminPage() {
 
           <button
             type="button"
-            onClick={() => setActiveTab("providers")}
+            onClick={() => {
+              setActiveTab("providers");
+              setNavOpen(false);
+            }}
             className={cn(
               "flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "providers"
@@ -364,7 +393,10 @@ export default function AdminPage() {
 
           <button
             type="button"
-            onClick={() => setActiveTab("broadcasts")}
+            onClick={() => {
+              setActiveTab("broadcasts");
+              setNavOpen(false);
+            }}
             className={cn(
               "flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "broadcasts"
@@ -386,7 +418,10 @@ export default function AdminPage() {
 
           <button
             type="button"
-            onClick={() => setActiveTab("tickets")}
+            onClick={() => {
+              setActiveTab("tickets");
+              setNavOpen(false);
+            }}
             className={cn(
               "flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all",
               activeTab === "tickets"
@@ -413,7 +448,14 @@ export default function AdminPage() {
           </button>
         </nav>
 
-        <div className="border-t border-white/5 pt-4">
+        <div className="mt-4 space-y-1.5 border-t border-white/5 pt-4">
+          <Link
+            href="/chat"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs text-neutral-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+          >
+            <MessageSquare className="size-4" />
+            <span>بازگشت به چت</span>
+          </Link>
           <button
             type="button"
             onClick={handleLogout}
@@ -425,12 +467,32 @@ export default function AdminPage() {
         </div>
       </aside>
 
+      {/* Backdrop — closes the mobile drawer. */}
+      {navOpen && (
+        <button
+          type="button"
+          aria-label="بستن منو"
+          onClick={() => setNavOpen(false)}
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+        />
+      )}
+
       {/* Main Admin Content Area */}
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/5 bg-[#09090c] px-8">
-          <div className="flex items-center gap-3.5">
-            <h1 className="text-sm font-bold text-white">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-white/5 bg-[#09090c] px-4 sm:px-8">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
+            {/* Hamburger — only below md, where the sidebar is a drawer. */}
+            <button
+              type="button"
+              onClick={() => setNavOpen(true)}
+              className="grid size-8 shrink-0 place-items-center rounded-lg text-neutral-400 hover:bg-white/[0.06] hover:text-white md:hidden"
+              aria-label="باز کردن منو"
+            >
+              <Menu className="size-4" />
+            </button>
+
+            <h1 className="truncate text-sm font-bold text-white">
               {activeTab === "providers"
                 ? "مدیریت پروایدرهای متمرکز و خوشه‌های چندکلیدی"
                 : activeTab === "users"
@@ -441,13 +503,13 @@ export default function AdminPage() {
                       ? "صندوق تیکت‌های پشتیبانی کاربران"
                       : "داشبورد نظارت و آمار سامانه"}
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-0.5 text-[11px] font-medium text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-0.5 text-[11px] font-medium text-emerald-400 sm:inline-flex">
+              <span className="size-1.5 rounded-full bg-emerald-400" />
               سرور پایدار و فعال
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex shrink-0 items-center gap-2.5">
             {activeTab === "dashboard" && (
               <Button
                 size="sm"
@@ -483,7 +545,7 @@ export default function AdminPage() {
           <TicketsManager />
         ) : (
           /* Dashboard Content Area with Generous Spacing */
-          <div className="flex-1 overflow-y-auto p-8 space-y-8">
+          <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:space-y-8 sm:p-6 lg:p-8">
             {/* 5 KPI Metric Cards (Rounded [24px], Spacious) */}
             <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {/* 1. Total Users */}
@@ -580,8 +642,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Registration Trend Chart Card (Inspired by Video 2) */}
-            <div className="rounded-[28px] border border-white/10 bg-[#101013] p-8 shadow-sm">
+            {/* Registration Trend Chart Card */}
+            <div className="rounded-[28px] border border-white/10 bg-[#101013] p-5 shadow-sm sm:p-8">
               <div className="flex flex-col justify-between gap-5 border-b border-white/5 pb-6 sm:flex-row sm:items-center">
                 <div>
                   <div className="flex items-center gap-3">

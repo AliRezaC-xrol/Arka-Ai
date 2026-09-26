@@ -12,7 +12,13 @@
 
 import { prisma } from "./prisma";
 import { decryptApiKey } from "./crypto";
-import { openChatStream, completeChat, type ChatTurn, type StreamDelta } from "./ai-client";
+import {
+  openChatStream,
+  completeChat,
+  DEFAULT_STREAM_MAX_TOKENS,
+  type ChatTurn,
+  type StreamDelta,
+} from "./ai-client";
 
 export interface FailoverExecutionResult {
   success: boolean;
@@ -83,8 +89,14 @@ export async function streamWithFailover(options: {
   messages: ChatTurn[];
   userId?: string;
   signal?: AbortSignal;
+  /**
+   * Output-token budget. Reasoning models spend part of it on their chain of
+   * thought, so the chat route raises this when the model is known to think
+   * out loud — otherwise the reply is truncated mid-sentence.
+   */
+  maxTokens?: number;
 }): Promise<StreamFailoverResult> {
-  const { providerId, model, messages, userId, signal } = options;
+  const { providerId, model, messages, userId, signal, maxTokens } = options;
 
   const provider = await loadProviderWithKeys(providerId);
 
@@ -111,7 +123,7 @@ export async function streamWithFailover(options: {
     const opened = await openChatStream(
       { type: provider.type, apiFormat: provider.apiFormat, apiKey: plainKey, baseUrl: provider.baseUrl, model },
       messages,
-      { signal },
+      { signal, maxTokens: maxTokens ?? DEFAULT_STREAM_MAX_TOKENS },
     );
 
     if (!opened.ok || !opened.stream) {

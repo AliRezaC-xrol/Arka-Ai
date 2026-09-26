@@ -146,7 +146,7 @@ export function NotificationsMenu() {
       >
         <Bell className="size-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -end-1 flex size-4 items-center justify-center rounded-full bg-red-500 font-mono text-[10px] font-bold text-white shadow-lg animate-pulse">
+          <span className="absolute -top-1 -end-1 flex size-4 items-center justify-center rounded-full bg-red-500 font-mono text-[10px] font-bold text-white shadow-lg">
             {unreadCount > 9 ? "+9" : unreadCount}
           </span>
         )}
@@ -156,8 +156,13 @@ export function NotificationsMenu() {
       {open && pos && (
         <div
           ref={panelRef}
-          style={{ top: pos.top, left: pos.left, width: pos.width }}
-          className="fixed z-[60] rounded-card border border-line bg-[#141416] p-4 shadow-2xl transition-all duration-150 opacity-100 scale-100 origin-top"
+          style={{
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            maxHeight: `calc(100dvh - ${pos.top + 12}px)`,
+          }}
+          className="fixed z-[60] flex flex-col overflow-hidden rounded-card border border-line bg-[#141416] p-4 shadow-2xl transition-all duration-150 opacity-100 scale-100 origin-top"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-line pb-3">
@@ -195,7 +200,7 @@ export function NotificationsMenu() {
           </div>
 
           {/* List */}
-          <div className="mt-3 max-h-80 overflow-y-auto space-y-2.5 pe-1">
+          <div className="mt-3 min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain pe-1">
             {notifications.length === 0 ? (
               <div className="py-10 text-center text-xs text-foreground-3 space-y-2">
                 <Sparkles className="size-6 text-foreground-3/50 mx-auto" />
@@ -218,7 +223,7 @@ export function NotificationsMenu() {
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <span className="font-bold text-white flex items-center gap-1.5">
                       {!item.isRead && (
-                        <span className="size-1.5 rounded-full bg-emerald-400 shrink-0 animate-ping" />
+                        <span className="size-1.5 shrink-0 rounded-full bg-emerald-400" />
                       )}
                       <span>{item.title || "پیام مدیریت آرکا"}</span>
                     </span>

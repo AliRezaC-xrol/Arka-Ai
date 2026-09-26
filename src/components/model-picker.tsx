@@ -26,17 +26,44 @@ interface ModelPickerProps {
   className?: string;
 }
 
+/** Gap between the trigger and the panel, and the minimum viewport margin. */
+const GAP = 8;
+const MARGIN = 8;
+/** The panel should never grow past this share of the viewport height. */
+const MAX_VH = 0.5;
+
+/**
+ * The model selector.
+ *
+ * Positioned from measurement rather than by CSS alone. The previous version
+ * was a CSS-only `bottom-full` popover pinned to `w-[19rem] max-h-[19rem]`,
+ * which meant that on the empty-state hero composer it floated a full 19rem
+ * above the trigger, overlapped the suggestion chips and ran off the top of
+ * short viewports. It now:
+ *
+ *   - measures the room above and below the trigger and opens whichever way
+ *     has more space, with a hard clamp to the viewport;
+ *   - sizes its height to `min(18rem, 50dvh)` so a phone in landscape still
+ *     gets a usable panel instead of one taller than the screen;
+ *   - lets the list scroll inside a fixed-height shell so the panel never
+ *     resizes while you type in the search box.
+ */
 export function ModelPicker({ groups, value, onChange, className }: ModelPickerProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
+  const [pos, setPos] = React.useState<{
+    top: number;
+    bottom: number;
+    width: number;
+    left: number;
+    maxHeight: number;
+    flip: "up" | "down";
+  } | null>(null);
+
   const rootRef = React.useRef<HTMLDivElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
-
-  /** The trigger is the first <button> under the root. */
-  const focusTrigger = React.useCallback(() => {
-    rootRef.current?.querySelector<HTMLButtonElement>("[data-trigger]")?.focus();
-  }, []);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
 
   /** Flat list of every selectable option, regardless of the current filter. */
   const options = React.useMemo(
@@ -77,30 +104,105 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
       const el =
         listRef.current?.querySelector<HTMLButtonElement>("[aria-selected='true']") ??
         listRef.current?.querySelector<HTMLButtonElement>("button");
-      el?.focus();
+      /* `block: "nearest"` keeps the panel's own scroll from yanking the
+         whole page when a selected model sits far down a long list. */
+      el?.scrollIntoView({ block: "nearest" });
     });
   }, []);
 
-  const close = React.useCallback(
-    (returnFocus = false) => {
-      setOpen(false);
-      setQuery("");
-      if (returnFocus) requestAnimationFrame(() => focusTrigger());
-    },
-    [focusTrigger],
-  );
+  const close = React.useCallback((returnFocus = false) => {
+    setOpen(false);
+    setQuery("");
+    if (returnFocus) {
+      requestAnimationFrame(() =>
+        rootRef.current?.querySelector<HTMLButtonElement>("[data-trigger]")?.focus(),
+      );
+    }
+  }, []);
+
+  /**
+   * Keep the panel inside the viewport. Recomputed on anything that can move
+   * the trigger: scroll (capture, so nested scroll containers count), resize,
+   * and the panel's own open/close.
+   */
+  React.useLayoutEffect(() => {
+    if (!open) return;
+
+    const compute = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      /* Wide enough for real model ids like
+         "anthropic/claude-sonnet-4-20250514", but never wider than the
+         screen allows. */
+      const width = Math.min(Math.max(r.width, 280), vw - MARGIN * 2);
+
+      /* RTL-safe: the panel's inline-start edge lines up with the trigger's,
+         then gets clamped so it cannot poke out of either side. */
+      let left = r.left;
+      left = Math.max(MARGIN, Math.min(left, vw - width - MARGIN));
+
+      const roomAbove = r.top - GAP - MARGIN;
+      const roomBelow = vh - r.bottom - GAP - MARGIN;
+      const cap = Math.max(160, Math.min(288, vh * MAX_VH));
+
+      /* Prefer upward when there is genuinely more room there; otherwise
+         drop below the trigger. A viewport with no good option gets the
+         larger of the two, clamped. */
+      const flip: "up" | "down" = roomAbove >= roomBelow ? "up" : "down";
+
+      if (flip === "up") {
+        const maxHeight = Math.min(cap, Math.max(140, roomAbove));
+        setPos({
+          top: 0,
+          bottom: vh - r.top + GAP,
+          width,
+          left,
+          maxHeight,
+          flip,
+        });
+      } else {
+        const maxHeight = Math.min(cap, Math.max(140, roomBelow));
+        setPos({
+          top: r.bottom + GAP,
+          bottom: 0,
+          width,
+          left,
+          maxHeight,
+          flip,
+        });
+      }
+    };
+
+    compute();
+    window.addEventListener("resize", compute);
+    window.addEventListener("scroll", compute, true);
+    window.visualViewport?.addEventListener("resize", compute);
+    window.visualViewport?.addEventListener("scroll", compute);
+    return () => {
+      window.removeEventListener("resize", compute);
+      window.removeEventListener("scroll", compute, true);
+      window.visualViewport?.removeEventListener("resize", compute);
+      window.visualViewport?.removeEventListener("scroll", compute);
+    };
+  }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
 
     const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-        close();
-      }
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      /* The panel is fixed-positioned, so it is not inside the trigger's
+         subtree in the layout sense — check it explicitly. */
+      if (listRef.current?.contains(target)) return;
+      close();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") close(true);
-      if (event.key === "Tab") close();
     };
 
     document.addEventListener("pointerdown", onPointerDown);
@@ -110,6 +212,10 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open, close]);
+
+  React.useEffect(() => {
+    if (open) focusSelected();
+  }, [open, focusSelected]);
 
   const onListKeyDown = (event: React.KeyboardEvent) => {
     // While typing in the search box the arrow keys belong to the text caret.
@@ -132,6 +238,8 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
     } else if (event.key === "End") {
       event.preventDefault();
       buttons[buttons.length - 1]?.focus();
+    } else if (event.key === "Tab") {
+      close();
     }
   };
 
@@ -147,62 +255,71 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
     }
   };
 
+  const panelStyle: React.CSSProperties | undefined = pos
+    ? {
+        top: pos.flip === "up" ? undefined : pos.top,
+        bottom: pos.flip === "up" ? pos.bottom : undefined,
+        left: pos.left,
+        width: pos.width,
+        maxHeight: pos.maxHeight,
+      }
+    : undefined;
+
   return (
     <div ref={rootRef} className={cn("relative inline-block text-start", className)}>
       <button
+        ref={triggerRef}
         type="button"
         data-trigger=""
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`مدل انتخاب‌شده: ${current?.model ?? "انتخاب مدل"}`}
         onClick={() => {
-          if (open) {
-            close();
-          } else {
-            setOpen(true);
-            focusSelected();
-          }
+          if (open) close();
+          else setOpen(true);
         }}
+        /* The trigger itself stays compact: `max-w` + `truncate` keep a long
+           model id from stretching the composer's control row on a phone. */
         className={cn(
-          "inline-flex h-9 items-center gap-2 rounded-control border border-line bg-card px-2.5 text-[13px] text-foreground transition-colors duration-200",
+          "inline-flex h-8 max-w-[11rem] items-center gap-1.5 rounded-control border border-line bg-card px-2 text-[12.5px] text-foreground transition-colors duration-150 sm:max-w-[15rem]",
           "hover:border-white/30 hover:bg-soft focus-visible:border-white focus-visible:outline-none",
           open && "border-white/40 bg-soft",
         )}
       >
         <span className="flex min-w-0 items-center gap-1.5">
           {current?.isUserProvider ? (
-            <Key className="size-3.5 text-amber-400" />
+            <Key className="size-3.5 shrink-0 text-amber-400" />
           ) : (
             <ProviderGlyph provider={current?.provider ?? "OpenAI"} />
           )}
-          <span className="truncate font-medium">{current?.model ?? "انتخاب مدل"}</span>
-          {current?.isUserProvider && (
-            <span className="hidden rounded bg-amber-500/10 px-1.5 py-0.2 text-[10px] text-amber-300 sm:inline">
-              شخصی
-            </span>
-          )}
+          <span dir="ltr" className="truncate font-medium">
+            {current?.model ?? "انتخاب مدل"}
+          </span>
         </span>
         <ChevronDown
           aria-hidden
-          className={cn("size-3.5 shrink-0 transition-transform duration-200", open && "rotate-180")}
+          className={cn("size-3.5 shrink-0 transition-transform duration-150", open && "rotate-180")}
         />
       </button>
 
-      {/* Popover — stays mounted so .picker-pop can animate BOTH ways.
-          data-open drives the transition (see globals.css); inert keeps the
-          closed list out of the tab order and unclickable. */}
+      {/* Popover — fixed-positioned from JS so it is never clipped by the
+          composer's overflow, and stays mounted so the enter/exit transition
+          can run both ways. `inert` keeps the closed list out of the tab
+          order and unclickable. */}
       <ul
         ref={listRef}
         role="listbox"
         aria-label="انتخاب مدل"
         data-open={open ? "true" : "false"}
+        data-flip={pos?.flip === "down" ? "down" : "up"}
         aria-hidden={!open}
         inert={!open}
         onKeyDown={onListKeyDown}
-        className="picker-pop absolute bottom-full start-0 z-50 mb-2 flex max-h-[19rem] w-[19rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-card border border-line bg-[#141414] shadow-2xl"
+        style={panelStyle}
+        className="picker-pop fixed z-[70] flex flex-col overflow-hidden rounded-card border border-line bg-[#141416] shadow-2xl ring-1 ring-black/60"
       >
         {/* Search */}
-        <li role="presentation" className="border-b border-line/60 p-1.5">
+        <li role="presentation" className="shrink-0 border-b border-line/60 p-1.5">
           <div className="relative">
             <Search
               aria-hidden
@@ -229,7 +346,7 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
           </div>
         </li>
 
-        <div className="min-h-0 flex-1 overflow-auto p-1.5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5">
           {matchCount === 0 ? (
             <p className="px-3 py-6 text-center text-[12px] text-foreground-3">
               مدلی با «{query}» پیدا نشد.
@@ -240,26 +357,28 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
                 <li
                   role="presentation"
                   className={cn(
-                    "flex items-center justify-between gap-2 px-3 pb-1.5 pt-2 text-[12px] font-semibold text-foreground-3",
-                    groupIndex > 0 && "mt-1 border-t border-line/60 pt-3",
+                    "sticky top-0 z-10 -mx-1.5 mb-0.5 flex items-center justify-between gap-2 bg-[#141416]/95 px-3 pb-1 pt-1.5 text-[11px] font-semibold text-foreground-3 backdrop-blur-sm",
+                    groupIndex > 0 && "mt-1 border-t border-line/60",
                   )}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
                     {group.isUserProvider ? (
-                      <Key className="size-3 text-amber-400" />
+                      <Key className="size-3 shrink-0 text-amber-400" />
                     ) : (
                       <ProviderGlyph provider={group.provider} />
                     )}
-                    <span dir="ltr">{group.provider}</span>
+                    <span dir="ltr" className="truncate">
+                      {group.provider}
+                    </span>
                   </div>
                   {group.isUserProvider && (
-                    <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9.5px] font-medium text-amber-300">
-                      پروایدر شخصی
+                    <span className="shrink-0 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-300">
+                      شخصی
                     </span>
                   )}
                   {group.isSiteProvider && (
-                    <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[9.5px] font-medium text-emerald-300">
-                      پروایدر سایت
+                    <span className="shrink-0 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-300">
+                      سایت
                     </span>
                   )}
                 </li>
@@ -277,7 +396,7 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
                           close(true);
                         }}
                         className={cn(
-                          "flex w-full items-center justify-between gap-3 rounded-control px-3 py-2 text-[13px] transition-colors duration-150",
+                          "flex w-full items-center justify-between gap-2 rounded-control px-2.5 py-1.5 text-[12.5px] transition-colors duration-100",
                           "hover:bg-soft focus-visible:bg-soft focus-visible:outline-none",
                           selected ? "bg-white/10 font-semibold text-white" : "text-foreground-2",
                         )}
@@ -294,6 +413,13 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
             ))
           )}
         </div>
+
+        <li
+          role="presentation"
+          className="shrink-0 border-t border-line/60 px-3 py-1.5 text-[10.5px] text-foreground-3"
+        >
+          {matchCount.toLocaleString("fa-IR")} مدل
+        </li>
       </ul>
     </div>
   );

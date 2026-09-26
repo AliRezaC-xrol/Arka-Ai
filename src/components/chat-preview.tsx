@@ -126,10 +126,16 @@ function Conversation({ compact = false }: { compact?: boolean }) {
         )}
       >
         <div className="flex items-center justify-between px-1">
-          <span className={cn("text-neutral-400", compact ? "text-[11px]" : "text-[12.5px]")}>
+          <span className={cn("truncate text-neutral-400", compact ? "text-[11px]" : "text-[12.5px]")}>
             هر چه می‌خواهید بپرسید…
           </span>
-          <span className="inline-block h-3.5 w-[2px] animate-pulse rounded-full bg-white/70" />
+          {/* Static caret. This used to be `animate-pulse`, which meant the
+              hero ran a repaint on an infinite loop forever — one of the main
+              reasons the page felt slow to settle after a refresh. */}
+          <span
+            aria-hidden
+            className="inline-block h-3.5 w-[2px] shrink-0 rounded-full bg-white/70"
+          />
         </div>
         <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
           <div className="flex items-center gap-2">
@@ -232,7 +238,9 @@ export function HeroWindow() {
           {/* Dynamic island */}
           <div className="relative z-20 mx-auto mb-2 flex h-5 w-24 items-center justify-between rounded-full border border-white/15 bg-black px-2.5">
             <span className="size-2 rounded-full border border-white/20 bg-[#111116]" />
-            <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+            {/* Static camera dot — the pulsing version kept the hero on a
+                permanent repaint loop. */}
+            <span aria-hidden className="size-1.5 rounded-full bg-emerald-500/80" />
           </div>
 
           {/* Status bar */}

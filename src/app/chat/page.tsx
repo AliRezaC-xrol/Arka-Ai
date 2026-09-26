@@ -769,6 +769,37 @@ function ChatContent() {
        * which truncated long answers. Keep the trailing partial line.
        */
       let lineBuffer = "";
+      /**
+       * Once the answer starts streaming, the thinking trace must stop being
+       * rewritten. Its `<details>` element is uncontrolled by React after the
+       * user opens or closes it, and re-rendering the reasoning text on every
+       * answer token fought the browser's own open/close state.
+       */
+      let answerStarted = false;
+
+      /**
+       * One atomic writer for the streaming assistant message. Reasoning and
+       * answer chunks both come through here, so a later reasoning frame can
+       * never clobber the answer text that already streamed in.
+       */
+      const writeStreamingMessage = (patch: Partial<ChatMessage>, isNew: boolean) => {
+        if (isNew) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: assistantMsgId,
+              role: "assistant",
+              content: "",
+              isStreaming: true,
+              ...patch,
+            },
+          ]);
+          return;
+        }
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === assistantMsgId ? { ...msg, ...patch } : msg)),
+        );
+      };
 
       const handleEvent = (line: string) => {
         if (!line.startsWith("data: ")) return;
@@ -796,80 +827,51 @@ function ChatContent() {
               } else if (eventData.type === "chunk") {
                 setIsThinking(false);
 
-                // Reasoning arrives first and separately: show it in the
-                // "thinking" block, then the answer streams in below it.
+                const chunkText =
+                  typeof eventData.text === "string" ? eventData.text : "";
+                if (!chunkText) return;
+
+                // Reasoning arrives separately from the answer. Both are kept,
+                // and the answer always wins the screen once it starts.
                 if (eventData.reasoning) {
-                  accumulatedReasoning += eventData.text;
-                  if (!hasAddedAssistantMsg) {
-                    hasAddedAssistantMsg = true;
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: assistantMsgId,
-                        role: "assistant",
-                        content: "",
-                        reasoning: accumulatedReasoning,
-                        isStreaming: true,
-                      },
-                    ]);
-                  } else {
-                    setMessages((prev) =>
-                      prev.map((msg) =>
-                        msg.id === assistantMsgId
-                          ? { ...msg, reasoning: accumulatedReasoning }
-                          : msg,
-                      ),
-                    );
-                  }
+                  accumulatedReasoning += chunkText;
+                  writeStreamingMessage(
+                    { reasoning: accumulatedReasoning, content: accumulatedText },
+                    !hasAddedAssistantMsg,
+                  );
+                  hasAddedAssistantMsg = true;
                   scrollToBottom();
                   return;
                 }
 
-                accumulatedText += eventData.text;
+                accumulatedText += chunkText;
 
-                if (!hasAddedAssistantMsg) {
-                  hasAddedAssistantMsg = true;
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      id: assistantMsgId,
-                      role: "assistant",
-                      content: accumulatedText,
-                      isStreaming: true,
-                    },
-                  ]);
-                } else {
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMsgId
-                        ? { ...msg, content: accumulatedText }
-                        : msg,
-                    ),
+                if (!answerStarted) {
+                  answerStarted = true;
+                  /* Fold the live reasoning trace the instant the answer
+                     begins, so the reply is what fills the screen instead of
+                     sitting below an expanded wall of thinking. Scoped to the
+                     streaming bubble by id — <details> owns its own open
+                     state, so this is done imperatively on the DOM. */
+                  const liveTrace = document.querySelector<HTMLDetailsElement>(
+                    `[data-msg-id="${assistantMsgId}"] details[data-live-trace="true"]`,
                   );
+                  if (liveTrace) liveTrace.open = false;
                 }
+
+                writeStreamingMessage(
+                  { content: accumulatedText, reasoning: accumulatedReasoning || undefined },
+                  !hasAddedAssistantMsg,
+                );
+                hasAddedAssistantMsg = true;
                 scrollToBottom();
               } else if (eventData.type === "error") {
                 accumulatedText += `${accumulatedText ? "\n\n" : ""}⚠️ ${eventData.message}`;
-                if (!hasAddedAssistantMsg) {
-                  hasAddedAssistantMsg = true;
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      id: assistantMsgId,
-                      role: "assistant",
-                      content: accumulatedText,
-                      isStreaming: false,
-                    },
-                  ]);
-                } else {
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMsgId
-                        ? { ...msg, content: accumulatedText, isStreaming: false }
-                        : msg,
-                    ),
-                  );
-                }
+                writeStreamingMessage(
+                  { content: accumulatedText, isStreaming: false },
+                  !hasAddedAssistantMsg,
+                );
+                hasAddedAssistantMsg = true;
               } else if (eventData.type === "done") {
                 setMessages((prev) =>
                   prev.map((msg) =>
@@ -897,6 +899,28 @@ function ChatContent() {
 
       // Flush a final frame that arrived without a trailing newline.
       if (lineBuffer) handleEvent(lineBuffer);
+
+      /**
+       * Never leave an empty assistant bubble behind. If the provider only
+       * sent a chain of thought and no answer frame at all, surface the trace
+       * as the answer instead of showing a bare "thinking" card — that is the
+       * exact symptom of "the API content never shows up".
+       */
+      if (hasAddedAssistantMsg && !accumulatedText && accumulatedReasoning) {
+        accumulatedText = accumulatedReasoning;
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  content: accumulatedText,
+                  reasoning: undefined,
+                  isStreaming: false,
+                }
+              : msg,
+          ),
+        );
+      }
     } catch (err: unknown) {
       if ((err as Error)?.name !== "AbortError") {
         console.error("Send error:", err);
@@ -929,15 +953,21 @@ function ChatContent() {
   const activeTitle = conversations.find((c) => c.id === activeId)?.title;
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-[#070709] text-foreground" dir="rtl">
+    <div className="chat-shell flex w-full overflow-hidden bg-[#070709] text-foreground" dir="rtl">
       {/* ================= Dock / Sidebar ================= */}
       <aside
+        data-open={sidebarOpen ? "true" : "false"}
         className={cn(
-          "fixed inset-y-0 start-0 z-40 flex shrink-0 flex-col border-e border-white/5 bg-[#0b0b0e] transition-all duration-300 ease-in-out md:static",
-          // Mobile state
-          sidebarOpen ? "translate-x-0 w-72" : "-translate-x-full md:translate-x-0",
+          /* Mobile: an off-canvas drawer pinned to the inline-start edge.
+             Desktop: a normal flex column that can collapse to an icon dock.
+             The slide itself lives in globals.css (.chat-drawer) because it
+             has to be RTL-correct — Tailwind's `translate-x` is physical and
+             would slide the drawer off the wrong side of an RTL layout. */
+          "chat-drawer fixed inset-y-0 start-0 z-50 flex shrink-0 flex-col border-e border-white/5 bg-[#0b0b0e] md:static md:z-auto",
+          "w-[17.5rem] max-w-[85vw]",
+          sidebarOpen && "shadow-2xl",
           // Desktop state
-          desktopCollapsed ? "md:w-16 p-2" : "md:w-80 p-3",
+          desktopCollapsed ? "md:w-16 md:p-2" : "md:w-80 md:p-3",
         )}
       >
         {desktopCollapsed ? (
@@ -1098,16 +1128,24 @@ function ChatContent() {
       )}
 
       {/* ================= Main Chat Section ================= */}
-      <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[#070709]">
+      <main className="relative isolate flex min-w-0 flex-1 flex-col overflow-hidden bg-[#070709]">
         {/* Animated monochrome aurora — the flowing-light look from the
             reference video, retinted to the black/white palette (no blue).
-            Negative z-index keeps it above the panel colour but below content. */}
-        <div aria-hidden className="aurora-mono -z-10" />
 
-        {/* Top Header Bar matching Video 1 exactly */}
-        <header className="relative z-20 flex h-14 shrink-0 items-center justify-between px-4 sm:px-6 bg-background/60 backdrop-blur-md">
+            The layer stack matters: the background is painted FIRST, at
+            z-index 0, and every piece of real content above it carries a
+            positive z-index. The previous `-z-10` put the aurora behind
+            `main`'s own opaque `bg-[#070709]`, so it was painted but never
+            visible — which is why the background looked "not done". */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
+          <div className="aurora-mono" />
+          <div className="aurora-veil" />
+        </div>
+
+        {/* Top Header Bar */}
+        <header className="relative z-20 flex h-14 shrink-0 items-center justify-between gap-2 px-3 sm:px-6 bg-background/60 backdrop-blur-md">
           {/* Left Side: Sidebar toggle + New chat + Arka Logo */}
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => {
@@ -1117,7 +1155,7 @@ function ChatContent() {
                   setDesktopCollapsed(!desktopCollapsed);
                 }
               }}
-              className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+              className="grid size-8 shrink-0 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
               title="تغییر وضعیت نوار کناری"
             >
               {desktopCollapsed ? (
@@ -1130,16 +1168,16 @@ function ChatContent() {
             <button
               type="button"
               onClick={handleNewChat}
-              className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+              className="grid size-8 shrink-0 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
               title="گفتگوی جدید"
             >
               <SquarePen className="size-4" />
             </button>
 
-            <span className="ms-1 font-display text-[14px] font-bold text-white tracking-tight flex items-center gap-1.5">
-              <span>ARKA</span>
+            <span className="ms-0.5 flex min-w-0 items-center gap-1.5 font-display text-[14px] font-bold tracking-tight text-white">
+              <span className="shrink-0">ARKA</span>
               {activeTitle && (
-                <span className="text-xs text-neutral-400 font-normal truncate max-w-[140px] sm:max-w-xs">
+                <span className="truncate text-xs font-normal text-neutral-400 sm:max-w-xs">
                   / {activeTitle}
                 </span>
               )}
@@ -1147,13 +1185,13 @@ function ChatContent() {
           </div>
 
           {/* Right Side: Export + User */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
             {/* Export conversation */}
             {messages.length > 0 && (
               <button
                 type="button"
                 onClick={handleExportChat}
-                className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+                className="hidden size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors sm:grid"
                 title="دانلود و خروجی گفت‌وگو"
               >
                 <Download className="size-4" />
@@ -1185,7 +1223,7 @@ function ChatContent() {
         {/* Chat Messages Scroll View OR Empty State */}
         <div
           ref={chatScrollRef}
-          className="relative min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-8"
+          className="relative z-10 min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-8"
         >
           {messages.length === 0 && !isLoadingMessages ? (
             /* ================= Exact Empty State matching Video 1 =================
@@ -1198,10 +1236,10 @@ function ChatContent() {
                   `.enter` lives in globals.css and is disabled under
                   prefers-reduced-motion. */}
               <h1 className="enter [--enter-delay:0ms] text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-                چطور می‌توانم کمکت کنم؟
+                چطور می‌توانم کمکتان کنم؟
               </h1>
               <p className="enter [--enter-delay:70ms] mt-2 text-xs text-neutral-400 sm:text-[13px]">
-                هر چه می‌خواهید بپرسید — تاریخچه فقط روی همین دستگاه می‌ماند.
+                هر چه می‌خواهید بپرسید — تاریخچهٔ گفتگوها در حساب شما ذخیره می‌شود.
               </p>
 
               {/* Center Floating Capsule Composer (Video 1 recreation) */}
@@ -1283,20 +1321,22 @@ function ChatContent() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
-                    placeholder="هر چیزی بپرسید..."
+                    placeholder="هر چه می‌خواهید بپرسید…"
                     rows={1}
                     className="w-full resize-none bg-transparent px-2 text-[14px] leading-6 text-white placeholder:text-neutral-500 focus:outline-none min-h-[38px] max-h-36"
                   />
 
-                  {/* Bottom Control Bar */}
-                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.04]">
-                    {/* Model Pill + Quality + Attachments */}
-                    <div className="flex items-center gap-2">
+                  {/* Bottom Control Bar — wraps instead of overflowing on a
+                      narrow phone, where the model pill plus two attach
+                      buttons plus the send button do not fit on one line. */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/[0.04]">
+                    {/* Model Pill + Attachments */}
+                    <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
                       <ModelPicker
                         groups={modelGroups}
                         value={model}
                         onChange={setModel}
-                        className="text-xs"
+                        className="min-w-0"
                       />
 
                       <input
@@ -1349,8 +1389,10 @@ function ChatContent() {
                 </div>
               </div>
 
-              {/* Exact Suggestion Pills beneath Composer (Video 1 matching) */}
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 max-w-xl">
+              {/* Suggestion pills beneath the composer. Hidden on the very
+                  narrowest screens, where five chips plus the headline push
+                  the composer off the first screen. */}
+              <div className="mt-5 hidden max-w-xl flex-wrap items-center justify-center gap-2 sm:flex">
                 {SUGGESTIONS.map((item) => (
                   <button
                     key={item.title}
@@ -1363,9 +1405,10 @@ function ChatContent() {
                 ))}
               </div>
 
-              {/* Footnote below pills */}
-              <p className="mt-4 text-[11px] text-neutral-500">
-                گفتگوها فقط روی همین دستگاه ذخیره می‌شود.
+              {/* Footnote below pills. The disclaimer is the only thing worth
+                  keeping on a phone. */}
+              <p className="mt-4 px-4 text-center text-[11px] text-neutral-500">
+                گفتگوها در حساب ارکای شما ذخیره می‌شوند.
               </p>
             </div>
           ) : (
@@ -1422,7 +1465,7 @@ function ChatContent() {
                 }
 
                 return (
-                  <div key={msg.id} className="group me-auto flex w-full flex-col items-start text-start">
+                  <div key={msg.id} data-msg-id={msg.id} className="group me-auto flex w-full flex-col items-start text-start">
                     <div className="mb-2 flex items-center gap-2">
                       <div className="grid size-6 place-items-center rounded-lg border border-white/15 bg-white/5">
                         <ArkaMark className="size-3.5 text-white" />
@@ -1448,7 +1491,12 @@ function ChatContent() {
 
                     {msg.reasoning && (
                       <details
-                        open={Boolean(msg.isStreaming)}
+                        /* The trace auto-expands only while it is the ONLY
+                           thing we have. The moment the answer arrives the
+                           block folds away so the reply is what fills the
+                           screen instead of being pushed below the fold. */
+                        open={Boolean(msg.isStreaming) && !msg.content}
+                        data-live-trace={msg.isStreaming ? "true" : undefined}
                         className="msg-soft-in mb-3 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-2.5"
                       >
                         <summary className="cursor-pointer select-none list-none text-[11.5px] font-semibold text-neutral-300 transition-colors hover:text-white">
@@ -1460,10 +1508,12 @@ function ChatContent() {
                                 msg.isStreaming && "animate-pulse bg-emerald-400",
                               )}
                             />
-                            {msg.isStreaming ? "در حال فکر کردن…" : "روند فکر کردن مدل"}
+                            {msg.isStreaming && !msg.content
+                              ? "در حال فکر کردن…"
+                              : `روند فکر کردن مدل (${msg.reasoning.trim().split(/\s+/).length.toLocaleString("fa-IR")} واژه)`}
                           </span>
                         </summary>
-                        <p className="mt-2.5 whitespace-pre-wrap text-[12.5px] leading-6 text-neutral-400">
+                        <p className="mt-2.5 max-h-72 overflow-y-auto whitespace-pre-wrap text-[12.5px] leading-6 text-neutral-400">
                           {msg.reasoning}
                         </p>
                       </details>
@@ -1492,7 +1542,7 @@ function ChatContent() {
             `w-full` matters here — as a flex child of a column `main` it would
             otherwise shrink-to-fit its content instead of spanning the pane. */}
         {messages.length > 0 && (
-          <div className="relative z-10 w-full shrink-0 px-3 pb-3 sm:px-4 sm:pb-4">
+          <div className="relative z-10 w-full shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
             <div className="mx-auto w-full max-w-3xl">
               {attachment && (
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#161619] px-3 py-1 text-xs text-neutral-300">
@@ -1517,7 +1567,7 @@ function ChatContent() {
                     handleSend();
                   }
                 }}
-                className="relative flex items-end gap-2 rounded-[24px] border border-white/10 bg-[#121215] p-2 shadow-sm transition-colors focus-within:border-white/25"
+                className="relative rounded-[24px] border border-white/10 bg-[#121215] p-2 shadow-sm transition-colors focus-within:border-white/25"
               >
                 <input
                   ref={fileInputRef}
@@ -1527,62 +1577,79 @@ function ChatContent() {
                   onChange={handleFileChange}
                 />
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={Boolean(
-                    attachmentsBlocked ||
-                      user?.isBanned ||
-                      (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0),
-                  )}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="size-8 shrink-0 rounded-full text-neutral-400 hover:text-white"
-                  title={attachmentsBlocked ? "این مدل از پیوست پشتیبانی نمی‌کند" : "پیوست فایل یا تصویر"}
-                >
-                  <Paperclip className="size-4" />
-                </Button>
-
+                {/* Row 1: the textarea spans the full width, so a long prompt
+                    never fights the buttons for horizontal space. */}
                 <textarea
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))}
-                  placeholder="هر چیزی بپرسید..."
+                  placeholder="هر چه می‌خواهید بپرسید…"
                   rows={1}
-                  className="max-h-36 min-h-[36px] flex-1 resize-none bg-transparent py-1.5 text-[13.5px] leading-6 text-white placeholder:text-neutral-500 focus:outline-none"
+                  className="max-h-36 min-h-[36px] w-full resize-none bg-transparent px-2 py-1.5 text-[13.5px] leading-6 text-white placeholder:text-neutral-500 focus:outline-none"
                 />
 
-                {isStreaming ? (
+                {/* Row 2: controls. The model picker is now reachable from the
+                    docked composer too — previously it only existed in the
+                    empty-state hero, so once a conversation started the model
+                    could not be changed without starting a new chat. */}
+                <div className="mt-1 flex items-center gap-1.5 border-t border-white/[0.04] pt-2 sm:gap-2">
+                  <ModelPicker
+                    groups={modelGroups}
+                    value={model}
+                    onChange={setModel}
+                    className="min-w-0 shrink"
+                  />
+
                   <Button
                     type="button"
+                    variant="ghost"
                     size="icon"
-                    onClick={handleStop}
-                    className="size-8 shrink-0 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                    title="توقف پاسخ"
+                    disabled={Boolean(
+                      attachmentsBlocked ||
+                        user?.isBanned ||
+                        (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0),
+                    )}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="size-8 shrink-0 rounded-full text-neutral-400 hover:text-white"
+                    title={attachmentsBlocked ? "این مدل از پیوست پشتیبانی نمی‌کند" : "پیوست فایل یا تصویر"}
                   >
-                    <Square className="size-3.5 fill-current" />
+                    <Paperclip className="size-4" />
                   </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    size="icon"
-                    disabled={
-                      !model || (!input.trim() && !attachment) ||
-                      Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))
-                    }
-                    className="size-8 shrink-0 rounded-full bg-white text-black hover:bg-neutral-200 shadow disabled:opacity-30"
-                    title="ارسال پیام"
-                  >
-                    <ArrowUp className="size-4 stroke-[2.5]" />
-                  </Button>
-                )}
+
+                  <div className="flex-1" />
+
+                  {isStreaming ? (
+                    <Button
+                      type="button"
+                      size="icon"
+                      onClick={handleStop}
+                      className="size-8 shrink-0 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                      title="توقف پاسخ"
+                    >
+                      <Square className="size-3.5 fill-current" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      size="icon"
+                      disabled={
+                        !model || (!input.trim() && !attachment) ||
+                        Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))
+                      }
+                      className="size-8 shrink-0 rounded-full bg-white text-black hover:bg-neutral-200 shadow disabled:opacity-30"
+                      title="ارسال پیام"
+                    >
+                      <ArrowUp className="size-4 stroke-[2.5]" />
+                    </Button>
+                  )}
+                </div>
               </form>
 
-              <div className="mt-2 flex items-center justify-between px-2 text-[10.5px] text-neutral-500">
-                <span>ارکا ممکن است خطا کند؛ خروجی‌های مهم را بررسی فرمایید.</span>
-                <span className="hidden sm:inline font-mono">مدل: {model.split(":")[1] || model}</span>
+              <div className="mt-2 flex items-center justify-between gap-3 px-2 text-[10.5px] text-neutral-500">
+                <span className="truncate">ارکا ممکن است خطا کند؛ خروجی‌های مهم را بررسی فرمایید.</span>
+                <span className="hidden shrink-0 font-mono sm:inline">مدل: {model.split(":")[1] || model}</span>
               </div>
             </div>
           </div>

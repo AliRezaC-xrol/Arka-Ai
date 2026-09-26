@@ -10,8 +10,10 @@ import { prisma } from "@/lib/prisma";
 import { decryptApiKey } from "@/lib/crypto";
 import { streamWithFailover } from "@/lib/provider-failover";
 import {
+  DEFAULT_STREAM_MAX_TOKENS,
   generateImage,
   isImageModel,
+  looksLikeReasoningModel,
   normalizeType,
   openChatStream,
   type ChatTurn,
@@ -24,6 +26,12 @@ export const maxDuration = 300;
 
 /** How many previous turns to send upstream as context. */
 const HISTORY_LIMIT = 24;
+
+/**
+ * A reasoning model needs a bigger output budget: the chain of thought and
+ * the answer are drawn from the same allowance.
+ */
+const REASONING_STREAM_MAX_TOKENS = 16384;
 
 function generateAutoTitle(text: string): string {
   const clean = text.replace(/[\r\n]+/g, " ").trim();
@@ -322,6 +330,16 @@ export async function POST(request: NextRequest) {
 
   const clientSignal = request.signal;
 
+  /**
+   * Output budget. A reasoning model spends part of this on its chain of
+   * thought before it writes a single word of the answer, so it gets double.
+   * Without this the reply was cut off mid-sentence — the model hit the cap
+   * while still thinking.
+   */
+  const streamMaxTokens = looksLikeReasoningModel(model)
+    ? REASONING_STREAM_MAX_TOKENS
+    : DEFAULT_STREAM_MAX_TOKENS;
+
   let openResult: { stream: AsyncGenerator<StreamDelta, void, unknown>; attempts: number };
 
   try {
@@ -336,7 +354,7 @@ export async function POST(request: NextRequest) {
             model,
           },
           chatMessages,
-          { signal: clientSignal },
+          { signal: clientSignal, maxTokens: streamMaxTokens },
         );
         if (!res.ok || !res.stream) {
           throw new Error(res.message || "اتصال به پروایدر شخصی برقرار نشد.");
@@ -350,6 +368,7 @@ export async function POST(request: NextRequest) {
         messages: chatMessages,
         userId: user.id,
         signal: clientSignal,
+        maxTokens: streamMaxTokens,
       });
       if (!res.ok || !res.stream) {
         throw new Error(res.message || "اتصال به پروایدر برقرار نشد.");
@@ -417,6 +436,15 @@ export async function POST(request: NextRequest) {
           streamError = e?.message || "ارتباط با پروایدر در میانه‌ی پاسخ قطع شد.";
           console.error("[chat] upstream stream error:", e);
         }
+      }
+
+      /**
+       * The provider reported no error but sent no answer text either. Say so
+       * explicitly — an empty assistant bubble is the least useful outcome,
+       * and this is indistinguishable from a silent stream failure.
+       */
+      if (!streamError && !accumulated.trim() && !reasoning.trim()) {
+        streamError = "پاسخی از پروایدر دریافت نشد. مدل دیگری را امتحان کنید.";
       }
 
       // Persist whatever we managed to receive.

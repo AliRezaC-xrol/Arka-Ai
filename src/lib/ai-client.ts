@@ -329,15 +329,25 @@ function extractDelta(format: ApiFormat, payload: string): StreamDelta {
   try {
     json = JSON.parse(payload);
   } catch {
-    return EMPTY_DELTA;
+    // A provider that streams raw text (no JSON envelope) still needs to be
+    // rendered, otherwise the answer looks empty.
+    return payload.length > 0 && /[^\s]/.test(payload)
+      ? { text: payload, kind: "content" }
+      : EMPTY_DELTA;
   }
 
   if (format === "anthropic_messages") {
     const t = json.type as string | undefined;
     if (t === "content_block_delta") {
       const delta = json.delta as { type?: string; text?: string; thinking?: string } | undefined;
-      if (delta?.type === "thinking_delta") return { text: delta.thinking || "", kind: "reasoning" };
-      return { text: delta?.text || "", kind: "content" };
+      if (delta?.type === "thinking_delta") {
+        return typeof delta.thinking === "string" && delta.thinking.length > 0
+          ? { text: delta.thinking, kind: "reasoning" }
+          : EMPTY_DELTA;
+      }
+      return typeof delta?.text === "string" && delta.text.length > 0
+        ? { text: delta.text, kind: "content" }
+        : EMPTY_DELTA;
     }
     return EMPTY_DELTA;
   }
@@ -352,10 +362,13 @@ function extractDelta(format: ApiFormat, payload: string): StreamDelta {
     let content = "";
     let reasoning = "";
     for (const p of parts) {
-      if (!p?.text) continue;
+      if (typeof p?.text !== "string" || p.text.length === 0) continue;
       if (p.thought) reasoning += p.text;
       else content += p.text;
     }
+    // A single frame can carry both a thought part and an answer part. Prefer
+    // the answer so the visible reply is never starved of text, but never
+    // discard the remaining reasoning — the caller merges by kind.
     if (content) return { text: content, kind: "content" };
     if (reasoning) return { text: reasoning, kind: "reasoning" };
     return EMPTY_DELTA;
@@ -363,12 +376,15 @@ function extractDelta(format: ApiFormat, payload: string): StreamDelta {
 
   if (format === "responses") {
     const t = json.type as string | undefined;
-    if (t === "response.reasoning_summary_text.delta") {
-      return { text: (json.delta as string) || "", kind: "reasoning" };
+    if (t === "response.reasoning_summary_text.delta" || t === "response.reasoning_text.delta") {
+      const d = json.delta as string | undefined;
+      return typeof d === "string" && d.length > 0 ? { text: d, kind: "reasoning" } : EMPTY_DELTA;
     }
     if (t === "response.output_text.delta" || t === "response.refusal.delta") {
-      return { text: (json.delta as string) || "", kind: "content" };
+      const d = json.delta as string | undefined;
+      return typeof d === "string" && d.length > 0 ? { text: d, kind: "content" } : EMPTY_DELTA;
     }
+    // Some gateways reuse the chat-completions envelope even on /responses.
     return EMPTY_DELTA;
   }
 
@@ -381,9 +397,17 @@ function extractDelta(format: ApiFormat, payload: string): StreamDelta {
     | undefined;
   const delta = choices?.[0]?.delta;
   if (choices?.[0]?.text) return { text: choices[0].text as string, kind: "content" };
-  if (delta?.content) return { text: delta.content, kind: "content" };
+  if (typeof delta?.content === "string" && delta.content.length > 0) {
+    return { text: delta.content, kind: "content" };
+  }
+  // Check the chain of thought BEFORE falling through: several providers
+  // (DeepSeek, Qwen, OpenRouter passthroughs) put reasoning and content in
+  // SEPARATE frames, and a frame that carries only reasoning must not be
+  // reported as an empty content delta — that silently swallowed the trace.
   const reasoning = delta?.reasoning_content || delta?.reasoning;
-  if (reasoning) return { text: reasoning, kind: "reasoning" };
+  if (typeof reasoning === "string" && reasoning.length > 0) {
+    return { text: reasoning, kind: "reasoning" };
+  }
   return EMPTY_DELTA;
 }
 
@@ -432,6 +456,17 @@ export interface OpenedStream {
 }
 
 /**
+ * Output budget for a streamed answer.
+ *
+ * This used to be 2048. That is nowhere near enough for a reasoning model:
+ * the chain of thought and the answer share one budget, so a "thinking" model
+ * would spend the allowance on the trace and then stop — which is exactly what
+ * "the answer cuts off in the middle" looked like from the outside. 8k leaves
+ * room for a long trace plus a complete reply on every mainstream provider.
+ */
+export const DEFAULT_STREAM_MAX_TOKENS = 8192;
+
+/**
  * Opens a real streaming completion. On a non-2xx upstream response the body is
  * drained and returned as a message instead of a stream, so the caller can fail
  * over to the next key.
@@ -459,7 +494,7 @@ export async function openChatStream(
     target.model,
     messages,
     true,
-    options.maxTokens ?? 2048,
+    options.maxTokens ?? DEFAULT_STREAM_MAX_TOKENS,
   );
 
   let res: Response;
@@ -506,16 +541,29 @@ export async function openChatStream(
           const payload = trimmed.slice(5).trim();
           if (payload === "[DONE]") return;
 
-          // A provider-level error can arrive mid-stream.
-          if (payload.startsWith("{") && payload.includes('"error"')) {
+          // A provider-level error can arrive mid-stream. Only treat a frame
+          // as fatal when it is an object with NO usable delta text — the old
+          // substring check threw away perfectly good answer frames whose
+          // content merely mentioned the word "error".
+          if (payload.startsWith("{")) {
+            let parsed: Record<string, unknown> | null = null;
             try {
-              const parsed = JSON.parse(payload);
-              if (parsed?.type === "error" || parsed?.error) {
-                const msg = parsed?.error?.message || parsed?.error?.type || "خطای پروایدر در میانه‌ی پاسخ";
+              parsed = JSON.parse(payload);
+            } catch {
+              parsed = null;
+            }
+
+            if (parsed && (parsed.type === "error" || parsed.error)) {
+              const delta = extractDelta(format, payload);
+              // A frame that still yields text is answer content, not an error.
+              if (!delta.text) {
+                const errObj = parsed.error as { message?: string; type?: string } | string | undefined;
+                const msg =
+                  (typeof errObj === "object" && errObj?.message) ||
+                  (typeof errObj === "string" ? errObj : "") ||
+                  "خطای پروایدر در میانه‌ی پاسخ";
                 throw new Error(String(msg));
               }
-            } catch (e) {
-              if (e instanceof Error && e.message && !e.message.startsWith("Unexpected")) throw e;
             }
           }
 
@@ -759,8 +807,22 @@ export interface ModelCapabilities {
   /** 0 when the model cannot take images at all. */
   maxImages: number;
   contextLength: number | null;
+  /**
+   * True when the model streams a chain of thought before its answer. Such a
+   * model shares one output-token budget between the trace and the reply, so
+   * the caller should give it more room.
+   */
+  reasoning: boolean;
   source: "provider" | "heuristic";
   note?: string;
+}
+
+/** Model-name hints for "this model thinks out loud before answering". */
+export function looksLikeReasoningModel(model: string): boolean {
+  const m = model.toLowerCase();
+  return /(^|[/\-_])(o1|o3|o4|r1|qwq|deepseek-reasoner|deepseek-r1|reasoning|thinking|aion|sonoma|nemotron|magistral|kimi-thinking|glm-z1)([/\-_.:]|$)/.test(
+    m,
+  ) || /\b(reason|think)\b/.test(m);
 }
 
 /**
@@ -779,6 +841,7 @@ function heuristicCapabilities(model: string): ModelCapabilities {
     files,
     maxImages: vision ? 8 : 0,
     contextLength: null,
+    reasoning: looksLikeReasoningModel(model),
     source: "heuristic",
     note: "سرویس‌دهنده متادیتای قابلیت‌ها را منتشر نمی‌کند؛ این مقادیر از روی نام مدل تخمین زده شده‌اند.",
   };
@@ -845,15 +908,27 @@ export async function getModelCapabilities(options: {
         const arch = (entry.architecture ?? {}) as { input_modalities?: string[] };
         const modalities = Array.isArray(arch.input_modalities) ? arch.input_modalities : [];
         const ctx = entry.context_length ?? entry.context_window ?? entry.inputTokenLimit;
+        // OpenRouter publishes `supported_parameters`; a reasoning model lists
+        // "reasoning" / "include_reasoning" there.
+        const params = Array.isArray(entry.supported_parameters)
+          ? (entry.supported_parameters as string[])
+          : [];
+        const nameHint = String(entry.id ?? entry.name ?? model);
 
         const vision = modalities.includes("image") || fallback.vision;
         const files = modalities.includes("file") || vision;
+        const reasoning =
+          params.includes("reasoning") ||
+          params.includes("include_reasoning") ||
+          params.includes("reasoning_effort") ||
+          looksLikeReasoningModel(nameHint);
 
         return {
           vision,
           files,
           maxImages: vision ? 8 : 0,
           contextLength: typeof ctx === "number" ? ctx : null,
+          reasoning,
           source: "provider",
           note: modalities.length
             ? `ورودی‌های پشتیبانی‌شده: ${modalities.join(", ")}`
