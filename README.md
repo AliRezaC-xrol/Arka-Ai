@@ -2,97 +2,67 @@
 
 # ARKA
 
-**همهٔ مدل‌های هوش مصنوعی، در یک گفتگو.**
+**Every AI model, in one conversation.**
 
 </div>
 
 ---
 
-## ARKA چیست؟
+Arka is a Persian-first AI chat platform. Sign in, connect your own API key (or
+use the built-in providers), and chat with GPT, Claude, Gemini, DeepSeek, Grok
+and any OpenAI-compatible endpoint — in one interface.
 
-ارکا یک پلتفرم چت هوش مصنوعی فارسی است. یک حساب می‌سازید، کلید API خودتان را وصل
-می‌کنید (یا از پروایدرهای آمادهٔ سیستم استفاده می‌کنید) و با GPT، Claude، Gemini،
-DeepSeek، Grok و هر سرویس سازگار با OpenAI گفتگو می‌کنید — همه در یک رابط، بدون
-جابه‌جایی بین سایت‌های مختلف.
-
-## قابلیت‌ها
+## Features
 
 | | |
 |---|---|
-| **چند پروایدری** | OpenAI، Anthropic، Google، DeepSeek، Grok، OpenRouter، Groq و هر endpoint سازگار با OpenAI |
-| **سوییچ میان مدل‌ها** | وسط یک گفتگو مدل را عوض کنید و رشتهٔ بحث را از دست ندهید |
-| **کلید شخصی (BYOK)** | کلید خودتان را اضافه کنید؛ با AES-256-GCM رمزنگاری و فقط سمت سرور رمزگشایی می‌شود |
-| **جابه‌جایی خودکار کلیدها** | با خطای سقف سهمیه یا rate-limit، کلید بعدی بی‌درنگ جایگزین می‌شود و چت قطع نمی‌شود |
-| **استریم زنده** | پاسخ کلمه‌به‌کلمه می‌آید؛ «فکر کردن» مدل جدا از پاسخ نمایش داده می‌شود |
-| **پیش‌نمایش HTML و SVG** | خروجی کد را همان‌جا در چت اجرا و مشاهده کنید |
-| **تشخیص خودکار پیوست** | از روی خود API می‌فهمد هر مدل چه نوع فایلی و چند تا می‌پذیرد |
-| **تیکت پشتیبانی** | کاربر تیکت می‌زند، وضعیت را می‌بیند، ادمین پاسخ می‌دهد و می‌بندد |
-| **پنل مدیریت** | آمار، کاربران، پروایدرها، کلیدها، پیام‌رسانی همگانی و صندوق تیکت‌ها |
+| **Multi-provider** | OpenAI, Anthropic, Google, DeepSeek, Grok, OpenRouter, Groq, and any OpenAI-compatible endpoint |
+| **Switch models mid-chat** | Change model without losing the thread |
+| **BYOK** | Your own keys, encrypted with AES-256-GCM, decrypted server-side only |
+| **Automatic key failover** | On a quota or rate-limit error the next key takes over instantly |
+| **Live streaming** | Word-by-word answers, with the model's reasoning shown separately |
+| **HTML & SVG preview** | Run generated markup right in the chat |
+| **Attachment detection** | Reads each model's real limits from the provider API |
+| **Support tickets** | Users open and track tickets; admins reply and close |
+| **Admin panel** | Stats, users, providers, keys, broadcasts, ticket inbox |
 
-## پشتهٔ فناوری
+## Stack
 
-- **Next.js 15** (App Router) و **React 19**
-- **TypeScript** با حالت strict
-- **Tailwind CSS 4** و کامپوننت‌های **vibefarsi**
-- **Prisma** روی **PostgreSQL**
-- استریم **SSE** با پشتیبانی از چهار دیالکت: `chat_completions`، `anthropic_messages`، `responses`، `google_generate`
+- **Next.js 15** (App Router), **React 19**, **TypeScript** (strict)
+- **Tailwind CSS 4** with **vibefarsi** components
+- **Prisma** on **PostgreSQL**
+- **SSE** streaming across four dialects: `chat_completions`, `anthropic_messages`, `responses`, `google_generate`
 
-## راه‌اندازی
+## Setup
 
 ```bash
 pnpm install
-cp .env.example .env      # مقادیر را پر کنید
+cp .env.example .env      # fill in the values
 npx prisma generate
 npx prisma db push
 pnpm dev
 ```
 
-سپس روی <http://localhost:3000> بالا می‌آید.
+Runs at <http://localhost:3000>.
 
-### متغیرهای محیطی
+**Environment:** `DATABASE_URL`, `SESSION_SECRET`, `BYOK_ENCRYPTION_KEY`,
+`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, `NEXT_PUBLIC_APP_URL`,
+`ADMIN_PASSWORD`.
 
-| متغیر | توضیح |
-|---|---|
-| `DATABASE_URL` | رشتهٔ اتصال PostgreSQL |
-| `SESSION_SECRET` | کلید امضای نشست (حداقل ۳۲ کاراکتر) |
-| `BYOK_ENCRYPTION_KEY` | کلید ۳۲ بایتی هگز برای رمزنگاری کلیدهای کاربران |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | اطلاعات ورود با گوگل |
-| `NEXT_PUBLIC_APP_URL` | آدرس عمومی سایت |
-| `ADMIN_PASSWORD` | گذرواژهٔ پنل مدیریت |
-
-## ساختار پروژه
-
-```
-src/
-├── app/                    صفحات و API route ها
-│   ├── chat/               خود چت
-│   ├── login/              ورود با گوگل
-│   ├── settings/           تنظیمات و مدیریت کلیدها
-│   ├── c-xroladi1n/        پنل مدیریت
-│   └── api/                API (چت، تیکت، پروایدرها، ادمین)
-├── components/             کامپوننت‌های رابط کاربری
-│   ├── ui/                 کامپوننت‌های پایه (vibefarsi)
-│   ├── admin/              بخش‌های پنل مدیریت
-│   └── ...
-└── lib/                    منطق مشترک (ai-client، auth، prisma، failover)
-```
-
-## دستورها
+## Commands
 
 ```bash
-pnpm dev                  # سرور توسعه
-pnpm build                # بیلد پروداکشن
+pnpm dev                  # dev server
+pnpm build                # production build
 pnpm lint                 # eslint
-npx tsc --noEmit          # بررسی تایپ‌ها
-npx prisma studio         # مرور دیتابیس
-bash scripts/arka-cli.sh  # CLI مدیریت (روی سرور)
+npx tsc --noEmit          # type check
+bash scripts/arka-cli.sh  # admin CLI (server only)
 ```
 
-## پروانه
+## License
 
-**سورس‌بسته و انحصاری.** تمامی حقوق مادی و معنوی متعلق به **AliRezaC-xrol** است.
-این پروژه تحت هیچ پروانهٔ متن‌بازی منتشر نشده و هیچ مجوزی برای کپی‌برداری،
-بازتوزیع، تغییر یا انتشار آن اعطا نمی‌شود. برای جزئیات کامل فایل
-[LICENSE](./LICENSE) را ببینید.
+**Closed source and proprietary.** All rights reserved by **AliRezaC-xrol**. No
+license is granted to copy, redistribute, modify or publish this software. See
+[LICENSE](./LICENSE) for details.
 
-رابط کاربری این پروژه با **کامپوننت‌های vibefarsi** ساخته شده است.
+The UI is built with **vibefarsi** components.
