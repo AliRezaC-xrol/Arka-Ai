@@ -7,6 +7,7 @@
  */
 
 import { adminFetch } from "@/lib/admin-fetch";
+import { API_FORMATS, resolveApiFormat, type ApiFormat } from "@/lib/ai-client";
 
 import * as React from "react";
 import {
@@ -51,9 +52,11 @@ export interface ProviderData {
   id: string;
   name: string;
   type: string;
+  apiFormat?: string | null;
   baseUrl: string | null;
   isActive: boolean;
   models: string;
+  modelsConfig?: unknown;
   createdAt: string;
   updatedAt: string;
   apiKeys: ProviderApiKeyData[];
@@ -126,6 +129,7 @@ export function ProvidersManager() {
   const [formName, setFormName] = React.useState("");
   const [formType, setFormType] = React.useState("openai");
   const [formBaseUrl, setFormBaseUrl] = React.useState("");
+  const [formApiFormat, setFormApiFormat] = React.useState<ApiFormat>("chat_completions");
   const [formModels, setFormModels] = React.useState("");
   const [formApiKey, setFormApiKey] = React.useState("");
   const [formKeyLabel, setFormKeyLabel] = React.useState("");
@@ -257,6 +261,7 @@ export function ProvidersManager() {
           name: formName,
           type: formType,
           baseUrl: formBaseUrl || null,
+          apiFormat: formApiFormat,
           models: formModels,
           apiKey: formApiKey || undefined,
           keyLabel: formKeyLabel || undefined,
@@ -294,6 +299,7 @@ export function ProvidersManager() {
           name: formName,
           type: formType,
           baseUrl: formBaseUrl || null,
+          apiFormat: formApiFormat,
           models: formModels,
         }),
       });
@@ -408,6 +414,7 @@ export function ProvidersManager() {
     setFormName("");
     setFormType("openai");
     setFormBaseUrl("");
+    setFormApiFormat("chat_completions");
     setFormModels("");
     setFormApiKey("");
     setFormKeyLabel("");
@@ -419,6 +426,7 @@ export function ProvidersManager() {
     setFormName(p.name);
     setFormType(p.type);
     setFormBaseUrl(p.baseUrl || "");
+    setFormApiFormat(resolveApiFormat(p.type, p.apiFormat));
     setFormModels(p.models || "");
     setFormError(null);
   };
@@ -1201,6 +1209,28 @@ export function ProvidersManager() {
                     className="h-9 text-xs font-mono"
                   />
                 </div>
+
+                {/* API format — the wire protocol this provider actually speaks. */}
+                <div>
+                  <label className="block font-medium text-foreground-2 mb-1">
+                    قالب API (API format)
+                  </label>
+                  <select
+                    value={formApiFormat}
+                    onChange={(e) => setFormApiFormat(e.target.value as ApiFormat)}
+                    dir="ltr"
+                    className="w-full h-9 rounded-control border border-line bg-card px-2 text-xs text-foreground focus:border-white focus:outline-none"
+                  >
+                    {API_FORMATS.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label} ({f.hint})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[10.5px] text-foreground-3">
+                    مطمئن نیستید؟ برای بیشتر سرویس‌ها «Chat completions» درست است.
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -1325,6 +1355,24 @@ export function ProvidersManager() {
                     dir="ltr"
                     className="h-9 text-xs font-mono"
                   />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-foreground-2 mb-1">
+                    قالب API (API format)
+                  </label>
+                  <select
+                    value={formApiFormat}
+                    onChange={(e) => setFormApiFormat(e.target.value as ApiFormat)}
+                    dir="ltr"
+                    className="w-full h-9 rounded-control border border-line bg-card px-2 text-xs text-foreground focus:border-white focus:outline-none"
+                  >
+                    {API_FORMATS.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label} ({f.hint})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminTokenFromRequest, verifyAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { resolveApiFormat } from "@/lib/ai-client";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -70,6 +71,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
     if (typeof body.type === "string") {
       dataToUpdate.type = body.type.trim();
+    }
+    if (typeof body.apiFormat === "string" && body.apiFormat.trim()) {
+      dataToUpdate.apiFormat = resolveApiFormat(String(body.type || "custom"), body.apiFormat);
     }
     if (body.baseUrl !== undefined) {
       dataToUpdate.baseUrl = body.baseUrl ? body.baseUrl.trim() : null;
