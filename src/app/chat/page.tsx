@@ -947,7 +947,7 @@ function ChatContent() {
               <button
                 type="button"
                 onClick={() => setDesktopCollapsed(false)}
-                className="grid size-9 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/10 transition-colors"
+                className="press grid size-9 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-white hover:bg-white/10 transition-colors"
                 title="باز کردن تاریخچه گفتگوها"
               >
                 <ArkaMark className="size-4" />
@@ -1054,7 +1054,7 @@ function ChatContent() {
               <button
                 type="button"
                 onClick={() => setByokOpen(true)}
-                className="flex w-full items-center gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2.5 text-start text-xs text-amber-200 transition-colors hover:border-amber-500/40 hover:bg-amber-500/[0.1]"
+                className="press flex w-full items-center gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2.5 text-start text-xs text-amber-200 transition-colors hover:border-amber-500/40 hover:bg-amber-500/[0.1]"
               >
                 <Key className="size-3.5 shrink-0 text-amber-400" />
                 <span className="flex-1 font-semibold">کلیدهای API من</span>
@@ -1066,7 +1066,7 @@ function ChatContent() {
               <button
                 type="button"
                 onClick={() => setSupportOpen(true)}
-                className="flex w-full items-center gap-2.5 rounded-xl border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2.5 text-start text-xs text-sky-200 transition-colors hover:border-sky-500/40 hover:bg-sky-500/[0.1]"
+                className="press flex w-full items-center gap-2.5 rounded-xl border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2.5 text-start text-xs text-sky-200 transition-colors hover:border-sky-500/40 hover:bg-sky-500/[0.1]"
               >
                 <MessageSquarePlus className="size-3.5 shrink-0 text-sky-400" />
                 <span className="flex-1 font-semibold">پشتیبانی</span>
@@ -1079,7 +1079,7 @@ function ChatContent() {
 
               <Link
                 href="/settings"
-                className="flex w-full items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-xs text-neutral-300 transition-colors hover:border-white/15 hover:bg-white/[0.05] hover:text-white"
+                className="press flex w-full items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-xs text-neutral-300 transition-colors hover:border-white/15 hover:bg-white/[0.05] hover:text-white"
               >
                 <Settings className="size-3.5 shrink-0" />
                 <span className="flex-1 font-semibold">حساب کاربری و تنظیمات</span>
@@ -1356,7 +1356,7 @@ function ChatContent() {
                     key={item.title}
                     type="button"
                     onClick={() => handleSend(item.prompt)}
-                    className="rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs text-neutral-300 transition-all hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
+                    className="press rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs text-neutral-300 transition-all hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
                   >
                     {item.title}
                   </button>

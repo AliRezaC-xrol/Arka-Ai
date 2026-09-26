@@ -127,7 +127,7 @@ export function SiteNavbar() {
           <Link
             href="/login"
             className={cn(
-              "btn-ink inline-flex h-10 items-center rounded-control px-4 text-[14.5px] font-semibold transition-transform duration-200 sm:px-5",
+              "btn-ink press inline-flex h-10 items-center rounded-control px-4 text-[14.5px] font-semibold sm:px-5",
               scrolled && "scale-[0.98]",
             )}
           >

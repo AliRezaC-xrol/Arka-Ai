@@ -1362,3 +1362,86 @@ html { color-scheme: dark; }
     animation: none !important;
   }
 }
+
+/* ---------- Global micro-interactions ---------- */
+
+/* Cards lift toward the reader on hover. Transform + shadow only, so this
+   stays on the compositor and never triggers layout. */
+.lift {
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 300ms ease,
+    background-color 300ms ease;
+  will-change: transform;
+}
+
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.85);
+  }
+}
+
+.lift:active {
+  transform: translateY(-1px);
+}
+
+/* A single tasteful press response for every control on the site. */
+@media (hover: hover) {
+  .press:active {
+    transform: scale(0.97);
+  }
+}
+
+.press {
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Rows/cards slide a hair toward the reading direction on hover. */
+@media (hover: hover) {
+  .nudge:hover {
+    transform: translateX(-3px);
+  }
+}
+
+.nudge {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Focus ring that matches the monochrome palette and only appears for
+   keyboard users. */
+:where(a, button, [role="button"], summary, input, textarea, select):focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* The aurora and every other decorative layer is pure decoration; make sure it
+   never blocks a click. */
+.aurora-mono,
+.aurora-mono::before,
+.aurora-mono::after {
+  pointer-events: none;
+}
+
+/* Anchor targets should not hide under the sticky header. */
+:where(#features, #models, #how, #faq) {
+  scroll-margin-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lift,
+  .press,
+  .nudge {
+    transition: none !important;
+  }
+
+  .lift:hover,
+  .lift:active,
+  .press:active,
+  .nudge:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}

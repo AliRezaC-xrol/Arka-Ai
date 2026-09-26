@@ -14,6 +14,7 @@ import { MeshCanvas } from "@/components/mesh-canvas";
 import { Reveal } from "@/components/reveal";
 import { ScrollLink } from "@/components/scroll-link";
 import { StepsScroll } from "@/components/steps-scroll";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { HeroWindow } from "@/components/chat-preview";
 import { ArkaMark, SiteNavbar } from "@/components/site-navbar";
 import { ProviderLogosRow } from "@/components/provider-logos";
@@ -212,17 +213,18 @@ export default async function Home() {
               {FEATURES.map((f, i) => {
                 const Icon = f.icon;
                 return (
-                  <Reveal
-                    as="article"
-                    key={f.title}
-                    delay={i * 80}
-                    className="group rounded-card border border-white/10 bg-[#0f0f12] p-6 transition-all duration-300 hover:border-white/25 hover:bg-[#141418] shadow-sm"
-                  >
-                    <span className="grid size-10 place-items-center rounded-xl border border-white/15 bg-white/[0.05] text-white transition-colors group-hover:bg-white group-hover:text-black">
-                      <Icon aria-hidden className="size-4" strokeWidth={2} />
-                    </span>
-                    <h3 className="mt-5 text-[16.5px] font-bold text-white">{f.title}</h3>
-                    <p className="mt-2 text-[13.5px] leading-6 text-neutral-400">{f.text}</p>
+                  <Reveal as="div" key={f.title} delay={i * 80}>
+                    <Card className="lift group h-full border-line-strong bg-elevated p-6 hover:border-white/25 hover:bg-[#141418]">
+                      <span className="grid size-10 place-items-center rounded-xl border border-line-strong bg-white/[0.05] text-foreground transition-colors duration-300 group-hover:bg-white group-hover:text-black">
+                        <Icon aria-hidden className="size-4" strokeWidth={2} />
+                      </span>
+                      <CardTitle className="mt-5 text-[16.5px] font-bold text-foreground">
+                        {f.title}
+                      </CardTitle>
+                      <CardDescription className="mt-2 text-[13.5px] leading-6 text-foreground-3">
+                        {f.text}
+                      </CardDescription>
+                    </Card>
                   </Reveal>
                 );
               })}
