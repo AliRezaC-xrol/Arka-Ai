@@ -28,6 +28,9 @@ export function NotificationsMenu() {
   const [notifications, setNotifications] = React.useState<UserNotification[]>([]);
   const [loading, setLoading] = React.useState(false);
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const [pos, setPos] = React.useState<{ top: number; left: number; width: number } | null>(null);
 
   const fetchNotifications = React.useCallback(async () => {
     try {
@@ -52,12 +55,40 @@ export function NotificationsMenu() {
   React.useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  /**
+   * Anchor the panel to the bell but clamp it inside the viewport.
+   * Previously it was `absolute start-0` inside an RTL header, which threw
+   * the 384px panel off the left edge of the screen.
+   */
+  React.useLayoutEffect(() => {
+    if (!open) return;
+
+    const compute = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = Math.min(384, window.innerWidth - 24);
+      let left = r.left + r.width / 2 - width / 2; // centre under the bell
+      left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+      setPos({ top: r.bottom + 8, left, width });
+    };
+
+    compute();
+    window.addEventListener("resize", compute);
+    window.addEventListener("scroll", compute, true);
+    return () => {
+      window.removeEventListener("resize", compute);
+      window.removeEventListener("scroll", compute, true);
+    };
   }, [open]);
 
   // Mark single as read
@@ -103,6 +134,7 @@ export function NotificationsMenu() {
     <div ref={rootRef} className="relative inline-block" dir="rtl">
       {/* Bell Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         aria-label="اعلان‌ها"
         onClick={() => setOpen((prev) => !prev)}
@@ -121,8 +153,12 @@ export function NotificationsMenu() {
       </button>
 
       {/* Dropdown Popover */}
-      {open && (
-        <div className="absolute start-0 top-full z-50 mt-2 w-80 sm:w-96 rounded-card border border-line bg-[#141416] p-4 shadow-2xl animate-in fade-in-50 zoom-in-95">
+      {open && pos && (
+        <div
+          ref={panelRef}
+          style={{ top: pos.top, left: pos.left, width: pos.width }}
+          className="fixed z-[60] rounded-card border border-line bg-[#141416] p-4 shadow-2xl transition-all duration-150 opacity-100 scale-100 origin-top"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-line pb-3">
             <div className="flex items-center gap-2">

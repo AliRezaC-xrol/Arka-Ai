@@ -156,15 +156,19 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
         />
       </button>
 
-      {/* Popover */}
-      {open && (
-        <ul
-          ref={listRef}
-          role="listbox"
-          aria-label="انتخاب مدل"
-          onKeyDown={onListKeyDown}
-          className="picker-pop absolute bottom-full start-0 z-50 mb-2 max-h-80 w-72 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-card border border-line bg-[#141414] p-1.5 shadow-2xl"
-        >
+      {/* Popover — stays mounted so .picker-pop can animate BOTH ways.
+          data-open drives the transition (see globals.css); inert keeps the
+          closed list out of the tab order and unclickable. */}
+      <ul
+        ref={listRef}
+        role="listbox"
+        aria-label="انتخاب مدل"
+        data-open={open ? "true" : "false"}
+        aria-hidden={!open}
+        inert={!open}
+        onKeyDown={onListKeyDown}
+        className="picker-pop absolute bottom-full start-0 z-50 mb-2 max-h-80 w-72 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-card border border-line bg-[#141414] p-1.5 shadow-2xl"
+      >
           {groups.map((group, groupIndex) => (
             <React.Fragment key={group.provider}>
               <li
@@ -222,8 +226,7 @@ export function ModelPicker({ groups, value, onChange, className }: ModelPickerP
               })}
             </React.Fragment>
           ))}
-        </ul>
-      )}
+      </ul>
     </div>
   );
 }

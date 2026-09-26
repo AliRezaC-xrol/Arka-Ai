@@ -14,10 +14,12 @@ import {
   AlertTriangle,
   BarChart2,
   Check,
+  CheckCircle2,
   Copy,
   Cpu,
   Key,
   Layers,
+  Loader2,
   Plus,
   RefreshCw,
   Server,
@@ -39,6 +41,8 @@ export interface ProviderApiKeyData {
   status: "active" | "exhausted" | "error";
   lastUsedAt: string | null;
   lastErrorMessage: string | null;
+  lastTestedAt?: string | null;
+  lastTestMessage?: string | null;
   usageCount: number;
   createdAt: string;
 }
@@ -128,6 +132,41 @@ export function ProvidersManager() {
   const [formSubmitLoading, setFormSubmitLoading] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [copiedKeyId, setCopiedKeyId] = React.useState<string | null>(null);
+  const [testingProviderId, setTestingProviderId] = React.useState<string | null>(null);
+  const [testFeedback, setTestFeedback] = React.useState<{
+    providerId: string;
+    ok: boolean;
+    text: string;
+  } | null>(null);
+
+  /** Runs a REAL connection check against the live provider API. */
+  const handleTestProvider = async (provider: ProviderData, keyId?: string) => {
+    setTestingProviderId(provider.id);
+    setTestFeedback(null);
+    try {
+      const res = await adminFetch(`/api/admin/providers/${provider.id}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(keyId ? { keyId } : {}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "بررسی اتصال ناموفق بود.");
+      setTestFeedback({
+        providerId: provider.id,
+        ok: Boolean(data.ok),
+        text: data.message || "بررسی اتصال انجام شد.",
+      });
+      await fetchProviders();
+    } catch (err) {
+      setTestFeedback({
+        providerId: provider.id,
+        ok: false,
+        text: (err as Error)?.message || "خطای نامشخص در بررسی اتصال.",
+      });
+    } finally {
+      setTestingProviderId(null);
+    }
+  };
 
   const handleCopyKeyMask = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -538,6 +577,50 @@ export function ProvidersManager() {
                         )}
                       </div>
 
+                      {/* Real connection status, derived from the last verification run */}
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {p.apiKeys.length === 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-300">
+                            <AlertCircle className="size-3" />
+                            بدون کلید — قابل استفاده نیست
+                          </span>
+                        ) : p.apiKeys.every((k) => !k.lastTestedAt) ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-line bg-soft px-2 py-0.5 text-[10px] text-foreground-3">
+                            <AlertCircle className="size-3" />
+                            اتصال هنوز بررسی نشده
+                          </span>
+                        ) : p.apiKeys.filter((k) => k.status === "active" && k.lastTestedAt).length > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
+                            <CheckCircle2 className="size-3" />
+                            اتصال موفق ✓ ({p.apiKeys.filter((k) => k.status === "active" && k.lastTestedAt).length} از{" "}
+                            {p.apiKeys.length} کلید)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] text-red-300">
+                            <AlertCircle className="size-3" />
+                            اتصال ناموفق ✗
+                          </span>
+                        )}
+
+                        {modelList.length === 0 && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-300">
+                            <AlertCircle className="size-3" />
+                            بدون مدل — در چت نمایش داده نمی‌شود
+                          </span>
+                        )}
+                      </div>
+
+                      {testFeedback?.providerId === p.id && (
+                        <p
+                          className={cn(
+                            "mt-2 whitespace-pre-wrap text-[11px] leading-5",
+                            testFeedback.ok ? "text-emerald-300" : "text-red-300",
+                          )}
+                        >
+                          {testFeedback.text}
+                        </p>
+                      )}
+
                       {/* Models List */}
                       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         <span className="text-[11px] text-foreground-3">مدل‌های قابل انتخاب:</span>
@@ -556,6 +639,22 @@ export function ProvidersManager() {
 
                   {/* Actions & Toggles */}
                   <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={testingProviderId === p.id || p.apiKeys.length === 0}
+                      onClick={() => handleTestProvider(p)}
+                      className="text-xs h-8 gap-1.5"
+                      title="بررسی واقعی اتصال با سرویس‌دهنده و انتشار خودکار مدل‌ها"
+                    >
+                      {testingProviderId === p.id ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Zap className="size-3.5" />
+                      )}
+                      <span>بررسی اتصال</span>
+                    </Button>
+
                     {/* Active Toggle Switch */}
                     <button
                       type="button"
@@ -727,10 +826,41 @@ export function ProvidersManager() {
                                     </span>
                                   )}
                                 </div>
+
+                                {k.lastTestMessage && (
+                                  <p
+                                    className={cn(
+                                      "mt-1.5 max-w-2xl text-[10.5px] leading-5",
+                                      k.status === "active" ? "text-emerald-400/90" : "text-amber-400/90",
+                                    )}
+                                  >
+                                    نتیجه آخرین بررسی اتصال
+                                    {k.lastTestedAt
+                                      ? ` (${new Date(k.lastTestedAt).toLocaleString("fa-IR")})`
+                                      : ""}
+                                    : {k.lastTestMessage}
+                                  </p>
+                                )}
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={testingProviderId === p.id}
+                                onClick={() => handleTestProvider(p, k.id)}
+                                className="text-[11px] h-7 gap-1"
+                                title="بررسی اتصال همین کلید"
+                              >
+                                {testingProviderId === p.id ? (
+                                  <Loader2 className="size-3 animate-spin" />
+                                ) : (
+                                  <Zap className="size-3" />
+                                )}
+                                بررسی
+                              </Button>
+
                               {k.status !== "active" && (
                                 <Button
                                   size="sm"

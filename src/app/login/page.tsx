@@ -76,10 +76,11 @@ export default async function LoginPage({
         <MeshCanvas spacing={64} />
       </div>
 
-      {/* 2. Brand panel (desktop - right side in RTL) with clean hairline divider */}
+      {/* 2. Brand panel (desktop - right side in RTL). No divider line: the two
+             halves sit side by side on the same background, both centred. */}
       <aside
         aria-label="درباره‌ی ارکا"
-        className="relative z-10 hidden w-[48%] max-w-2xl flex-col justify-between border-e border-white/10 p-10 lg:flex xl:p-14"
+        className="relative z-10 hidden w-1/2 flex-col items-center justify-between p-10 text-center lg:flex xl:p-14"
       >
         {/* Top Brand Logo */}
         <div className="flex items-center gap-2.5">
@@ -89,30 +90,28 @@ export default async function LoginPage({
           </span>
         </div>
 
-        {/* Center Content: Balanced headline with NO empty space in front of text */}
-        <div className="my-auto py-8">
-          <h2 className="text-[2.1rem] lg:text-[2.5rem] xl:text-[2.8rem] font-extrabold leading-[1.35] tracking-tight text-white">
+        {/* Center Content: horizontally centred */}
+        <div className="my-auto w-full max-w-xl py-8">
+          <h2 className="mx-auto text-[2.1rem] font-extrabold leading-[1.35] tracking-tight text-white lg:text-[2.5rem] xl:text-[2.8rem]">
             یک حساب برای همه‌ی مدل‌های هوش مصنوعی.
           </h2>
 
-          <p className="mt-4 text-[14.5px] leading-7 text-neutral-300 max-w-lg">
+          <p className="mx-auto mt-4 max-w-lg text-[14.5px] leading-7 text-neutral-300">
             دسترسی متمرکز و بدون فیلتر به هوش مصنوعی‌های برتر جهان در یک محیط یکپارچه فارسی.
           </p>
 
-          <ul className="mt-8 space-y-6">
+          <ul className="mx-auto mt-8 max-w-lg space-y-6">
             {BRAND_POINTS.map((point) => (
-              <li key={point.title} className="flex items-start gap-3.5">
+              <li key={point.title} className="flex flex-col items-center gap-2.5 text-center">
                 <span
                   aria-hidden
-                  className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-white/20 bg-white/[0.06] text-white"
+                  className="grid size-6 shrink-0 place-items-center rounded-full border border-white/20 bg-white/[0.06] text-white"
                 >
                   <Check className="size-3.5" strokeWidth={2.5} />
                 </span>
                 <div>
                   <span className="block text-[15px] font-bold text-white">{point.title}</span>
-                  <span className="mt-1 block max-w-md text-[13px] leading-6 text-neutral-400">
-                    {point.text}
-                  </span>
+                  <span className="mt-1 block text-[13px] leading-6 text-neutral-400">{point.text}</span>
                 </div>
               </li>
             ))}

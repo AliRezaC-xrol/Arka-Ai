@@ -27,17 +27,20 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-GITHUB_TOKEN="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"
+# NEVER hardcode credentials in the repository. Export GITHUB_TOKEN before
+# running this script when the server has no git credential store set up for
+# the private repo, e.g.:  sudo -E GITHUB_TOKEN=ghp_xxx bash quick-install.sh
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 TARGET_DIR="/var/www/arka"
 
-# Parse arguments: if argument is a domain, use it; if domain was passed as first arg or env:
+# Parse arguments: the first non-token argument is treated as the domain.
 ARG1="$1"
 ARG2="$2"
 
 DOMAIN_NAME=""
 if [[ -n "$ARG1" && "$ARG1" != ghp_* ]]; then
   DOMAIN_NAME="$ARG1"
-elif [[ -n "$ARG2" ]]; then
+elif [[ -n "$ARG2" && "$ARG2" != ghp_* ]]; then
   DOMAIN_NAME="$ARG2"
 fi
 
@@ -114,15 +117,26 @@ echo -e " ${CLR_GREEN}✔ پایگاه داده PostgreSQL آماده و متص�
 
 # 6. Clone or Update Repository Cleanly
 echo -e "\n ${CLR_CYAN}ℹ [6/9] کلون سورس‌کد پروژه از مخزن اختصاصی شما...${CLR_RESET}"
+REPO_PLAIN="https://github.com/AliRezaC-xrol/arka.git"
+if [[ -n "$GITHUB_TOKEN" ]]; then
+  REPO_AUTH="https://${GITHUB_TOKEN}@github.com/AliRezaC-xrol/arka.git"
+else
+  REPO_AUTH="$REPO_PLAIN"
+fi
+
 if [[ -d "$TARGET_DIR/.git" ]]; then
   echo -e " دریافت آخرین تغییرات مخزن..."
   cd "$TARGET_DIR"
-  git remote set-url origin "https://${GITHUB_TOKEN}@github.com/AliRezaC-xrol/arka.git"
-  git reset --hard origin/main 2>/dev/null || git pull origin main || true
+  git remote set-url origin "$REPO_AUTH"
+  git fetch origin main
+  git reset --hard origin/main
+  # Never leave the token sitting in .git/config.
+  git remote set-url origin "$REPO_PLAIN"
 else
   mkdir -p "$TARGET_DIR"
-  git clone "https://${GITHUB_TOKEN}@github.com/AliRezaC-xrol/arka.git" "$TARGET_DIR"
+  git clone "$REPO_AUTH" "$TARGET_DIR"
   cd "$TARGET_DIR"
+  git remote set-url origin "$REPO_PLAIN"
 fi
 
 # Generate Cryptographic Keys & .env

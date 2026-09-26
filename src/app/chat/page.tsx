@@ -10,13 +10,13 @@ import * as React from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
+  AlertCircle,
   ArrowUp,
   Ban,
   Clock,
   Download,
   Image as ImageIcon,
   Key,
-  Moon,
   PanelRightClose,
   PanelRightOpen,
   Paperclip,
@@ -39,6 +39,7 @@ import {
 } from "@/components/spotlight-list";
 import { UserMenu } from "@/components/user-menu";
 import { NotificationsMenu } from "@/components/notifications-menu";
+import { ByokManager } from "@/components/byok-manager";
 import { ArkaMark } from "@/components/site-navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,14 +65,11 @@ interface ChatMessage {
   isStreaming?: boolean;
 }
 
-const BASE_MODEL_GROUPS: ModelGroup[] = [
-  { provider: "Anthropic", models: ["Claude Sonnet 4", "Claude 3.5 Haiku"] },
-  { provider: "OpenAI", models: ["GPT-4o", "GPT-4o mini"] },
-  { provider: "Google", models: ["Gemini 2.5 Flash", "Gemini 2.5 Pro"] },
-  { provider: "DeepSeek", models: ["DeepSeek-R1", "DeepSeek-V3"] },
-  { provider: "Image Studio", models: ["FLUX.1 Schnell"] },
-];
-
+/**
+ * The model list is 100% real: it is built from the providers the admin has
+ * activated plus the user's own verified BYOK providers. There is no hardcoded
+ * catalogue any more — a model only appears here if a live provider serves it.
+ */
 const SUGGESTIONS = [
   {
     title: "خودت را معرفی کن",
@@ -194,8 +192,9 @@ function ChatContent() {
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = React.useState(false);
 
-  // Selected Model
-  const [model, setModel] = React.useState("Anthropic:Claude Sonnet 4");
+  // Selected Model — encoded as "ProviderName:model-id". Empty until the real
+  // provider list has loaded, then auto-filled with the first available model.
+  const [model, setModel] = React.useState("");
 
   // User personal providers
   const [userProviders, setUserProviders] = React.useState<
@@ -218,14 +217,16 @@ function ChatContent() {
     }>
   >([]);
 
-  React.useEffect(() => {
+  const loadUserProviders = React.useCallback(() => {
     fetch("/api/user-providers")
       .then((res) => res.json())
       .then((data) => {
         setUserProviders(data.providers || []);
       })
       .catch(() => {});
+  }, []);
 
+  const loadSiteProviders = React.useCallback(() => {
     fetch("/api/site-providers")
       .then((res) => res.json())
       .then((data) => {
@@ -234,13 +235,21 @@ function ChatContent() {
       .catch(() => {});
   }, []);
 
-  const modelGroups: ModelGroup[] = React.useMemo(() => {
-    const list: ModelGroup[] = [...BASE_MODEL_GROUPS];
+  React.useEffect(() => {
+    loadUserProviders();
+    loadSiteProviders();
+  }, [loadUserProviders, loadSiteProviders]);
 
+  const modelGroups: ModelGroup[] = React.useMemo(() => {
+    const list: ModelGroup[] = [];
+
+    // Admin-activated providers — visible to every user.
     for (const p of siteProviders) {
-      const pModels = p.models
-        ? p.models.split(",").map((m) => m.trim()).filter(Boolean)
-        : ["Default Model"];
+      const pModels = (p.models || "")
+        .split(",")
+        .map((m) => m.trim())
+        .filter(Boolean);
+      if (pModels.length === 0) continue;
       list.push({
         provider: p.name,
         models: pModels,
@@ -249,11 +258,14 @@ function ChatContent() {
       });
     }
 
-    const connected = userProviders.filter((p) => p.status === "connected");
-    for (const p of connected) {
-      const pModels = p.models
-        ? p.models.split(",").map((m) => m.trim()).filter(Boolean)
-        : ["Default Model"];
+    // The user's own verified BYOK providers.
+    for (const p of userProviders) {
+      if (p.status !== "connected") continue;
+      const pModels = (p.models || "")
+        .split(",")
+        .map((m) => m.trim())
+        .filter(Boolean);
+      if (pModels.length === 0) continue;
       list.push({
         provider: p.name,
         models: pModels,
@@ -261,8 +273,20 @@ function ChatContent() {
         providerId: p.id,
       });
     }
+
     return list;
   }, [siteProviders, userProviders]);
+
+  // Keep the selection valid: if nothing is selected (or the selected model
+  // disappeared) fall back to the first real model available.
+  React.useEffect(() => {
+    const ids = modelGroups.flatMap((g) => g.models.map((m) => `${g.provider}:${m}`));
+    if (ids.length === 0) {
+      if (model) setModel("");
+      return;
+    }
+    if (!ids.includes(model)) setModel(ids[0]);
+  }, [modelGroups, model]);
 
   // Composer state
   const [input, setInput] = React.useState("");
@@ -273,6 +297,7 @@ function ChatContent() {
 
   // UI state: Dock / Sidebar
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [byokOpen, setByokOpen] = React.useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = React.useState(true); // Collapsed by default like reference video
   const [searchQuery, setSearchQuery] = React.useState("");
   const chatScrollRef = React.useRef<HTMLDivElement>(null);
@@ -531,8 +556,26 @@ function ChatContent() {
     if (!textToSend && !attachment) return;
     if (isStreaming) return;
 
-    const [selectedProviderName, selectedModelName] = model.split(":");
-    const currentModelName = selectedModelName || model;
+    // Selection is encoded as "ProviderName:model-id" — split on the FIRST
+    // colon only, because real model ids contain slashes/colons themselves
+    // (e.g. OpenRouter's "anthropic/claude-sonnet-4").
+    const sepIndex = model.indexOf(":");
+    const selectedProviderName = sepIndex === -1 ? "" : model.slice(0, sepIndex);
+    const currentModelName = sepIndex === -1 ? model : model.slice(sepIndex + 1);
+
+    if (!currentModelName) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "assistant",
+          content:
+            "⚠️ هیچ مدلی انتخاب نشده است. ابتدا از فهرست مدل‌ها یک مدل انتخاب کنید، یا از «کلیدهای API من» یک کلید اضافه کنید.",
+        },
+      ]);
+      return;
+    }
+
     const matchingProvider = userProviders.find(
       (p) => p.name === selectedProviderName && p.status === "connected",
     );
@@ -659,6 +702,28 @@ function ChatContent() {
                   );
                 }
                 scrollToBottom();
+              } else if (eventData.type === "error") {
+                accumulatedText += `${accumulatedText ? "\n\n" : ""}⚠️ ${eventData.message}`;
+                if (!hasAddedAssistantMsg) {
+                  hasAddedAssistantMsg = true;
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: assistantMsgId,
+                      role: "assistant",
+                      content: accumulatedText,
+                      isStreaming: false,
+                    },
+                  ]);
+                } else {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMsgId
+                        ? { ...msg, content: accumulatedText, isStreaming: false }
+                        : msg,
+                    ),
+                  );
+                }
               } else if (eventData.type === "done") {
                 setMessages((prev) =>
                   prev.map((msg) =>
@@ -879,7 +944,7 @@ function ChatContent() {
         </div>
 
         {/* Top Header Bar matching Video 1 exactly */}
-        <header className="relative z-20 flex h-14 shrink-0 items-center justify-between px-4 sm:px-6 border-b border-white/[0.04] bg-background/60 backdrop-blur-md">
+        <header className="relative z-20 flex h-14 shrink-0 items-center justify-between px-4 sm:px-6 bg-background/60 backdrop-blur-md">
           {/* Left Side: Sidebar toggle + New chat + Arka Logo */}
           <div className="flex items-center gap-2">
             <button
@@ -946,14 +1011,14 @@ function ChatContent() {
             {/* Notification Menu */}
             <NotificationsMenu />
 
-            {/* Theme / Appearance toggle */}
+            {/* Personal API keys (BYOK) — add / edit from inside the chat */}
             <button
               type="button"
-              onClick={() => {}}
+              onClick={() => setByokOpen(true)}
               className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
-              title="حالت تاریک"
+              title="کلیدهای API من"
             >
-              <Moon className="size-4" />
+              <Key className="size-4" />
             </button>
 
             {/* User Profile */}
@@ -962,6 +1027,7 @@ function ChatContent() {
                 name={user?.name || "کاربر ارکا"}
                 subtitle={user?.email || "حساب گوگل"}
                 avatarUrl={user?.avatarUrl}
+                placement="down"
               />
             </div>
           </div>
@@ -1014,6 +1080,28 @@ function ChatContent() {
                       {Math.floor(timeoutRemainingSeconds / 60)}:
                       {String(timeoutRemainingSeconds % 60).padStart(2, "0")}
                     </span>
+                  </div>
+                )}
+
+                {/* No models available — guide the user to connect a real key */}
+                {modelGroups.length === 0 && (
+                  <div className="mb-3 rounded-[20px] border border-amber-500/40 bg-amber-500/[0.08] p-3.5 text-xs text-amber-200">
+                    <div className="mb-1 flex items-center gap-2 text-sm font-bold text-amber-300">
+                      <AlertCircle className="size-4" />
+                      <span>هیچ مدلی در دسترس نیست</span>
+                    </div>
+                    <p className="leading-5">
+                      هنوز هیچ پروایدری توسط مدیر سیستم فعال نشده و شما هم کلید شخصی ثبت نکرده‌اید. برای شروع،
+                      کلید API خودتان را اضافه کنید.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setByokOpen(true)}
+                      className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[11.5px] font-bold text-black transition-colors hover:bg-neutral-200"
+                    >
+                      <Key className="size-3" />
+                      افزودن کلید API
+                    </button>
                   </div>
                 )}
 
@@ -1090,7 +1178,7 @@ function ChatContent() {
                       type="button"
                       onClick={() => handleSend()}
                       disabled={
-                        (!input.trim() && !attachment) ||
+                        !model || (!input.trim() && !attachment) ||
                         Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))
                       }
                       className="grid size-8 place-items-center rounded-full bg-white text-black hover:bg-neutral-200 transition-all shadow disabled:opacity-30 disabled:hover:bg-white"
@@ -1237,7 +1325,7 @@ function ChatContent() {
                     type="submit"
                     size="icon"
                     disabled={
-                      (!input.trim() && !attachment) ||
+                      !model || (!input.trim() && !attachment) ||
                       Boolean(user?.isBanned || (timeoutRemainingSeconds !== null && timeoutRemainingSeconds > 0))
                     }
                     className="size-8 shrink-0 rounded-full bg-white text-black hover:bg-neutral-200 shadow disabled:opacity-30"
@@ -1256,6 +1344,17 @@ function ChatContent() {
           </div>
         )}
       </main>
+
+      {/* BYOK manager — add / edit / verify personal API keys without leaving the chat */}
+      <ByokManager
+        open={byokOpen}
+        onClose={() => setByokOpen(false)}
+        onChanged={() => {
+          loadUserProviders();
+          loadSiteProviders();
+        }}
+        providers={userProviders}
+      />
     </div>
   );
 }

@@ -31,13 +31,22 @@ if [[ ! -d "$TARGET_DIR" ]]; then
 fi
 
 ENV_FILE="$TARGET_DIR/.env"
-GITHUB_TOKEN="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"
 
-echo -e " ${CLR_CYAN}ℹ [1/4] دریافت جدیدترین نسخه سورس‌کد (رفع هاله لاگین، سنتر کردن FAQ و بهبودها)...${CLR_RESET}"
+# NEVER hardcode credentials in the repository. Either export GITHUB_TOKEN
+# before running this script, or rely on the server's own git credential store.
+REMOTE_URL="https://github.com/AliRezaC-xrol/arka.git"
+
+echo -e " ${CLR_CYAN}ℹ [1/4] دریافت جدیدترین نسخه سورس‌کد...${CLR_RESET}"
 cd "$TARGET_DIR"
-git remote set-url origin "https://${GITHUB_TOKEN}@github.com/AliRezaC-xrol/arka.git"
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  git remote set-url origin "https://${GITHUB_TOKEN}@github.com/AliRezaC-xrol/arka.git"
+else
+  git remote set-url origin "$REMOTE_URL"
+fi
 git fetch origin main
 git reset --hard origin/main
+# Strip any embedded token back out so it is never left in .git/config.
+git remote set-url origin "$REMOTE_URL"
 echo -e " ${CLR_GREEN}✔ سورس‌کد با موفقیت به آخرین نسخه ارکا به‌روزرسانی شد.${CLR_RESET}"
 
 # 2. Check and prompt for Google OAuth

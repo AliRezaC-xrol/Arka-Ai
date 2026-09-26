@@ -99,6 +99,8 @@ model ProviderApiKey {
   status           String    @default("active") // active | exhausted | error
   lastUsedAt       DateTime?
   lastErrorMessage String?   @db.Text
+  lastTestedAt     DateTime? // آخرین بررسی اتصال (null = هرگز بررسی نشده)
+  lastTestMessage  String?   @db.Text // پیام نتیجه بررسی اتصال
   usageCount       Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
