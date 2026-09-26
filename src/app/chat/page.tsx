@@ -1061,15 +1061,9 @@ function ChatContent() {
             {/* Notification Menu */}
             <NotificationsMenu />
 
-            {/* Personal API keys (BYOK) — add / edit from inside the chat */}
-            <button
-              type="button"
-              onClick={() => setByokOpen(true)}
-              className="grid size-8 place-items-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.05] transition-colors"
-              title="کلیدهای API من"
-            >
-              <Key className="size-4" />
-            </button>
+            {/* BYOK lives in ONE place only: the highlighted box at the bottom
+                of the sidebar. The duplicate header button was removed so the
+                key manager is never opened from two different spots. */}
 
             {/* User Profile */}
             <div className="w-32 sm:w-40">
