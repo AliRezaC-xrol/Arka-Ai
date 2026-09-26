@@ -8,7 +8,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowUp,
@@ -153,9 +153,29 @@ function ImageMessageCard({ content }: { content: string }) {
 }
 
 function ChatContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const activeId = searchParams.get("id");
+  const urlActiveId = searchParams.get("id");
+
+  /**
+   * The conversation currently on screen.
+   *
+   * This has to be local state, not a pure read of `searchParams`.
+   *
+   * The URL is updated with `history.replaceState` (never `router.push`) while
+   * an answer streams, because a real navigation re-renders this page and
+   * destroys the in-flight response. But `replaceState` does not tell React
+   * anything: `searchParams.get("id")` keeps returning the OLD value. That
+   * desync was the "I have to refresh to see the message" bug — the message
+   * list effect keyed off a stale id, so the optimistic assistant message was
+   * thrown away and re-fetched from the server, where it had not been written
+   * yet.
+   *
+   * So: local state is the source of truth during a session, and the URL is
+   * kept in sync beside it (for reloads and shareable links). The effect below
+   * adopts an id that arrives from the URL on a real navigation.
+   */
+  const [activeId, setActiveId] = React.useState<string | null>(urlActiveId);
+  const activeIdRef = React.useRef<string | null>(urlActiveId);
 
   // User session state
   const [user, setUser] = React.useState<{
@@ -358,6 +378,14 @@ function ChatContent() {
    * conversation appeared to answer only its first message.
    */
   const conversationIdRef = React.useRef<string | null>(null);
+  /**
+   * Which conversation the `messages` array currently belongs to.
+   *
+   * Guards the load effect against re-fetching and overwriting messages we
+   * already hold — that overwrite is what made a fresh answer disappear until
+   * the page was refreshed.
+   */
+  const messagesConversationRef = React.useRef<string | null>(null);
   const [isThinking, setIsThinking] = React.useState(false);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
@@ -409,12 +437,42 @@ function ChatContent() {
     loadConversations();
   }, [loadConversations]);
 
+  /**
+   * Adopt a conversation id that arrives from the URL.
+   *
+   * On a real navigation (sidebar link, back/forward button, or a page load)
+   * `searchParams` changes and we must follow it. During streaming the URL is
+   * written with `replaceState`, which does NOT change `searchParams`, so this
+   * effect is deliberately inert then — no spurious re-fetch, no wipe.
+   */
+  React.useEffect(() => {
+    setActiveId((current) => (urlActiveId === current ? current : urlActiveId));
+  }, [urlActiveId]);
+
+  React.useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
+
   // Load messages for selected conversation
   React.useEffect(() => {
     conversationIdRef.current = activeId ?? null;
 
     if (!activeId) {
       setMessages([]);
+      return;
+    }
+
+    /**
+     * If this conversation is already on screen, do NOT re-fetch.
+     *
+     * Re-fetching was destructive: a response that had just streamed in (or
+     * was still streaming) is not necessarily in the database yet, so the
+     * server returned the older message list and the answer visibly vanished
+     * until a manual refresh. Skip the fetch whenever we already hold messages
+     * for this exact id.
+     */
+    if (messagesConversationRef.current === activeId) {
+      setIsLoadingMessages(false);
       return;
     }
 
@@ -427,10 +485,16 @@ function ChatContent() {
         return res.json();
       })
       .then((data) => {
-        if (!cancelled) setMessages(data.conversation?.messages || []);
+        if (!cancelled) {
+          messagesConversationRef.current = activeId;
+          setMessages(data.conversation?.messages || []);
+        }
       })
       .catch(() => {
-        if (!cancelled) setMessages([]);
+        if (!cancelled) {
+          messagesConversationRef.current = activeId;
+          setMessages([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setIsLoadingMessages(false);
@@ -513,12 +577,20 @@ function ChatContent() {
   }, [conversations, searchQuery]);
 
   const handleSelectConversation = (id: string) => {
-    router.push(`/chat?id=${id}`);
+    // Claim the id before navigating so the load effect treats this as a
+    // genuine conversation switch and does fetch the message list.
+    messagesConversationRef.current = null;
+    conversationIdRef.current = id;
+    setActiveId(id);
+    window.history.replaceState(null, "", `/chat?id=${id}`);
     setSidebarOpen(false);
   };
 
   const handleNewChat = () => {
-    router.push("/chat");
+    messagesConversationRef.current = null;
+    conversationIdRef.current = null;
+    setActiveId(null);
+    window.history.replaceState(null, "", "/chat");
     setMessages([]);
     setAttachment(null);
     setInput("");
@@ -749,7 +821,12 @@ function ChatContent() {
         }
 
         if (data.isNewConversation && data.conversationId) {
-          router.push(`/chat?id=${data.conversationId}`);
+          // Same reasoning as the streaming path: state + URL, never a router
+          // navigation, so the message list is not re-fetched and overwritten.
+          messagesConversationRef.current = data.conversationId;
+          conversationIdRef.current = data.conversationId;
+          setActiveId(data.conversationId);
+          window.history.replaceState(null, "", `/chat?id=${data.conversationId}`);
           loadConversations();
         }
         return;
@@ -814,8 +891,21 @@ function ChatContent() {
                 if (eventData.conversationId) {
                   conversationIdRef.current = eventData.conversationId;
                   if (eventData.isNewConversation) {
-                    // Sync the URL WITHOUT a router navigation. A push() here
-                    // re-renders the page mid-stream and wipes the answer.
+                    /**
+                     * Sync the URL WITHOUT a router navigation. A push() here
+                     * re-renders the page mid-stream and wipes the answer.
+                     *
+                     * `replaceState` is invisible to React, so the id must also
+                     * go into state — otherwise the load effect keeps keying off
+                     * the stale id in `searchParams` and re-fetches, discarding
+                     * the answer that is arriving right now.
+                     *
+                     * `messagesConversationRef` is claimed here too, so the load
+                     * effect recognises this id as already-on-screen and leaves
+                     * the streaming messages alone.
+                     */
+                    messagesConversationRef.current = eventData.conversationId;
+                    setActiveId(eventData.conversationId);
                     window.history.replaceState(
                       null,
                       "",

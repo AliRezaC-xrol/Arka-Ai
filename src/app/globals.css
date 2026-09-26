@@ -1258,32 +1258,45 @@ html { color-scheme: dark; }
 
 .aurora-mono::before {
   top: -30rem;
-  width: min(72rem, 170vw);
-  height: 56rem;
+  width: min(78rem, 175vw);
+  height: 62rem;
+  /* Opacities are tuned by MEASUREMENT, not by eye. The base is #070709 —
+     almost pure black — so a 30% white glow blurred by 34px integrated down to
+     a barely-perceptible haze, which is why the chat read as "there is no
+     background". Simply raising the alpha to 0.62 overcorrected badly: sampled
+     pixels in the centre came back at luminance ~149, and white text on a
+     mid-grey field is worse than no background at all.
+     The values below land the brightest region around luminance 40-60: clearly
+     visible as flowing light, still comfortably behind the text. The four
+     gradients stack additively, so the peak is well above any single alpha. */
   background:
-    radial-gradient(closest-side at 50% 58%, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.10) 42%, transparent 74%),
-    radial-gradient(closest-side at 31% 63%, rgba(196, 208, 226, 0.24), transparent 76%),
-    radial-gradient(closest-side at 69% 59%, rgba(255, 255, 255, 0.18), transparent 76%);
+    radial-gradient(closest-side at 50% 58%, rgba(255, 255, 255, 0.17), rgba(226, 232, 240, 0.07) 40%, transparent 72%),
+    radial-gradient(closest-side at 27% 64%, rgba(186, 202, 228, 0.12), transparent 74%),
+    radial-gradient(closest-side at 73% 57%, rgba(255, 255, 255, 0.07), transparent 74%),
+    radial-gradient(closest-side at 50% 70%, rgba(148, 163, 184, 0.07), transparent 70%);
   animation: aurora-mono-drift 34s ease-in-out infinite;
 }
 
 .aurora-mono::after {
   bottom: -34rem;
-  width: min(62rem, 150vw);
-  height: 48rem;
-  background: radial-gradient(closest-side at 50% 40%, rgba(255, 255, 255, 0.16), transparent 74%);
+  width: min(68rem, 155vw);
+  height: 52rem;
+  background:
+    radial-gradient(closest-side at 50% 40%, rgba(226, 232, 240, 0.10), transparent 72%),
+    radial-gradient(closest-side at 30% 45%, rgba(255, 255, 255, 0.07), transparent 74%);
   animation: aurora-mono-drift 46s ease-in-out infinite reverse;
 }
 
-/* A third, static veil that needs no animation at all: it gives the pane the
-   depth the user asked for without costing a single extra rAF tick. */
+/* A static veil that needs no animation at all: it gives the pane depth
+   without costing a single extra rAF tick. Kept dim so it never competes with
+   the message text sitting on top of it. */
 .aurora-veil {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.045), transparent 62%),
-    radial-gradient(90% 60% at 50% 110%, rgba(255, 255, 255, 0.03), transparent 60%);
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.075), transparent 64%),
+    radial-gradient(90% 60% at 50% 110%, rgba(255, 255, 255, 0.055), transparent 62%);
 }
 
 @keyframes aurora-mono-drift {
