@@ -25,11 +25,14 @@ export function UserMenu({
   subtitle,
   avatarUrl,
   placement = "up",
+  compact = false,
 }: {
   name: string;
   subtitle: string;
   avatarUrl?: string | null;
   placement?: "up" | "down";
+  /** Collapse the trigger to just the avatar (used in the mobile chat header). */
+  compact?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const [imgError, setImgError] = React.useState(false);
@@ -200,7 +203,10 @@ export function UserMenu({
             focusFirstItem();
           }
         }}
-        className="flex w-full items-center gap-3 rounded-control border border-transparent p-2 text-start transition-colors duration-200 hover:bg-soft focus-visible:border-line focus-visible:outline-none"
+        className={cn(
+          "flex w-full items-center rounded-control border border-transparent text-start transition-colors duration-200 hover:bg-soft focus-visible:border-line focus-visible:outline-none",
+          compact ? "justify-center p-1" : "gap-3 p-2",
+        )}
       >
         <span
           aria-hidden
@@ -218,11 +224,15 @@ export function UserMenu({
             initial
           )}
         </span>
-        <span className="min-w-0 flex-1 leading-5">
-          <span className="block truncate text-[13px] font-medium text-foreground">{name}</span>
-          <span className="block truncate text-[11px] text-foreground-3">{subtitle}</span>
-        </span>
-        <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-foreground-3" />
+        {!compact && (
+          <>
+            <span className="min-w-0 flex-1 leading-5">
+              <span className="block truncate text-[13px] font-medium text-foreground">{name}</span>
+              <span className="block truncate text-[11px] text-foreground-3">{subtitle}</span>
+            </span>
+            <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-foreground-3" />
+          </>
+        )}
       </button>
     </div>
   );

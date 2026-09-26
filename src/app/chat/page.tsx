@@ -1167,13 +1167,16 @@ function ChatContent() {
                 of the sidebar. The duplicate header button was removed so the
                 key manager is never opened from two different spots. */}
 
-            {/* User Profile */}
-            <div className="w-32 sm:w-40">
+            {/* User Profile — collapses to just the avatar on phones, where the
+                header has no room for a name block plus the notification and
+                export buttons. */}
+            <div className="w-auto md:w-40">
               <UserMenu
                 name={user?.name || "کاربر ارکا"}
                 subtitle={user?.email || "حساب گوگل"}
                 avatarUrl={user?.avatarUrl}
                 placement="down"
+                compact
               />
             </div>
           </div>
@@ -1185,15 +1188,19 @@ function ChatContent() {
           className="relative min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-8"
         >
           {messages.length === 0 && !isLoadingMessages ? (
-            /* ================= Exact Empty State matching Video 1 ================= */
-            <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center py-6">
+            /* ================= Exact Empty State matching Video 1 =================
+               `min-h-full` + `justify-center` centres the block when there is
+               room, but lets it grow and scroll instead of squashing when the
+               viewport is short (a phone in landscape, or a phone with the
+               keyboard open). */
+            <div className="mx-auto flex min-h-full max-w-2xl flex-col items-center justify-center py-6 text-center">
               {/* Staggered entrance: title → subtitle → composer → chips.
                   `.enter` lives in globals.css and is disabled under
                   prefers-reduced-motion. */}
-              <h1 className="enter [--enter-delay:0ms] text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <h1 className="enter [--enter-delay:0ms] text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
                 چطور می‌توانم کمکت کنم؟
               </h1>
-              <p className="enter [--enter-delay:70ms] mt-2 text-xs sm:text-[13px] text-neutral-400">
+              <p className="enter [--enter-delay:70ms] mt-2 text-xs text-neutral-400 sm:text-[13px]">
                 هر چه می‌خواهید بپرسید — تاریخچه فقط روی همین دستگاه می‌ماند.
               </p>
 
@@ -1363,7 +1370,7 @@ function ChatContent() {
             </div>
           ) : (
             /* ================= Message List ================= */
-            <div className="mx-auto flex max-w-3xl flex-col gap-6 pb-28">
+            <div className="mx-auto flex max-w-3xl flex-col gap-5 pb-32 sm:gap-6 sm:pb-36">
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
 
@@ -1481,10 +1488,12 @@ function ChatContent() {
         {/* ================= Bottom Docked Composer (When messages exist) =================
             No border and no tinted backdrop: the page background (and the aurora)
             flow straight under the composer instead of it sitting in its own
-            separated box. */}
+            separated box.
+            `w-full` matters here — as a flex child of a column `main` it would
+            otherwise shrink-to-fit its content instead of spanning the pane. */}
         {messages.length > 0 && (
-          <div className="relative z-10 shrink-0 p-3 sm:p-4">
-            <div className="mx-auto max-w-3xl">
+          <div className="relative z-10 w-full shrink-0 px-3 pb-3 sm:px-4 sm:pb-4">
+            <div className="mx-auto w-full max-w-3xl">
               {attachment && (
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#161619] px-3 py-1 text-xs text-neutral-300">
                   <Paperclip className="size-3 text-neutral-400" />

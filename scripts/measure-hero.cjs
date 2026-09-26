@@ -17,12 +17,34 @@ const VIEWPORTS = [
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   const out = {};
 
+  // Sign in once with the dev-auth route so the chat page can be measured.
+  // Only available when the server runs with ALLOW_DEV_AUTH=true.
+  const authCtx = await browser.newContext();
+  const authPage = await authCtx.newPage();
+  let storageState = null;
+  try {
+    await authPage.goto(
+      `${BASE}/api/auth/mock-login?email=measure%40arka.test&name=%D9%85%D8%B1%D8%B3%D8%B1&returnTo=%2Fchat`,
+      { waitUntil: "domcontentloaded", timeout: 20000 },
+    );
+    if (authPage.url().includes("/chat")) {
+      storageState = await authCtx.storageState();
+      out.auth = "ok";
+    } else {
+      out.auth = "failed: " + authPage.url();
+    }
+  } catch (e) {
+    out.auth = "error: " + String(e).slice(0, 120);
+  }
+  await authCtx.close();
+
   for (const vp of VIEWPORTS) {
     const ctx = await browser.newContext({
       viewport: { width: vp.width, height: vp.height },
       isMobile: vp.mobile,
       hasTouch: vp.mobile,
       deviceScaleFactor: 1,
+      ...(storageState ? { storageState } : {}),
     });
     const page = await ctx.newPage();
     const errors = [];

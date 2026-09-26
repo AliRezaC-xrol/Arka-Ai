@@ -16,7 +16,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-NODE_OPTIONS="--max-old-space-size=3072" npx next start -p "$PORT" > /tmp/arka-measure-server.log 2>&1 &
+ALLOW_DEV_AUTH=true NODE_OPTIONS="--max-old-space-size=3072" npx next start -p "$PORT" > /tmp/arka-measure-server.log 2>&1 &
 SERVER_PID=$!
 
 # Wait for readiness
