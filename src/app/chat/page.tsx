@@ -13,13 +13,16 @@ import {
   AlertCircle,
   ArrowUp,
   Ban,
+  Check,
   Clock,
+  Copy,
   Download,
   Image as ImageIcon,
   Key,
   PanelRightClose,
   PanelRightOpen,
   Paperclip,
+  Pencil,
   Plus,
   Search,
   Settings,
@@ -554,6 +557,37 @@ function ChatContent() {
     });
     e.target.value = "";
   };
+
+  /** Id of the message whose copy button just fired (drives the spring anim). */
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
+
+  const handleCopyMessage = React.useCallback(async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Clipboard API needs a secure context; fall back to a hidden textarea.
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedId(id);
+    window.setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 1400);
+  }, []);
+
+  /** Load a sent message back into the composer so it can be edited and resent. */
+  const handleEditMessage = React.useCallback((content: string) => {
+    setInput(content);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      el?.focus();
+      el?.setSelectionRange(content.length, content.length);
+    });
+  }, []);
 
   const handleStop = () => {
     if (abortControllerRef.current) {
@@ -1232,29 +1266,75 @@ function ChatContent() {
                 const isUser = msg.role === "user";
 
                 if (isUser) {
+                  const justSent = msg.id.startsWith("user-");
                   return (
-                    <div key={msg.id} className="ms-auto flex max-w-[85%] flex-col items-end sm:max-w-[75%]">
+                    <div
+                      key={msg.id}
+                      className="group ms-auto flex max-w-[85%] flex-col items-end sm:max-w-[75%]"
+                    >
                       <div
                         className={cn(
                           "rounded-[22px] rounded-se-sm border border-white/10 bg-[#1a1a1f] px-4 py-3 text-start text-[14px] leading-7 text-white shadow-sm",
                           // Bubble grows out of the send corner, iMessage-style.
                           "[--bubble-origin:100%_100%]",
-                          msg.id.startsWith("user-") && "msg-send-pop",
+                          justSent && "msg-send-pop",
                         )}
                       >
                         <p className="whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+
+                      <div className="mt-1 flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyMessage(msg.content, msg.id)}
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-white"
+                          title="کپی پیام"
+                        >
+                          {copiedId === msg.id ? (
+                            <Check className="copy-pop size-3 text-emerald-400" />
+                          ) : (
+                            <Copy className="size-3" />
+                          )}
+                          <span>{copiedId === msg.id ? "کپی شد" : "کپی"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleEditMessage(msg.content)}
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-white"
+                          title="ویرایش و ارسال دوباره به مدل"
+                        >
+                          <Pencil className="size-3" />
+                          <span>ویرایش</span>
+                        </button>
                       </div>
                     </div>
                   );
                 }
 
                 return (
-                  <div key={msg.id} className="me-auto flex w-full flex-col items-start text-start">
+                  <div key={msg.id} className="group me-auto flex w-full flex-col items-start text-start">
                     <div className="mb-2 flex items-center gap-2">
                       <div className="grid size-6 place-items-center rounded-lg border border-white/15 bg-white/5">
                         <ArkaMark className="size-3.5 text-white" />
                       </div>
                       <span className="text-xs font-semibold text-neutral-300">ارکا</span>
+
+                      {msg.contentType !== "image" && msg.content.trim().length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyMessage(msg.content, msg.id)}
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] text-neutral-500 opacity-0 transition-all duration-200 hover:bg-white/[0.06] hover:text-white group-hover:opacity-100 focus-visible:opacity-100"
+                          title="کپی پاسخ"
+                        >
+                          {copiedId === msg.id ? (
+                            <Check className="copy-pop size-3 text-emerald-400" />
+                          ) : (
+                            <Copy className="size-3" />
+                          )}
+                          <span>{copiedId === msg.id ? "کپی شد" : "کپی"}</span>
+                        </button>
+                      )}
                     </div>
 
                     {msg.contentType === "image" ? (
