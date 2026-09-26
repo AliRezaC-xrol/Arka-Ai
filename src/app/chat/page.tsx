@@ -1169,16 +1169,18 @@ function ChatContent() {
           {messages.length === 0 && !isLoadingMessages ? (
             /* ================= Exact Empty State matching Video 1 ================= */
             <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center py-6">
-              {/* Friendly Title & Subtitle */}
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              {/* Staggered entrance: title → subtitle → composer → chips.
+                  `.enter` lives in globals.css and is disabled under
+                  prefers-reduced-motion. */}
+              <h1 className="enter [--enter-delay:0ms] text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 چطور می‌توانم کمکت کنم؟
               </h1>
-              <p className="mt-2 text-xs sm:text-[13px] text-neutral-400">
+              <p className="enter [--enter-delay:70ms] mt-2 text-xs sm:text-[13px] text-neutral-400">
                 هر چه می‌خواهید بپرسید — تاریخچه فقط روی همین دستگاه می‌ماند.
               </p>
 
               {/* Center Floating Capsule Composer (Video 1 recreation) */}
-              <div className="w-full mt-7 text-start">
+              <div className="enter [--enter-delay:150ms] w-full mt-7 text-start">
                 {/* Ban Banner */}
                 {user?.isBanned && (
                   <div className="mb-3 rounded-[20px] border border-red-500/40 bg-red-500/10 p-3.5 text-xs text-red-200">
